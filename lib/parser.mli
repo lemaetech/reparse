@@ -64,10 +64,6 @@ val take_while : (char -> bool) -> (string, [> error ]) t
 
 val take_while_n : int -> (char -> bool) -> (string, [> error ]) t
 
-val not_string : string -> (char, [> `String_matched | error ]) t
-(** [not_string s] accepts any string of length [String.length s] which does not
-    equal [s]. Conversely equivalent to [string]. *)
-
 (** {2 Constructors} *)
 
 val ok : 'a -> ('a, [> error ]) t

@@ -125,15 +125,6 @@ let string s state =
       else msgf state "%d: string \"%s\" not found" state.offset s
   | None -> msgf state "%d: got EOF while parsing string \"%s\"" state.offset s
 
-let not_string s state =
-  let len = String.length s in
-  match substring len state with
-  | Some s2 -> (
-      match String.equal s s2 with
-      | true -> R.error (state, `String_matched)
-      | false -> any_char state )
-  | None -> any_char state
-
 let rec skip_while f state =
   match satisfy f state with
   | Ok (state, _) -> skip_while f state
