@@ -1,16 +1,19 @@
 open Sexplib
 
-type error = [ `Msg of string ]
+(** {2 Types} *)
 
-type src = [ `String of string | `Bigstring of Bigstringaf.t ]
+type error = [ `Msg of string ]
+(** Parser error type. *)
+
+type input = [ `String of string | `Bigstring of Bigstringaf.t ]
+(** Represents parser input. *)
 
 type (+'a, +'error) t
-
-val sexp_of_error : error -> Sexp.t
-
-val sexp_of_t : ('a -> Sexp.t) -> ('error -> Sexp.t) -> ('a, 'error) t -> Sexp.t
+(** The main parser type. *)
 
 val advance : int -> (unit, [> error ]) t
+(** [advance n] advances parser by the given [n] number of characters. Always
+    succeeds. *)
 
 val end_of_input : (bool, [> error ]) t
 (** [end_of_input] returns [true] if parser has reached end of input. Always
@@ -18,7 +21,8 @@ val end_of_input : (bool, [> error ]) t
 
 (** {2 Executing} *)
 
-val parse : src -> ('a, ([> error ] as 'b)) t -> ('a, 'b) result
+val parse : input -> ('a, ([> error ] as 'b)) t -> ('a, 'b) result
+(** [parse input p] executes parser [p] with input [input]. *)
 
 (** {2 Basic Parsers} *)
 
@@ -105,3 +109,9 @@ val count_skip_many : ('a, [> error ]) t -> (int, [> error ]) t
 val line : (string option, [> error ]) t
 (** [line] accepts and returns a line of input delimited by either [\n] or
     [\r\n]. Returns [None] if end of input is reached. *)
+
+(** {2 Pretty Printers} *)
+
+val sexp_of_error : error -> Sexp.t
+
+val sexp_of_t : ('a -> Sexp.t) -> ('error -> Sexp.t) -> ('a, 'error) t -> Sexp.t

@@ -4,9 +4,9 @@ module String = StringLabels
 
 type error = [ `Msg of string ] [@@deriving sexp_of]
 
-type state = { src : src; len : int; offset : int; cc : current_char }
+type state = { src : input; len : int; offset : int; cc : current_char }
 
-and src = [ `String of string | `Bigstring of Bigstringaf.t ]
+and input = [ `String of string | `Bigstring of Bigstringaf.t ]
 
 and current_char = [ `Char of char | `Eof ]
 
