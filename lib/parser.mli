@@ -39,6 +39,7 @@ val peek_char : (char option, [> error ]) t
     Always suceeds and returns [None] if EOF is reached. *)
 
 val peek_char_fail : (char, [> error ]) t
+(** Same as [peek_char] except the call fails if [end of input] is encountered. *)
 
 val any_char : (char, [> error ]) t
 (** [any_char] accepts any char and returns it. Fails if EOF reached. *)
