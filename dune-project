@@ -17,7 +17,9 @@
 
 (package
  (name reparse)
- (synopsis "monadic, recursive descent parsing library for ocaml.")
+ (synopsis "Recursive descent parsing library for ocaml")
+ (description
+   "reparse is an easy to learn and use parser combinator library. It is designed to aid authoring recursive descent style parsers.")
  (depends
   (ocaml
    (>= 4.10.0))
