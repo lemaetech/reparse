@@ -6,5 +6,5 @@ tedium of having to maintain parser/lexer input buffer. It emphasises and
 enables monadic style of writing parsers. As such the parser uses and error
 type to denote errors in parsing rather than an exception. 
 
-# Special Thanks
+## references
 API function names broadly follow Angstrom library names.
