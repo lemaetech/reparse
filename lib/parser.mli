@@ -1,3 +1,9 @@
+(** [reparse] is an easy to learn and use parser combinator library. It is
+    designed to aid authoring recursive descent style parsers. It removes the
+    tedium of having to maintain parser/lexer input buffer. It emphasises and
+    enables monadic style of writing parsers. As such the parser uses [error]
+    type to denote errors in parsing rather than the ocaml exception. *)
+
 (** {2 Types} *)
 
 type error = [ `Msg of string ]
@@ -7,7 +13,8 @@ type input = [ `String of string | `Bigstring of Bigstringaf.t ]
 (** Represents parser input. *)
 
 type (+'a, +'error) t
-(** The main parser type. *)
+(** The main parser type.['a] denotes the successful parse value while ['error]
+    denotes error raised by the parser. *)
 
 val advance : int -> (unit, [> error ]) t
 (** [advance n] advances parser by the given [n] number of characters. Always
