@@ -49,8 +49,8 @@ val any_char : (char, [> error ]) t
 (** [any_char] accepts any char and returns it. Fails if EOF reached. *)
 
 val peek_string : int -> (string option, [> error ]) t
-(** [peek_string n] attempts to match [n] length string from input exactly and
-    return it. If it isn't matched [None] is returned. *)
+(** [peek_string n] attempts to match string of length [n] from input exactly
+    and return it. If it isn't matched [None] is returned. *)
 
 val string : string -> (string, [> error ]) t
 (** [string s] accepts [s] exactly and returns it. *)
@@ -60,13 +60,14 @@ val skip_while : (char -> bool) -> (unit, [> error ]) t
     Always succeeds. *)
 
 val count_skip_while : (char -> bool) -> (int, [> error ]) t
-(** [count_skip_while f] loops through input accepting/advancing [c] only if
-    [f c] is true. Returns the count of times the [f c] was true. *)
+(** [count_skip_while f] accepts characters from input while [f c] is true and
+    records the count of times the input char was accepted. The accepted chars
+    are discarded and the count is returned. *)
 
 val count_skip_while_string : int -> (string -> bool) -> (int, [> error ]) t
-(** [count_skip_while_string n f] loops through input accepting/advancing [s]
-    only if [f s] is true. [String.length s = n]. Returns the count of times the
-    [f s] was true. *)
+(** [count_skip_while_string n f] accepts string [s] of length [n] if [f s] is
+    true. The accepted string [s] is discarded and the count of times the string
+    was accepted is noted. The count is then returned. *)
 
 val take_while : (char -> bool) -> (string, [> error ]) t
 (** [take_while f] keeps accepting character [c] from input while [f c] is true.
