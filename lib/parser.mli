@@ -1,5 +1,3 @@
-open Sexplib
-
 (** {2 Types} *)
 
 type error = [ `Msg of string ]
@@ -128,9 +126,3 @@ val count_skip_many : ('a, [> error ]) t -> (int, [> error ]) t
 val line : (string option, [> error ]) t
 (** [line] accepts and returns a line of input delimited by either [\n] or
     [\r\n]. Returns [None] if end of input is reached. *)
-
-(** {2 Pretty Printers} *)
-
-val sexp_of_error : error -> Sexp.t
-
-val sexp_of_t : ('a -> Sexp.t) -> ('error -> Sexp.t) -> ('a, 'error) t -> Sexp.t

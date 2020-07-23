@@ -1,5 +1,3 @@
 (library
  (name reparse)
- (libraries bigstringaf sexplib)
- (preprocess
-  (pps ppx_sexp_conv)))
+ (libraries bigstringaf))

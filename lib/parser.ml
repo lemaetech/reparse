@@ -1,8 +1,7 @@
-open Sexplib.Std
 module R = Result
 module String = StringLabels
 
-type error = [ `Msg of string ] [@@deriving sexp_of]
+type error = [ `Msg of string ]
 
 type state = { src : input; len : int; offset : int; cc : current_char }
 
@@ -11,7 +10,6 @@ and input = [ `String of string | `Bigstring of Bigstringaf.t ]
 and current_char = [ `Char of char | `Eof ]
 
 type ('a, 'error) t = state -> (state * 'a, state * 'error) result
-[@@deriving sexp_of]
 
 let msgf state fmt = Format.kasprintf (fun s -> R.error (state, `Msg s)) fmt
 
