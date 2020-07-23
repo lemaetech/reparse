@@ -27,12 +27,16 @@ val parse : input -> ('a, ([> error ] as 'b)) t -> ('a, 'b) result
 (** {2 Basic Parsers} *)
 
 val char : char -> (char, [> error ]) t
+(** [char c] accepts character [c] from input exactly and returns it. Fails
+    Otherwise.*)
 
 val char_if : (char -> bool) -> (char option, [> error ]) t
 (** [char_if f] accepts and returns a [Some c] if [f c] is true. Otherwise it
     returns [None]. Always succeeds. *)
 
 val satisfy : (char -> bool) -> (char, [> error ]) t
+(** [satisfy f] accepts a char [c] from input if [f c] is true and returns it.
+    Otherwise it fails. *)
 
 val peek_char : (char option, [> error ]) t
 (** [peek_char t] returns a character at the current position in the parser.
@@ -45,8 +49,11 @@ val any_char : (char, [> error ]) t
 (** [any_char] accepts any char and returns it. Fails if EOF reached. *)
 
 val peek_string : int -> (string option, [> error ]) t
+(** [peek_string n] attempts to match [n] length string from input exactly and
+    return it. If it isn't matched [None] is returned. *)
 
 val string : string -> (string, [> error ]) t
+(** [string s] accepts [s] exactly and returns it. *)
 
 val skip_while : (char -> bool) -> (unit, [> error ]) t
 (** [skip_while f] keeps accepting [c] if [f c] is [true]. [c] is discarded.
@@ -62,22 +69,36 @@ val count_skip_while_string : int -> (string -> bool) -> (int, [> error ]) t
     [f s] was true. *)
 
 val take_while : (char -> bool) -> (string, [> error ]) t
+(** [take_while f] keeps accepting character [c] from input while [f c] is true.
+    It then concatenates the accepted characters and converts it into a string
+    and returns it. *)
 
 val take_while_n : int -> (char -> bool) -> (string, [> error ]) t
+(** [take_while_n n f] similar in functionality to [take_while]. The parser
+    however has a maximum upper bound [n] on the number of characters it
+    accepts. *)
 
 (** {2 Constructors} *)
 
 val ok : 'a -> ('a, [> error ]) t
+(** [ok v] creates a new parser that always returns the constant [v]. *)
 
 val fail : ([> error ] as 'e) -> (_, 'e) t
+(** [fail err] creates a parser that always fails with [err]. *)
 
 (** {2 Combinators} *)
 
 val ( <|> ) : ('a, 'error) t -> ('a, 'error) t -> ('a, 'error) t
+(** [p <|> q] creates a parser that executes [p] and returns the result if it is
+    successful. If false then it executes [q] and returns it. *)
 
 val ( >>= ) : ('a, 'error) t -> ('a -> ('b, 'error) t) -> ('b, 'error) t
+(** [p >>= q] executes [p] and if it succeeds executes [q] and returns it's
+    result else it returns the result of executing [p]. *)
 
 val ( >>| ) : ('a, 'error) t -> ('a -> 'b) -> ('b, 'error) t
+(** [p >>| f] executes [p] and then if it is successful returns [a]. It then
+    executes [f a] and returns the result. *)
 
 val ( >>|? ) : ('a, 'error) t -> ('error -> 'c) -> ('a, 'c) t
 (** [p >>|? f] executes [p] and maps [error] via [f error] if [p] results in
