@@ -17,6 +17,14 @@ Installation
 $ opam install dune
 ```
 
+API documentation
+-----------------
+
+```sh
+$ opam install odig 
+$ odig doc reparse 
+```
+
 References
 ----------
 API function names broadly follow Angstrom library names.
