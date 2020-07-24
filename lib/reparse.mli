@@ -8,7 +8,7 @@
  * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
 
-(** [reparse] is an easy to learn and use parser combinator library. It is
+(** Reparse is an easy to learn and use parser combinator library. It is
     designed to aid authoring recursive descent style parsers. It removes the
     tedium of having to maintain parser/lexer input buffer. It emphasises and
     enables monadic style of writing parsers. As such the parser uses [error]
