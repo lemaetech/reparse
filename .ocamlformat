@@ -1,4 +1,4 @@
-version=0.14.2
+version=0.14.3
 profile = conventional
 parse-docstrings = true
 break-infix = fit-or-vertical
