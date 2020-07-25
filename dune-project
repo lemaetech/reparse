@@ -23,8 +23,5 @@
  (depends
   (ocaml
    (>= 4.10.0))
-  (dune
-   (and
-    :build
-    (>= 2.6.0)))
+  dune
   bigstringaf))
