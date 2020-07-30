@@ -26,6 +26,8 @@ type (+'a, +'error) t
 (** The main parser type.['a] denotes the successful parse value while ['error]
     denotes error raised by the parser. *)
 
+val sexp_of_error : error -> Sexplib0.Sexp.t
+
 val advance : int -> (unit, [> error ]) t
 (** [advance n] advances parser by the given [n] number of characters. Always
     succeeds. *)

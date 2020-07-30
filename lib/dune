@@ -2,4 +2,6 @@
  (name reparse)
  (public_name reparse)
  (wrapped false)
- (libraries bigstringaf))
+ (libraries bigstringaf sexplib0)
+ (preprocess
+  (pps ppx_sexp_conv)))

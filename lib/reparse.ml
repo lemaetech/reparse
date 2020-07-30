@@ -9,8 +9,9 @@
  *-------------------------------------------------------------------------*)
 module R = Result
 module String = StringLabels
+open Sexplib0.Sexp_conv
 
-type error = [ `Msg of string ]
+type error = [ `Msg of string ] [@@deriving sexp_of]
 
 type state = { src : input; len : int; offset : int; cc : current_char }
 
