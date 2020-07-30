@@ -74,7 +74,7 @@ val string : string -> (string, [> error ]) t
 
 val string_if : string -> (string option, [> error ]) t
 (** [string_if s] accepts and returns [Some s] if [s] matches input. Otherwise
-    it returns false. Always succeeds. *)
+    returns [None]. Always succeeds. *)
 
 val skip_while : (char -> bool) -> (unit, [> error ]) t
 (** [skip_while f] keeps accepting [c] if [f c] is [true]. [c] is discarded.
