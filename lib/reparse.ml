@@ -133,6 +133,15 @@ let string s state =
       else msgf state "%d: string \"%s\" not found" state.offset s
   | None -> msgf state "%d: got EOF while parsing string \"%s\"" state.offset s
 
+let string_if s state =
+  let len = String.length s in
+  match substring len state with
+  | Some s2 ->
+      if s = s2 then
+        R.map (fun (state, ()) -> (state, Some s)) (advance len state)
+      else R.ok (state, None)
+  | None -> R.ok (state, None)
+
 let rec skip_while f state =
   match satisfy f state with
   | Ok (state, _) -> skip_while f state

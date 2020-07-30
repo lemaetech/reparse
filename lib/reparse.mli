@@ -48,7 +48,7 @@ val char : char -> (char, [> error ]) t
     Otherwise.*)
 
 val char_if : (char -> bool) -> (char option, [> error ]) t
-(** [char_if f] accepts and returns a [Some c] if [f c] is true. Otherwise it
+(** [char_if f] accepts and returns [Some c] if [f c] is true. Otherwise it
     returns [None]. Always succeeds. *)
 
 val satisfy : (char -> bool) -> (char, [> error ]) t
@@ -71,6 +71,10 @@ val peek_string : int -> (string option, [> error ]) t
 
 val string : string -> (string, [> error ]) t
 (** [string s] accepts [s] exactly and returns it. *)
+
+val string_if : string -> (string option, [> error ]) t
+(** [string_if s] accepts and returns [Some s] if [s] matches input. Otherwise
+    it returns false. Always succeeds. *)
 
 val skip_while : (char -> bool) -> (unit, [> error ]) t
 (** [skip_while f] keeps accepting [c] if [f c] is [true]. [c] is discarded.
