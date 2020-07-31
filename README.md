@@ -14,7 +14,7 @@ Reparse requires ocaml version 4.10.0.
 Installation
 -----------
 ```sh
-$ opam install dune
+$ opam install reparse
 ```
 
 API documentation
