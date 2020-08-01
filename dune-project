@@ -7,7 +7,7 @@
 (generate_opam_files true)
 
 (source
- (github bikallem/reparse))
+ (github lemaetech/reparse))
 
 (license MPL-2.0)
 

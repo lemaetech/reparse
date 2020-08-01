@@ -27,7 +27,7 @@ $ odig doc reparse
 
 Examples
 --------
-See https://github.com/bikallem/http-mutlipart-formdata/blob/master/lib/http_multipart_formdata.ml 
+See https://github.com/lemaetech/http-mutlipart-formdata/blob/master/lib/http_multipart_formdata.ml 
 
 References
 ----------
