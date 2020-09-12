@@ -16,10 +16,12 @@
 
 (** {2 Types} *)
 
-type error = [ `Msg of string ]
+type error = [`Msg of string]
 (** Parser error type. *)
 
-type input = [ `String of string | `Bigstring of Bigstringaf.t ]
+type input =
+  [ `String    of string
+  | `Bigstring of Bigstringaf.t ]
 (** Represents parser input. *)
 
 type (+'a, +'error) t
@@ -28,84 +30,84 @@ type (+'a, +'error) t
 
 val sexp_of_error : error -> Sexplib0.Sexp.t
 
-val advance : int -> (unit, [> error ]) t
+val advance : int -> (unit, [> error]) t
 (** [advance n] advances parser by the given [n] number of characters. Always
     succeeds. *)
 
-val end_of_input : (bool, [> error ]) t
+val end_of_input : (bool, [> error]) t
 (** [end_of_input] returns [true] if parser has reached end of input. Always
     succeeds. *)
 
 (** {2 Executing} *)
 
-val parse : input -> ('a, ([> error ] as 'b)) t -> ('a, 'b) result
+val parse : input -> ('a, ([> error] as 'b)) t -> ('a, 'b) result
 (** [parse input p] executes parser [p] with input [input]. *)
 
 (** {2 Basic Parsers} *)
 
-val char : char -> (char, [> error ]) t
+val char : char -> (char, [> error]) t
 (** [char c] accepts character [c] from input exactly and returns it. Fails
     Otherwise.*)
 
-val char_if : (char -> bool) -> (char option, [> error ]) t
+val char_if : (char -> bool) -> (char option, [> error]) t
 (** [char_if f] accepts and returns [Some c] if [f c] is true. Otherwise it
     returns [None]. Always succeeds. *)
 
-val satisfy : (char -> bool) -> (char, [> error ]) t
+val satisfy : (char -> bool) -> (char, [> error]) t
 (** [satisfy f] accepts a char [c] from input if [f c] is true and returns it.
     Otherwise it fails. *)
 
-val peek_char : (char option, [> error ]) t
+val peek_char : (char option, [> error]) t
 (** [peek_char t] returns a character at the current position in the parser.
     Always suceeds and returns [None] if EOF is reached. *)
 
-val peek_char_fail : (char, [> error ]) t
+val peek_char_fail : (char, [> error]) t
 (** Same as [peek_char] except the call fails if [end of input] is encountered. *)
 
-val any_char : (char, [> error ]) t
+val any_char : (char, [> error]) t
 (** [any_char] accepts any char and returns it. Fails if EOF reached. *)
 
-val peek_string : int -> (string option, [> error ]) t
+val peek_string : int -> (string option, [> error]) t
 (** [peek_string n] attempts to match string of length [n] from input exactly
     and return it. If it isn't matched [None] is returned. *)
 
-val string : string -> (string, [> error ]) t
+val string : string -> (string, [> error]) t
 (** [string s] accepts [s] exactly and returns it. *)
 
-val string_if : string -> (string option, [> error ]) t
+val string_if : string -> (string option, [> error]) t
 (** [string_if s] accepts and returns [Some s] if [s] matches input. Otherwise
     returns [None]. Always succeeds. *)
 
-val skip_while : (char -> bool) -> (unit, [> error ]) t
+val skip_while : (char -> bool) -> (unit, [> error]) t
 (** [skip_while f] keeps accepting [c] if [f c] is [true]. [c] is discarded.
     Always succeeds. *)
 
-val count_skip_while : (char -> bool) -> (int, [> error ]) t
+val count_skip_while : (char -> bool) -> (int, [> error]) t
 (** [count_skip_while f] accepts characters from input while [f c] is true and
     records the count of times the input char was accepted. The accepted chars
     are discarded and the count is returned. *)
 
-val count_skip_while_string : int -> (string -> bool) -> (int, [> error ]) t
+val count_skip_while_string : int -> (string -> bool) -> (int, [> error]) t
 (** [count_skip_while_string n f] accepts string [s] of length [n] if [f s] is
     true. The accepted string [s] is discarded and the count of times the string
     was accepted is noted. The count is then returned. *)
 
-val take_while : (char -> bool) -> (string, [> error ]) t
+val take_while : (char -> bool) -> (string, [> error]) t
 (** [take_while f] keeps accepting character [c] from input while [f c] is true.
     It then concatenates the accepted characters and converts it into a string
     and returns it. *)
 
-val take_while_n : int -> (char -> bool) -> (string, [> error ]) t
+val take_while_n : int -> (char -> bool) -> (string, [> error]) t
 (** [take_while_n n f] similar in functionality to [take_while]. The parser
     however has a maximum upper bound [n] on the number of characters it
     accepts. *)
 
 (** {2 Constructors} *)
 
-val ok : 'a -> ('a, [> error ]) t
+val ok : 'a -> ('a, [> error]) t
 (** [ok v] creates a new parser that always returns the constant [v]. *)
 
-val fail : ([> error ] as 'e) -> (_, 'e) t
+val fail : ([> error] as 'e) -> (_, 'e) t
 (** [fail err] creates a parser that always fails with [err]. *)
 
 (** {2 Combinators} *)
@@ -139,13 +141,13 @@ val ( <* ) : ('a, 'error) t -> (_, 'error) t -> ('a, 'error) t
 val ( *>| ) : (_, 'error) t -> 'a -> ('a, 'error) t
 (** [p *>| a] is [p >>| fun _ -> a] *)
 
-val many : ('a, [> error ]) t -> ('a list, [> error ]) t
+val many : ('a, [> error]) t -> ('a list, [> error]) t
 (** [many p] runs p zero or more times and returns a list of results from the
     runs of p.*)
 
-val count_skip_many : ('a, [> error ]) t -> (int, [> error ]) t
+val count_skip_many : ('a, [> error]) t -> (int, [> error]) t
 (** [count_skip_many p] runs [p] zeor or more times *)
 
-val line : (string option, [> error ]) t
+val line : (string option, [> error]) t
 (** [line] accepts and returns a line of input delimited by either [\n] or
     [\r\n]. Returns [None] if end of input is reached. *)
