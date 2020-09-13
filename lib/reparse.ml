@@ -340,3 +340,8 @@ let lf =
     (char_if (function
         | '\n' -> true
         | _    -> false))
+
+let octect state =
+  match state.cc with
+  | `Char c -> (state, c)
+  | `Eof    -> parser_error state "EOF reached."
