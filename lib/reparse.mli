@@ -24,27 +24,29 @@ val parse : ?track_lnum:bool -> string -> 'a t -> ('a, exn) result
     is set to [false] by default. *)
 
 val return : 'a -> 'a t
-(** [return v] creates a new parser that always returns constant [v]. *)
+(** [return v] creates a new parser that always returns [v]. *)
 
 (** {2 Operators} *)
 
 val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-(** [p >>= q] executes [p] and if it succeeds executes [q] and returns it's
-    result else it returns the result of executing [p]. *)
+(** [p >>= f] executes parser [p] which returns value [a]. If it succeeds then
+    it executes [f a] which returns a new parse [q]. *)
 
 val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
-(** [p >|= f] executes [p] and then if it is successful returns [a]. It then
-    executes [f a] and returns the result. *)
+(** [p >|= f] executes parser [p] which returns value [a]. It then executes
+    [f a] which returns value [c]. This is same as [p >>= (fun a -> return a)]. *)
 
 val ( *> ) : _ t -> 'a t -> 'a t
-(** [p *> b] is [p >>= fun _ -> b] *)
+(** [p *> q] executes parser [p] and [q]. However, the result of [p] is
+    discarded. The parse value of [q] is returned instead. *)
 
 val ( <* ) : 'a t -> _ t -> 'a t
-(** [p <* q] discards result from [q] and returns [p] *)
+(** [p <* q] discards result of parser [q] and returns [p] instead. *)
 
 val ( <|> ) : 'a t -> 'a t -> 'a t
-(** [p <|> q] creates a parser that executes [p] and returns the result if it is
-    successful. If false then it executes [q] and returns it. See [delay]. *)
+(** [p <|> q] creates a parser that executes both parser [p] and [q]. It [p] is
+    successful then its result is used otherwise the result of [q] is used. If
+    you want [q] to be lazy evaluated then use it with [delay] combinator. *)
 
 val delay : (unit -> 'a t) -> 'a t
 (** [delay f] delays the computation of [p] until it is required. [p] is
