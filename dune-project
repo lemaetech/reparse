@@ -23,7 +23,4 @@
  (depends
   (ocaml
    (>= 4.10.0))
-  dune
-  sexplib0
-  ppx_sexp_conv
-  bigstringaf))
+  dune))
