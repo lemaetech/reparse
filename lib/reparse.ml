@@ -50,35 +50,12 @@ let ( >>= ) p f state =
   let state, a = p state in
   f a state
 
-let ( >|= ) p f state =
-  let state, a = p state in
-  (state, f a)
-
-let ( <*> ) pf q state =
-  let state, f = pf state in
-  let state, a = q state in
-  (state, f a)
-
+let ( >|= ) p f = p >>= fun a -> return (f a)
+let ( <*> ) pf q = pf >>= fun f -> q >|= f
 let ( <$> ) f p = return f <*> p
-
-let ( <$$> ) f p q state =
-  let state, a = p state in
-  let state, b = q state in
-  (state, f a b)
-
-let ( <$$$> ) f p q r state =
-  let state, a = p state in
-  let state, b = q state in
-  let state, c = r state in
-  (state, f a b c)
-
-let ( <$$$$> ) f p q r s state =
-  let state, a = p state in
-  let state, b = q state in
-  let state, c = r state in
-  let state, d = s state in
-  (state, f a b c d)
-
+let ( <$$> ) f p q = return f <*> p <*> q
+let ( <$$$> ) f p q r = return f <*> p <*> q <*> r
+let ( <$$$$> ) f p q r s = return f <*> p <*> q <*> r <*> s
 let ( <$ ) v p = (fun _ -> v) <$> p
 
 let ( *> ) p q state =
