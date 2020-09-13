@@ -49,6 +49,15 @@ val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
       r = Ok 4
     ]} *)
 
+val ( <$ ) : 'b -> 'a t -> 'b t
+(** [v <$ p] replaces the result of [p] with [v]. *)
+
+(** Mappers over pairs of parsers. Joins their parsing results together. *)
+
+val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
+val ( <$$> ) : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
+val ( <$$$> ) : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
+
 val ( *> ) : _ t -> 'a t -> 'a t
 (** [p *> q] executes parser [p] and [q]. However, the result of [p] is
     discarded. The parse value of [q] is returned instead. *)
@@ -57,9 +66,9 @@ val ( <* ) : 'a t -> _ t -> 'a t
 (** [p <* q] discards result of parser [q] and returns [p] instead. *)
 
 val ( <|> ) : 'a t -> 'a t -> 'a t
-(** [p <|> q] creates a parser that executes both parser [p] and [q]. It [p] is
-    successful then its result is used otherwise the result of [q] is used. If
-    you want [q] to be lazy evaluated then use it with [delay] combinator. *)
+(** [p <|> q] tries both parsers. Takes the result of the first if success.
+    Otherwise returns the result of the second. {b Note} If you want [q] to be
+    lazy evaluated then use it with [delay] combinator. *)
 
 val ( <?> ) : 'a t -> string -> 'a t
 (** [p <?> err_mg] parse [p]. If it fails then fail with error message
