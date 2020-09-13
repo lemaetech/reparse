@@ -32,6 +32,7 @@ let parse src p =
     Ok a
   with exn -> Error exn
 
+let return v state = (state, v)
 let ( <|> ) p q state = try p state with (_ : exn) -> q state
 
 let ( >>= ) p f state =
@@ -49,6 +50,8 @@ let ( *> ) p q state =
 let ( <* ) p q state =
   let state, _ = q state in
   p state
+
+let delay f state = f () state
 
 let advance n state =
   let current_char offset = `Char state.src.[offset] in
@@ -73,7 +76,6 @@ let substring len state =
     String.sub state.src state.offset len |> Option.some
   else None
 
-let return v state = (state, v)
 let parser_error fmt = Format.kasprintf (fun s -> raise @@ Parse_error s) fmt
 
 let char c state =
