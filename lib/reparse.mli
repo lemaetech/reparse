@@ -18,10 +18,10 @@ exception Parse_error of int * int * string
     line number and column number respectively at the time of parser failure.
     [msg] contains a descriptive error message. *)
 
-val parse : ?count_lines:bool -> string -> 'a t -> ('a, exn) result
+val parse : ?track_lnum:bool -> string -> 'a t -> ('a, exn) result
 (** [parse ~count_lines input p] executes parser [p] with [input]. If
-    [count_lines] is true then the parser counts line and column numbers. It is
-    [false] by default. *)
+    [track_lnum] is true then the parser tracks both line and column numbers. It
+    is set to [false] by default. *)
 
 val return : 'a -> 'a t
 (** [return v] creates a new parser that always returns constant [v]. *)

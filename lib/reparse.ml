@@ -9,7 +9,7 @@
 type state =
   { src : string
   ; offset : int
-  ; count_lines : bool
+  ; track_lnum : bool
   ; lnum : int (* line count. *)
   ; cnum : int (* column count. *)
   ; cc : current_char }
@@ -31,8 +31,8 @@ let substring len state =
     String.sub state.src state.offset len |> Option.some
   else None
 
-let parse ?(count_lines = false) src p =
-  let state = {src; offset = 0; count_lines; lnum = 1; cnum = 1; cc = `Eof} in
+let parse ?(track_lnum = false) src p =
+  let state = {src; offset = 0; track_lnum; lnum = 1; cnum = 1; cc = `Eof} in
   try
     let (_ : state), a = p state in
     Ok a
@@ -64,7 +64,7 @@ let advance n state =
   if state.offset + n < len then
     let offset = state.offset + n in
     let state =
-      if state.count_lines then (
+      if state.track_lnum then (
         let lnum = ref state.lnum in
         let cnum = ref state.cnum in
         for i = state.offset to offset do
