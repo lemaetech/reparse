@@ -11,7 +11,7 @@
 (** {2 Types} *)
 
 type +'a t
-(** Represents a parser type that returns value ['a]. *)
+(** Represents a parser which can parse value ['a]. *)
 
 exception Parse_error of int * int * string
 (** [Parser_error (lnum, cnum, msg)] Raised by failed parsers. [lnum], [cnum] is
