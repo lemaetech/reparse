@@ -59,13 +59,7 @@ let ( <*> ) pf q state =
   let state, a = q state in
   (state, f a)
 
-let ( <$ ) v p state =
-  let state, _ = p state in
-  (state, v)
-
-let ( <$> ) f p state =
-  let state, a = p state in
-  (state, f a)
+let ( <$> ) f p = return f <*> p
 
 let ( <$$> ) f p q state =
   let state, a = p state in
@@ -84,6 +78,8 @@ let ( <$$$$> ) f p q r s state =
   let state, c = r state in
   let state, d = s state in
   (state, f a b c d)
+
+let ( <$ ) v p = (fun _ -> v) <$> p
 
 let ( *> ) p q state =
   let state, _ = p state in
