@@ -57,11 +57,10 @@ let ( <|> ) p q state = try p state with (_ : exn) -> q state
 let delay f state = f () state
 
 let advance n state =
-  let current_char offset = `Char state.src.[offset] in
   let len = String.length state.src in
   if state.offset + n < len then
     let offset = state.offset + n in
-    let state = {state with offset; cc = current_char offset} in
+    let state = {state with offset; cc = `Char state.src.[offset]} in
     (state, ())
   else
     let state = {state with offset = len; cc = `Eof} in
