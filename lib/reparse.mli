@@ -33,7 +33,11 @@ val parse : string -> 'a t -> ('a, exn) result
 
 val ( <|> ) : 'a t -> 'a t -> 'a t
 (** [p <|> q] creates a parser that executes [p] and returns the result if it is
-    successful. If false then it executes [q] and returns it. *)
+    successful. If false then it executes [q] and returns it. See [delay]. *)
+
+val delay : (unit -> 'a t) -> 'a t
+(** [delay f] delays the computation of [p] until it is required. [p] is
+    [p = f ()]. Use it together with [<|>]. *)
 
 val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 (** [p >>= q] executes [p] and if it succeeds executes [q] and returns it's
@@ -49,10 +53,6 @@ val ( *> ) : _ t -> 'a t -> 'a t
 val ( <* ) : 'a t -> _ t -> 'a t
 (** [p <* q] discards result from [q] and returns [p] *)
 
-val delay : (unit -> 'a t) -> 'a t
-(** [delay f] delays the computation of [p] until it is required. [p] is
-    [p = f ()]. *)
-
 (** {2 Basic Parsers} *)
 
 val char : char -> char t
@@ -61,7 +61,7 @@ val char : char -> char t
 
 val char_if : (char -> bool) -> char option t
 (** [char_if f] accepts and returns [Some c] if [f c] is true. Otherwise it
-    returns [None]. Always succeeds. *)
+    returns [None]. *)
 
 val satisfy : (char -> bool) -> char t
 (** [satisfy f] accepts a char [c] from input if [f c] is true and returns it.

@@ -8,7 +8,6 @@
  *-------------------------------------------------------------------------*)
 type state =
   { src : string
-  ; len : int
   ; offset : int
   ; cc : current_char }
 
@@ -25,8 +24,7 @@ let pp_current_char fmt = function
   | `Eof    -> Format.fprintf fmt "EOF"
 
 let parse src p =
-  let len = String.length src in
-  let state = {src; len; offset = 0; cc = `Eof} in
+  let state = {src; offset = 0; cc = `Eof} in
   try
     let (_ : state), a = p state in
     Ok a
@@ -55,12 +53,13 @@ let delay f state = f () state
 
 let advance n state =
   let current_char offset = `Char state.src.[offset] in
-  if state.offset + n < state.len then
+  let len = String.length state.src in
+  if state.offset + n < len then
     let offset = state.offset + n in
     let state = {state with offset; cc = current_char offset} in
     (state, ())
   else
-    let state = {state with offset = state.len; cc = `Eof} in
+    let state = {state with offset = len; cc = `Eof} in
     (state, ())
 
 let end_of_input state =
@@ -72,7 +71,7 @@ let end_of_input state =
   (state, is_eof)
 
 let substring len state =
-  if state.offset + len < state.len then
+  if state.offset + len < String.length state.src then
     String.sub state.src state.offset len |> Option.some
   else None
 
