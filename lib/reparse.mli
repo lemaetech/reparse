@@ -29,12 +29,24 @@ val return : 'a -> 'a t
 (** {2 Operators} *)
 
 val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-(** [p >>= f] executes parser [p] which returns value [a]. If it succeeds then
-    it executes [f a] which returns a new parse [q]. *)
+(** [p >>= f] Bind. Executes parser [p] which returns value [a]. If it succeeds
+    then it executes [f a] which returns a new parse [q]. *)
 
 val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
-(** [p >|= f] executes parser [p] which returns value [a]. It then executes
+(** [p >|= f] Map. Executes parser [p] which returns value [a]. It then executes
     [f a] which returns value [c]. This is same as [p >>= (fun a -> return a)]. *)
+
+val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
+(** [pf <*> q] Applicative. Executes parsers [pf] and [q] which returns function
+    [f] and [a] respectively. It then applies [f a].
+
+    {[
+      let pf = return (fun a -> a + 2) in
+      let q = return 2 in
+      let c = pf <*> q in
+      let r = parse "" c in
+      r = Ok 4
+    ]} *)
 
 val ( *> ) : _ t -> 'a t -> 'a t
 (** [p *> q] executes parser [p] and [q]. However, the result of [p] is

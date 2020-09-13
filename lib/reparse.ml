@@ -53,6 +53,11 @@ let ( >|= ) p f state =
   let state, a = p state in
   (state, f a)
 
+let ( <*> ) pf q state =
+  let state, f = pf state in
+  let state, a = q state in
+  (state, f a)
+
 let ( *> ) p q state =
   let state, _ = p state in
   q state
