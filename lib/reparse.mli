@@ -48,6 +48,11 @@ val ( <|> ) : 'a t -> 'a t -> 'a t
     successful then its result is used otherwise the result of [q] is used. If
     you want [q] to be lazy evaluated then use it with [delay] combinator. *)
 
+val ( <?> ) : 'a t -> string -> 'a t
+(** [p <?> err_mg] parse [p]. If it fails then fail with error message
+    [err_msg]. Used as a last choice in [<|>], e.g.
+    [a <|> b <|> c <?> "expected a b c"]. *)
+
 val delay : (unit -> 'a t) -> 'a t
 (** [delay f] delays the computation of [p] until it is required. [p] is
     [p = f ()]. Use it together with [<|>]. *)
