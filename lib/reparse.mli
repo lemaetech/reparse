@@ -13,10 +13,15 @@
 type +'a t
 (** Represents a parser type that returns value ['a]. *)
 
-exception Parse_error of string
+exception Parse_error of int * int * string
+(** [Parser_error (lnum, cnum, msg)] Raised by failed parsers. [lnum], [cnum] is
+    line number and column number respectively at the time of parser failure.
+    [msg] contains a descriptive error message. *)
 
-val parse : string -> 'a t -> ('a, exn) result
-(** [parse input p] executes parser [p] with [input]. *)
+val parse : ?count_lines:bool -> string -> 'a t -> ('a, exn) result
+(** [parse ~count_lines input p] executes parser [p] with [input]. If
+    [count_lines] is true then the parser counts line and column numbers. It is
+    [false] by default. *)
 
 val return : 'a -> 'a t
 (** [return v] creates a new parser that always returns constant [v]. *)
@@ -52,6 +57,13 @@ val end_of_input : bool t
 (** [end_of_input] returns [true] if parser has reached end of input. *)
 
 val fail : string -> 'a t
+(** [fail msg] fails the parser with [msg]. *)
+
+val lnum : int t
+(** [lnum] return the current line number. *)
+
+val cnum : int t
+(** [cnum] returns the current column number. *)
 
 (** {2 Basic Parsers} *)
 

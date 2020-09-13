@@ -9,6 +9,9 @@
 type state =
   { src : string
   ; offset : int
+  ; count_lines : bool
+  ; lnum : int (* line count. *)
+  ; cnum : int (* column count. *)
   ; cc : current_char }
 
 and current_char =
@@ -17,7 +20,7 @@ and current_char =
 
 type 'a t = state -> state * 'a
 
-exception Parse_error of string
+exception Parse_error of int * int * string
 
 let pp_current_char fmt = function
   | `Char c -> Format.fprintf fmt "%c" c
@@ -28,8 +31,8 @@ let substring len state =
     String.sub state.src state.offset len |> Option.some
   else None
 
-let parse src p =
-  let state = {src; offset = 0; cc = `Eof} in
+let parse ?(count_lines = false) src p =
+  let state = {src; offset = 0; count_lines; lnum = 1; cnum = 1; cc = `Eof} in
   try
     let (_ : state), a = p state in
     Ok a
@@ -60,7 +63,24 @@ let advance n state =
   let len = String.length state.src in
   if state.offset + n < len then
     let offset = state.offset + n in
-    let state = {state with offset; cc = `Char state.src.[offset]} in
+    let state =
+      if state.count_lines then (
+        let lnum = ref state.lnum in
+        let cnum = ref state.cnum in
+        for i = state.offset to offset do
+          let c = state.src.[i] in
+          if Char.equal c '\n' then (
+            lnum := !lnum + 1 ;
+            cnum := 1 )
+          else cnum := !cnum + 1
+        done ;
+        { state with
+          offset
+        ; lnum = !lnum
+        ; cnum = !cnum
+        ; cc = `Char state.src.[offset] } )
+      else {state with offset; cc = `Char state.src.[offset]}
+    in
     (state, ())
   else
     let state = {state with offset = len; cc = `Eof} in
@@ -74,8 +94,14 @@ let end_of_input state =
   in
   (state, is_eof)
 
-let fail msg _state = raise @@ Parse_error msg
-let parser_error fmt = Format.kasprintf (fun s -> raise @@ Parse_error s) fmt
+let fail msg state = raise @@ Parse_error (state.lnum, state.cnum, msg)
+let lnum state = (state, state.lnum)
+let cnum state = (state, state.cnum)
+
+let parser_error state fmt =
+  Format.kasprintf
+    (fun s -> raise @@ Parse_error (state.lnum, state.cnum, s))
+    fmt
 
 let char c state =
   if state.cc = `Char c then
@@ -83,6 +109,7 @@ let char c state =
     (state, c)
   else
     parser_error
+      state
       "%d: char '%c' expected instead of '%a'"
       state.offset
       c
@@ -106,6 +133,7 @@ let satisfy f state =
   | `Char _
    |`Eof ->
       parser_error
+        state
         "%d: satisfy is 'false' for char '%a'"
         state.offset
         pp_current_char
@@ -126,9 +154,13 @@ let string s state =
   match substring len state with
   | Some s2 ->
       if String.equal s s2 then advance len state
-      else parser_error "%d: string \"%s\" not found" state.offset s
+      else parser_error state "%d: string \"%s\" not found" state.offset s
   | None    ->
-      parser_error "%d: got EOF while parsing string \"%s\"" state.offset s
+      parser_error
+        state
+        "%d: got EOF while parsing string \"%s\""
+        state.offset
+        s
 
 let rec skip_while f state =
   try
