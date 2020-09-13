@@ -16,7 +16,8 @@ type +'a t
 exception Parse_error of int * int * string
 (** [Parser_error (lnum, cnum, msg)] Raised by failed parsers. [lnum], [cnum] is
     line number and column number respectively at the time of parser failure.
-    [msg] contains a descriptive error message. *)
+    [msg] contains a descriptive error message. {b Note} [lnum], [cnum] is both
+    [0] if line tracking is disabled. *)
 
 val parse : ?track_lnum:bool -> string -> 'a t -> ('a, exn) result
 (** [parse ~count_lines input p] executes parser [p] with [input]. If
