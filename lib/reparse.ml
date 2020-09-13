@@ -5,14 +5,7 @@
  * License,  v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
-(* module R = Result *)
-(* module String = StringLabels *)
-(* open Sexplib0.Sexp_conv *)
-
-(* type error = [`Msg of string] [@@deriving sexp_of] *)
-
 type state =
   { src : string
   ; len : int
@@ -30,6 +23,14 @@ exception Parse_error of string
 let pp_current_char fmt = function
   | `Char c -> Format.fprintf fmt "%c" c
   | `Eof    -> Format.fprintf fmt "EOF"
+
+let parse src p =
+  let len = String.length src in
+  let state = {src; len; offset = 0; cc = `Eof} in
+  try
+    let (_ : state), a = p state in
+    Ok a
+  with exn -> Error exn
 
 let ( <|> ) p q state = try p state with (_ : exn) -> q state
 
@@ -58,14 +59,6 @@ let advance n state =
   else
     let state = {state with offset = state.len; cc = `Eof} in
     (state, ())
-
-let parse src p =
-  let len = String.length src in
-  let state = {src; len; offset = 0; cc = `Eof} in
-  try
-    let (_ : state), a = p state in
-    Ok a
-  with exn -> Error exn
 
 let end_of_input state =
   let is_eof =

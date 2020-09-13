@@ -8,12 +8,6 @@
  * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
 
-(** Reparse is an easy to learn and use parser combinator library. It is
-    designed to aid authoring recursive descent style parsers. It removes the
-    tedium of having to maintain parser/lexer input buffer. It emphasises and
-    enables monadic style of writing parsers. As such the parser uses [error]
-    type to denote errors in parsing rather than the ocaml exception. *)
-
 (** {2 Types} *)
 
 type +'a t
@@ -106,9 +100,6 @@ val take_while_n : int -> (char -> bool) -> string t
 (** [take_while_n n f] similar in functionality to [take_while]. The parser
     however has a maximum upper bound [n] on the number of characters it
     accepts. *)
-
-(* val fail : ([> error] as 'e) -> (_, 'e) t *)
-(** [fail err] creates a parser that always fails with [err]. *)
 
 val many : 'a t -> 'a list t
 (** [many p] runs p zero or more times and returns a list of results from the
