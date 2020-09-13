@@ -5,227 +5,216 @@
  * License,  v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
-module R = Result
-module String = StringLabels
-open Sexplib0.Sexp_conv
+type state =
+  { src : string
+  ; len : int
+  ; offset : int
+  ; cc : current_char }
 
-type error = [ `Msg of string ] [@@deriving sexp_of]
+and current_char =
+  [ `Char of char
+  | `Eof ]
 
-type state = { src : input; len : int; offset : int; cc : current_char }
+type 'a t = state -> state * 'a
 
-and input = [ `String of string | `Bigstring of Bigstringaf.t ]
-
-and current_char = [ `Char of char | `Eof ]
-
-type ('a, 'error) t = state -> (state * 'a, state * 'error) result
-
-let msgf state fmt = Format.kasprintf (fun s -> R.error (state, `Msg s)) fmt
+exception Parse_error of string
 
 let pp_current_char fmt = function
   | `Char c -> Format.fprintf fmt "%c" c
-  | `Eof -> Format.fprintf fmt "EOF"
+  | `Eof    -> Format.fprintf fmt "EOF"
 
-let ( <|> ) p q state = match p state with Ok _ as o -> o | Error _ -> q state
+let parse src p =
+  let len = String.length src in
+  let state = {src; len; offset = 0; cc = `Eof} in
+  try
+    let (_ : state), a = p state in
+    Ok a
+  with exn -> Error exn
 
-let ( *> ) (p : (_, 'error) t) (q : ('a, 'error) t) state =
-  R.bind (p state) (fun (state, _) -> q state)
+let ( <|> ) p q state = try p state with (_ : exn) -> q state
 
-let ( <* ) (p : ('a, 'error) t) (q : (_, 'error) t) state =
-  R.bind (q state) (fun (state, _) -> p state)
+let ( >>= ) p f state =
+  let state, a = p state in
+  f a state
 
-let ( *>| ) p a state = R.map (fun (state, _) -> (state, a)) (p state)
+let ( >|= ) p f state =
+  let state, a = p state in
+  (state, f a)
 
-let ( >>= ) t f state = R.bind (t state) (fun (state, a) -> f a state)
+let ( *> ) p q state =
+  let state, _ = p state in
+  q state
 
-let ( >>| ) (t : ('a, 'error) t) (f : 'a -> 'b) state =
-  R.map (fun (state, a) -> (state, f a)) (t state)
-
-let ( >>|? ) t f state = R.map_error (fun (state, e) -> (state, f e)) (t state)
-
-let ( >>*? ) t e state = R.map_error (fun (state, _) -> (state, e)) (t state)
+let ( <* ) p q state =
+  let state, _ = q state in
+  p state
 
 let advance n state =
-  let current_char offset =
-    `Char
-      ( match state.src with
-      | `String src -> src.[offset]
-      | `Bigstring src -> Bigstringaf.unsafe_get src offset )
-  in
+  let current_char offset = `Char state.src.[offset] in
   if state.offset + n < state.len then
     let offset = state.offset + n in
-    let state = { state with offset; cc = current_char offset } in
-    R.ok (state, ())
+    let state = {state with offset; cc = current_char offset} in
+    (state, ())
   else
-    let state = { state with offset = state.len; cc = `Eof } in
-    R.ok (state, ())
-
-let parse src t =
-  let len =
-    match src with
-    | `String s -> String.length s
-    | `Bigstring s -> Bigstringaf.length s
-  in
-  let state = { src; len; offset = -1; cc = `Eof } in
-  R.bind (advance 1 state) (fun (state, ()) -> t state) |> function
-  | Ok (_, a) -> Ok a
-  | Error (_, e) -> Error e
+    let state = {state with offset = state.len; cc = `Eof} in
+    (state, ())
 
 let end_of_input state =
-  let eof = match state.cc with `Char _ -> false | `Eof -> true in
-  R.ok (state, eof)
+  let is_eof =
+    match state.cc with
+    | `Char _ -> false
+    | `Eof    -> true
+  in
+  (state, is_eof)
 
 let substring len state =
   if state.offset + len < state.len then
-    ( match state.src with
-    | `String src -> String.sub src ~pos:state.offset ~len
-    | `Bigstring src -> Bigstringaf.substring src ~off:state.offset ~len )
-    |> Option.some
+    String.sub state.src state.offset len |> Option.some
   else None
 
-let ok v state = R.ok (state, v)
-
-let fail e state = R.error (state, e)
+let return v state = (state, v)
+let parser_error fmt = Format.kasprintf (fun s -> raise @@ Parse_error s) fmt
 
 let char c state =
   if state.cc = `Char c then
-    R.map (fun (state, ()) -> (state, c)) (advance 1 state)
+    let state, () = advance 1 state in
+    (state, c)
   else
-    msgf state "%d: char '%c' expected instead of '%a'" state.offset c
-      pp_current_char state.cc
+    parser_error
+      "%d: char '%c' expected instead of '%a'"
+      state.offset
+      c
+      pp_current_char
+      state.cc
 
 let char_if f state =
   match state.cc with
   | `Char c when f c ->
-      R.map (fun (state, ()) -> (state, Some c)) (advance 1 state)
-  | `Eof | `Char _ -> R.ok (state, None)
+      let state, () = advance 1 state in
+      (state, Some c)
+  | `Eof
+   |`Char _ ->
+      (state, None)
 
 let satisfy f state =
   match state.cc with
   | `Char c when f c ->
-      R.bind (advance 1 state) (fun (state, ()) -> R.ok (state, c))
-  | `Char _ | `Eof ->
-      msgf state "%d: satisfy is 'false' for char '%a'" state.offset
-        pp_current_char state.cc
+      let state, () = advance 1 state in
+      (state, c)
+  | `Char _
+   |`Eof ->
+      parser_error
+        "%d: satisfy is 'false' for char '%a'"
+        state.offset
+        pp_current_char
+        state.cc
 
 let peek_char state =
-  let v = match state.cc with `Char c -> Some c | `Eof -> None in
-  R.ok (state, v)
+  let v =
+    match state.cc with
+    | `Char c -> Some c
+    | `Eof    -> None
+  in
+  (state, v)
 
-let peek_char_fail state =
-  match state.cc with
-  | `Char c -> R.ok (state, c)
-  | `Eof -> msgf state "%d: peek_char_fail returned EOF" state.offset
-
-let any_char state =
-  match state.cc with
-  | `Char c -> R.bind (advance 1 state) (fun (state, ()) -> R.ok (state, c))
-  | `Eof -> msgf state "%d: any_char returned EOF" state.offset
-
-let peek_string n state = R.ok (state, substring n state)
+let peek_string n state = (state, substring n state)
 
 let string s state =
   let len = String.length s in
   match substring len state with
   | Some s2 ->
-      if s = s2 then R.map (fun (state, ()) -> (state, s)) (advance len state)
-      else msgf state "%d: string \"%s\" not found" state.offset s
-  | None -> msgf state "%d: got EOF while parsing string \"%s\"" state.offset s
-
-let string_if s state =
-  let len = String.length s in
-  match substring len state with
-  | Some s2 ->
-      if s = s2 then
-        R.map (fun (state, ()) -> (state, Some s)) (advance len state)
-      else R.ok (state, None)
-  | None -> R.ok (state, None)
+      if String.equal s s2 then advance len state
+      else parser_error "%d: string \"%s\" not found" state.offset s
+  | None    ->
+      parser_error "%d: got EOF while parsing string \"%s\"" state.offset s
 
 let rec skip_while f state =
-  match satisfy f state with
-  | Ok (state, _) -> skip_while f state
-  | Error (state, _) -> ok () state
+  try
+    let state, (_ : char) = satisfy f state in
+    skip_while f state
+  with (_ : exn) -> (state, ())
 
 let count_skip_while f state =
   let rec loop count state =
-    match satisfy f state with
-    | Ok (state, _) -> loop (count + 1) state
-    | Error (state, _) -> ok count state
+    try
+      let state, (_ : char) = satisfy f state in
+      loop (count + 1) state
+    with (_ : exn) -> (state, count)
   in
   loop 0 state
 
 let count_skip_while_string n f =
   let rec loop count =
-    peek_string n >>= function
-    | Some s -> if f s then advance n *> loop (count + 1) else ok count
-    | None -> ok count
+    peek_string n
+    >>= function
+    | Some s -> if f s then advance n *> loop (count + 1) else return count
+    | None   -> return count
   in
   loop 0
 
 let take_while f state =
   let rec loop buf state =
-    match satisfy f state with
-    | Ok (state, c) ->
-        Buffer.add_char buf c;
-        loop buf state
-    | Error (state, _) -> R.ok (state, Buffer.contents buf)
+    try
+      let state, c = satisfy f state in
+      Buffer.add_char buf c ;
+      loop buf state
+    with (_ : exn) -> (state, Buffer.contents buf)
   in
   loop (Buffer.create 10) state
-
-let many t state =
-  let rec loop l state =
-    match t state with
-    | Ok (state, a) -> loop (a :: l) state
-    | Error _ -> (state, l)
-  in
-  let state, v = loop [] state in
-  ok (List.rev v) state
-
-let count_skip_many t state =
-  let rec loop count state =
-    match t state with
-    | Ok (state, _) -> loop (count + 1) state
-    | Error _ -> (state, count)
-  in
-  let state, v = loop 0 state in
-  ok v state
 
 let take_while_n n f state =
   let rec loop count buf state =
     if count < n then
-      match satisfy f state with
-      | Ok (state, c) ->
-          Buffer.add_char buf c;
-          loop (count + 1) buf state
-      | Error (state, _) -> R.ok (state, Buffer.contents buf)
-    else R.ok (state, Buffer.contents buf)
+      try
+        let state, c = satisfy f state in
+        Buffer.add_char buf c ;
+        loop (count + 1) buf state
+      with (_ : exn) -> (state, Buffer.contents buf)
+    else (state, Buffer.contents buf)
   in
   loop 0 (Buffer.create n) state
+
+let many t state =
+  let rec loop l state =
+    try
+      let state, a = t state in
+      loop (a :: l) state
+    with (_ : exn) -> (state, l)
+  in
+  let state, v = loop [] state in
+  (state, List.rev v)
+
+let count_skip_many t state =
+  let rec loop count state =
+    try
+      let state, _ = t state in
+      loop (count + 1) state
+    with (_ : exn) -> (state, count)
+  in
+  loop 0 state
 
 let line state =
   let peek_2chars state =
     let c1 = state.cc in
     let c2 =
-      match advance 1 state with
-      | Ok (state2, ()) -> state2.cc
-      | Error _ -> `Eof
+      let state2, () = advance 1 state in
+      state2.cc
     in
     (c1, c2)
   in
   let rec loop buf state =
     match peek_2chars state with
     | `Char '\r', `Char '\n' ->
-        R.map
-          (fun (state, ()) -> (state, Buffer.contents buf |> Option.some))
-          (advance 2 state)
-    | `Char '\n', _ ->
-        R.map
-          (fun (state, ()) -> (state, Buffer.contents buf |> Option.some))
-          (advance 1 state)
-    | `Char c1, _ ->
-        Buffer.add_char buf c1;
-        R.bind (advance 1 state) (fun (state, ()) -> loop buf state)
-    | `Eof, _ -> R.ok (state, None)
+        let state, () = advance 2 state in
+        (state, Buffer.contents buf |> Option.some)
+    | `Char '\n', _          ->
+        let state, () = advance 1 state in
+        (state, Buffer.contents buf |> Option.some)
+    | `Char c1, _            ->
+        Buffer.add_char buf c1 ;
+        let state, () = advance 1 state in
+        loop buf state
+    | `Eof, _                -> (state, None)
   in
   loop (Buffer.create 1) state

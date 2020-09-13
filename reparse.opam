@@ -12,9 +12,6 @@ bug-reports: "https://github.com/lemaetech/reparse/issues"
 depends: [
   "ocaml" {>= "4.10.0"}
   "dune" {>= "2.6"}
-  "sexplib0"
-  "ppx_sexp_conv"
-  "bigstringaf"
 ]
 build: [
   ["dune" "subst"] {pinned}

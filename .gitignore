@@ -1,3 +1,4 @@
+*.log
 *.annot
 *.cmo
 *.cma
@@ -22,14 +23,22 @@ setup.log
 # Merlin configuring file for Vim and Emacs
 .merlin
 
-# Dune generated files
 *.install
-
-# Local OPAM switch
-_opam/
-
-# node modules
 node_modules/
-
-# vscode
+_build
+_esy
+_release
+*.byte
+*.native
+*.installlmerlin
+node_modules/
+_build
+_esy
+_release
+*.byte
+*.native
+*.install
+.ionide
+*.swp
 .vscode
+.nvimlog
