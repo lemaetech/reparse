@@ -262,18 +262,24 @@ let char_parser name p state =
       state.cc
       name
 
-let alpha =
-  char_parser
-    "alpha"
-    (char_if (function
-        | 'a' .. 'z'
-        | 'A' .. 'Z' ->
-            true
-        | _ -> false))
+let is_alpha = function
+  | 'a' .. 'z'
+  | 'A' .. 'Z' ->
+      true
+  | _ -> false
+
+let is_digit = function
+  | '0' .. '9' -> true
+  | _          -> false
+
+let alpha = char_parser "ALPHA" (char_if is_alpha)
+
+let alpha_num =
+  char_parser "ALPHA NUM" (char_if (function c -> is_alpha c || is_digit c))
 
 let bit =
   char_parser
-    "bit"
+    "BIT"
     (char_if (function
         | '0'
         | '1' ->
@@ -305,10 +311,6 @@ let control =
         | '\x7F' ->
             true
         | _ -> false))
-
-let is_digit = function
-  | '0' .. '9' -> true
-  | _          -> false
 
 let digit = char_parser "DIGIT" (char_if is_digit)
 

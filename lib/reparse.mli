@@ -129,7 +129,10 @@ val line : string option t
 (** {2 Core parsers - RFC 5254, Appending B.1. *)
 
 val alpha : char t
-(** [alpha] parse a character which is in range [A - Z] or [a .. z]. *)
+(** [alpha] parse a character in range [A- Z] or [a-z]. *)
+
+val alpha_num : char t
+(** [alpha_num] parse a character in range [A-Z] or [a-z] or [0-9]. *)
 
 val bit : char t
 (** [bit] returns a character which is wither '0' or '1'. *)
