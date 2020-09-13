@@ -51,6 +51,8 @@ val advance : int -> unit t
 val end_of_input : bool t
 (** [end_of_input] returns [true] if parser has reached end of input. *)
 
+val fail : string -> 'a t
+
 (** {2 Basic Parsers} *)
 
 val char : char -> char t

@@ -23,6 +23,11 @@ let pp_current_char fmt = function
   | `Char c -> Format.fprintf fmt "%c" c
   | `Eof    -> Format.fprintf fmt "EOF"
 
+let substring len state =
+  if state.offset + len < String.length state.src then
+    String.sub state.src state.offset len |> Option.some
+  else None
+
 let parse src p =
   let state = {src; offset = 0; cc = `Eof} in
   try
@@ -31,7 +36,6 @@ let parse src p =
   with exn -> Error exn
 
 let return v state = (state, v)
-let ( <|> ) p q state = try p state with (_ : exn) -> q state
 
 let ( >>= ) p f state =
   let state, a = p state in
@@ -49,6 +53,7 @@ let ( <* ) p q state =
   let state, _ = q state in
   p state
 
+let ( <|> ) p q state = try p state with (_ : exn) -> q state
 let delay f state = f () state
 
 let advance n state =
@@ -70,11 +75,7 @@ let end_of_input state =
   in
   (state, is_eof)
 
-let substring len state =
-  if state.offset + len < String.length state.src then
-    String.sub state.src state.offset len |> Option.some
-  else None
-
+let fail msg _state = raise @@ Parse_error msg
 let parser_error fmt = Format.kasprintf (fun s -> raise @@ Parse_error s) fmt
 
 let char c state =
