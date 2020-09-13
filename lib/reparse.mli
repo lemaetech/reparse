@@ -130,3 +130,7 @@ val alpha : char t
 (** [alpha] returns a character which is in [A - Z] or [a .. z]. *)
 
 val bit : char t
+(** [bit] returns a character which is wither '0' or '1'. *)
+
+val crlf : unit t
+(** [crlf] parses CRLF. *)

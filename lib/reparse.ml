@@ -283,3 +283,6 @@ let bit state =
       "current char '%a' is not an 'bit' character."
       pp_current_char
       state.cc
+
+let crlf state =
+  try string "\r\n" state with _ -> parser_error state "unable to parse CRLF"
