@@ -11,26 +11,23 @@
 (** {2 Types} *)
 
 type +'a t
-(** The main parser type.['a] denotes the successful parse value while ['error]
-    denotes error raised by the parser. *)
+(** Represents a parser type that returns value ['a]. *)
 
 exception Parse_error of string
 
 val return : 'a -> 'a t
-(** [return v] creates a new parser that always returns the constant [v]. *)
+(** [return v] creates a new parser that always returns constant [v]. *)
 
 val advance : int -> unit t
-(** [advance n] advances parser by the given [n] number of characters. Always
-    succeeds. *)
+(** [advance n] advances parser by the given [n] number of characters. *)
 
 val end_of_input : bool t
-(** [end_of_input] returns [true] if parser has reached end of input. Always
-    succeeds. *)
+(** [end_of_input] returns [true] if parser has reached end of input. *)
 
 (** {2 Executing} *)
 
 val parse : string -> 'a t -> ('a, exn) result
-(** [parse input p] executes parser [p] with input [input]. *)
+(** [parse input p] executes parser [p] with [input]. *)
 
 (** {2 Combinators} *)
 
@@ -51,6 +48,10 @@ val ( *> ) : _ t -> 'a t -> 'a t
 
 val ( <* ) : 'a t -> _ t -> 'a t
 (** [p <* q] discards result from [q] and returns [p] *)
+
+val delay : (unit -> 'a t) -> 'a t
+(** [delay f] delays the computation of [p] until it is required. [p] is
+    [p = f ()]. *)
 
 (** {2 Basic Parsers} *)
 
