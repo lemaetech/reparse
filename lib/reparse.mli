@@ -127,7 +127,7 @@ val line : string option t
 (** {2 Core parsers - RFC 5254, Appending B.1. *)
 
 val alpha : char t
-(** [alpha] returns a character which is in [A - Z] or [a .. z]. *)
+(** [alpha] parse a character which is in range [A - Z] or [a .. z]. *)
 
 val bit : char t
 (** [bit] returns a character which is wither '0' or '1'. *)
@@ -136,10 +136,19 @@ val ascii_char : char t
 (** [ascii_char] parses any US-ASCII character. *)
 
 val cr : char t
-(** [cr] parser CR '\r' character. *)
+(** [cr] parse CR '\r' character. *)
 
 val crlf : unit t
-(** [crlf] parses CRLF - \r\n - string. *)
+(** [crlf] parse CRLF - \r\n - string. *)
 
 val control : char t
-(** [control] parser characters in range %x00-1F or %x7F. *)
+(** [control] parse characters in range %x00-1F or %x7F. *)
+
+val digit : char t
+(** [digit] parse a digit character - [0 .. 9]. *)
+
+val dquote : char t
+(** [dquote] parse double quote character - '"'. *)
+
+val hex_digit : char t
+(** [hex_digit] parse a hexadecimal digit - [0..9, A, B, C, D, E, F]. *)

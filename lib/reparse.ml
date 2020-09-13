@@ -305,3 +305,24 @@ let control =
         | '\x7F' ->
             true
         | _ -> false))
+
+let is_digit = function
+  | '0' .. '9' -> true
+  | _          -> false
+
+let digit = char_parser "DIGIT" (char_if is_digit)
+
+let dquote =
+  char_parser
+    "DQUOTE"
+    (char_if (function
+        | '"' -> true
+        | _   -> false))
+
+let hex_digit =
+  char_parser
+    "HEX DIGIT"
+    (char_if (function
+        | c when is_digit c -> true
+        | 'A' .. 'F' -> true
+        | _ -> false))
