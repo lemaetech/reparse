@@ -165,3 +165,12 @@ val lf : char t
 
 val octect : char t
 (** [octect] parse a byte of character, [%x00-FF] 8 bytes of data. *)
+
+val space : char t
+(** [space] parse a space character. *)
+
+val vchar : char t
+(** [vchar] parse a Visible (printing) character. *)
+
+val whitespace : char t
+(** [whitespace] parse a space or horizontal - ' ' or '\t' - character. *)

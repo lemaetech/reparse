@@ -345,3 +345,26 @@ let octect state =
   match state.cc with
   | `Char c -> (state, c)
   | `Eof    -> parser_error state "EOF reached."
+
+let space =
+  char_parser
+    "SPACE"
+    (char_if (function
+        | '\x20' -> true
+        | _      -> false))
+
+let vchar =
+  char_parser
+    "VCHAR"
+    (char_if (function
+        | '\x21' .. '\x7E' -> true
+        | _                -> false))
+
+let whitespace =
+  char_parser
+    "VCHAR"
+    (char_if (function
+        | '\x20'
+        | '\x09' ->
+            true
+        | _ -> false))
