@@ -120,10 +120,10 @@ let char_if f state =
   match state.cc with
   | `Char c when f c ->
       let state, () = advance 1 state in
-      (state, Some c)
+      (state, c)
   | `Eof
-   |`Char _ ->
-      (state, None)
+  | `Char _ ->
+      parser_error state "%a doesn't match char_if." pp_current_char state.cc
 
 let satisfy f state =
   match state.cc with
@@ -131,7 +131,7 @@ let satisfy f state =
       let state, () = advance 1 state in
       (state, c)
   | `Char _
-   |`Eof ->
+  | `Eof ->
       parser_error
         state
         "%d: satisfy is 'false' for char '%a'"
@@ -251,3 +251,35 @@ let line state =
     | `Eof, _                -> (state, None)
   in
   loop (Buffer.create 1) state
+
+let alpha state =
+  try
+    char_if
+      (function
+        | 'a' .. 'z'
+        | 'A' .. 'Z' ->
+            true
+        | _ -> false)
+      state
+  with _ ->
+    parser_error
+      state
+      "current char '%a' is not an 'alpha' character."
+      pp_current_char
+      state.cc
+
+let bit state =
+  try
+    char_if
+      (function
+        | '0'
+        | '1' ->
+            true
+        | _ -> false)
+      state
+  with _ ->
+    parser_error
+      state
+      "current char '%a' is not an 'bit' character."
+      pp_current_char
+      state.cc

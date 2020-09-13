@@ -18,3 +18,4 @@ doc-comments = after-when-possible
 break-cases = all
 break-sequences = true
 break-before-in=fit-or-vertical
+indicate-nested-or-patterns = unsafe-no

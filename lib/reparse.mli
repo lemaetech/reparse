@@ -65,15 +65,14 @@ val lnum : int t
 val cnum : int t
 (** [cnum] returns the current column number. *)
 
-(** {2 Basic Parsers} *)
+(** {2 Parsers} *)
 
 val char : char -> char t
 (** [char c] accepts character [c] from input exactly and returns it. Fails
     Otherwise.*)
 
-val char_if : (char -> bool) -> char option t
-(** [char_if f] accepts and returns [Some c] if [f c] is true. Otherwise it
-    returns [None]. *)
+val char_if : (char -> bool) -> char t
+(** [char_if f] accepts and returns [c] if [f c] is true. *)
 
 val satisfy : (char -> bool) -> char t
 (** [satisfy f] accepts a char [c] from input if [f c] is true and returns it.
@@ -124,3 +123,10 @@ val count_skip_many : 'a t -> int t
 val line : string option t
 (** [line] accepts and returns a line of input delimited by either [\n] or
     [\r\n]. Returns [None] if end of input is reached. *)
+
+(** {2 Core parsers - RFC 5254, Appending B.1. *)
+
+val alpha : char t
+(** [alpha] returns a character which is in [A - Z] or [a .. z]. *)
+
+val bit : char t
