@@ -13,27 +13,20 @@
 type +'a t
 (** Represents a parser type that returns value ['a]. *)
 
-exception Parse_error of string
+exception Parse_error of int * int * string
+(** [Parser_error (lnum, cnum, msg)] Raised by failed parsers. [lnum], [cnum] is
+    line number and column number respectively at the time of parser failure.
+    [msg] contains a descriptive error message. *)
+
+val parse : ?count_lines:bool -> string -> 'a t -> ('a, exn) result
+(** [parse ~count_lines input p] executes parser [p] with [input]. If
+    [count_lines] is true then the parser counts line and column numbers. It is
+    [false] by default. *)
 
 val return : 'a -> 'a t
 (** [return v] creates a new parser that always returns constant [v]. *)
 
-val advance : int -> unit t
-(** [advance n] advances parser by the given [n] number of characters. *)
-
-val end_of_input : bool t
-(** [end_of_input] returns [true] if parser has reached end of input. *)
-
-(** {2 Executing} *)
-
-val parse : string -> 'a t -> ('a, exn) result
-(** [parse input p] executes parser [p] with [input]. *)
-
-(** {2 Combinators} *)
-
-val ( <|> ) : 'a t -> 'a t -> 'a t
-(** [p <|> q] creates a parser that executes [p] and returns the result if it is
-    successful. If false then it executes [q] and returns it. *)
+(** {2 Operators} *)
 
 val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 (** [p >>= q] executes [p] and if it succeeds executes [q] and returns it's
@@ -49,19 +42,37 @@ val ( *> ) : _ t -> 'a t -> 'a t
 val ( <* ) : 'a t -> _ t -> 'a t
 (** [p <* q] discards result from [q] and returns [p] *)
 
+val ( <|> ) : 'a t -> 'a t -> 'a t
+(** [p <|> q] creates a parser that executes [p] and returns the result if it is
+    successful. If false then it executes [q] and returns it. See [delay]. *)
+
 val delay : (unit -> 'a t) -> 'a t
 (** [delay f] delays the computation of [p] until it is required. [p] is
-    [p = f ()]. *)
+    [p = f ()]. Use it together with [<|>]. *)
 
-(** {2 Basic Parsers} *)
+val advance : int -> unit t
+(** [advance n] advances parser by the given [n] number of characters. *)
+
+val end_of_input : bool t
+(** [end_of_input] returns [true] if parser has reached end of input. *)
+
+val fail : string -> 'a t
+(** [fail msg] fails the parser with [msg]. *)
+
+val lnum : int t
+(** [lnum] return the current line number. *)
+
+val cnum : int t
+(** [cnum] returns the current column number. *)
+
+(** {2 Parsers} *)
 
 val char : char -> char t
 (** [char c] accepts character [c] from input exactly and returns it. Fails
     Otherwise.*)
 
-val char_if : (char -> bool) -> char option t
-(** [char_if f] accepts and returns [Some c] if [f c] is true. Otherwise it
-    returns [None]. Always succeeds. *)
+val char_if : (char -> bool) -> char t
+(** [char_if f] accepts and returns [c] if [f c] is true. *)
 
 val satisfy : (char -> bool) -> char t
 (** [satisfy f] accepts a char [c] from input if [f c] is true and returns it.
@@ -112,3 +123,54 @@ val count_skip_many : 'a t -> int t
 val line : string option t
 (** [line] accepts and returns a line of input delimited by either [\n] or
     [\r\n]. Returns [None] if end of input is reached. *)
+
+(** {2 Core parsers - RFC 5254, Appending B.1. *)
+
+val alpha : char t
+(** [alpha] parse a character which is in range [A - Z] or [a .. z]. *)
+
+val bit : char t
+(** [bit] returns a character which is wither '0' or '1'. *)
+
+val ascii_char : char t
+(** [ascii_char] parses any US-ASCII character. *)
+
+val cr : char t
+(** [cr] parse CR '\r' character. *)
+
+val crlf : unit t
+(** [crlf] parse CRLF - \r\n - string. *)
+
+val control : char t
+(** [control] parse characters in range %x00-1F or %x7F. *)
+
+val digit : char t
+(** [digit] parse a digit character - [0 .. 9]. *)
+
+val dquote : char t
+(** [dquote] parse double quote character - '"'. *)
+
+val hex_digit : char t
+(** [hex_digit] parse a hexadecimal digit - [0..9, A, B, C, D, E, F]. *)
+
+val htab : char t
+(** [htab] parse a horizontal tab ('\t') character. *)
+
+val lf : char t
+(** [lf] parse a linefeed ('\n') character. *)
+
+(* val lwsp : string t *)
+(** [lwsp] parse linear whitespaces - *(WSP / CRLF WSP). {b Note} Use of LWSP is
+    discouraged. See https://tools.ietf.org/html/rfc5234#appendix-B.1 *)
+
+val octect : char t
+(** [octect] parse a byte of character, [%x00-FF] 8 bytes of data. *)
+
+val space : char t
+(** [space] parse a space character. *)
+
+val vchar : char t
+(** [vchar] parse a Visible (printing) character. *)
+
+val whitespace : char t
+(** [whitespace] parse a space or horizontal - ' ' or '\t' - character. *)

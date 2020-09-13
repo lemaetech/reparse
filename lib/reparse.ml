@@ -8,8 +8,10 @@
  *-------------------------------------------------------------------------*)
 type state =
   { src : string
-  ; len : int
   ; offset : int
+  ; count_lines : bool
+  ; lnum : int (* line count. *)
+  ; cnum : int (* column count. *)
   ; cc : current_char }
 
 and current_char =
@@ -18,22 +20,25 @@ and current_char =
 
 type 'a t = state -> state * 'a
 
-exception Parse_error of string
+exception Parse_error of int * int * string
 
 let pp_current_char fmt = function
   | `Char c -> Format.fprintf fmt "%c" c
   | `Eof    -> Format.fprintf fmt "EOF"
 
-let parse src p =
-  let len = String.length src in
-  let state = {src; len; offset = 0; cc = `Eof} in
+let substring len state =
+  if state.offset + len < String.length state.src then
+    String.sub state.src state.offset len |> Option.some
+  else None
+
+let parse ?(count_lines = false) src p =
+  let state = {src; offset = 0; count_lines; lnum = 1; cnum = 1; cc = `Eof} in
   try
     let (_ : state), a = p state in
     Ok a
   with exn -> Error exn
 
 let return v state = (state, v)
-let ( <|> ) p q state = try p state with (_ : exn) -> q state
 
 let ( >>= ) p f state =
   let state, a = p state in
@@ -51,16 +56,34 @@ let ( <* ) p q state =
   let state, _ = q state in
   p state
 
+let ( <|> ) p q state = try p state with (_ : exn) -> q state
 let delay f state = f () state
 
 let advance n state =
-  let current_char offset = `Char state.src.[offset] in
-  if state.offset + n < state.len then
+  let len = String.length state.src in
+  if state.offset + n < len then
     let offset = state.offset + n in
-    let state = {state with offset; cc = current_char offset} in
+    let state =
+      if state.count_lines then (
+        let lnum = ref state.lnum in
+        let cnum = ref state.cnum in
+        for i = state.offset to offset do
+          let c = state.src.[i] in
+          if Char.equal c '\n' then (
+            lnum := !lnum + 1 ;
+            cnum := 1 )
+          else cnum := !cnum + 1
+        done ;
+        { state with
+          offset
+        ; lnum = !lnum
+        ; cnum = !cnum
+        ; cc = `Char state.src.[offset] } )
+      else {state with offset; cc = `Char state.src.[offset]}
+    in
     (state, ())
   else
-    let state = {state with offset = state.len; cc = `Eof} in
+    let state = {state with offset = len; cc = `Eof} in
     (state, ())
 
 let end_of_input state =
@@ -71,12 +94,14 @@ let end_of_input state =
   in
   (state, is_eof)
 
-let substring len state =
-  if state.offset + len < state.len then
-    String.sub state.src state.offset len |> Option.some
-  else None
+let fail msg state = raise @@ Parse_error (state.lnum, state.cnum, msg)
+let lnum state = (state, state.lnum)
+let cnum state = (state, state.cnum)
 
-let parser_error fmt = Format.kasprintf (fun s -> raise @@ Parse_error s) fmt
+let parser_error state fmt =
+  Format.kasprintf
+    (fun s -> raise @@ Parse_error (state.lnum, state.cnum, s))
+    fmt
 
 let char c state =
   if state.cc = `Char c then
@@ -84,6 +109,7 @@ let char c state =
     (state, c)
   else
     parser_error
+      state
       "%d: char '%c' expected instead of '%a'"
       state.offset
       c
@@ -94,10 +120,10 @@ let char_if f state =
   match state.cc with
   | `Char c when f c ->
       let state, () = advance 1 state in
-      (state, Some c)
+      (state, c)
   | `Eof
-   |`Char _ ->
-      (state, None)
+  | `Char _ ->
+      parser_error state "%a doesn't match char_if." pp_current_char state.cc
 
 let satisfy f state =
   match state.cc with
@@ -105,8 +131,9 @@ let satisfy f state =
       let state, () = advance 1 state in
       (state, c)
   | `Char _
-   |`Eof ->
+  | `Eof ->
       parser_error
+        state
         "%d: satisfy is 'false' for char '%a'"
         state.offset
         pp_current_char
@@ -127,9 +154,13 @@ let string s state =
   match substring len state with
   | Some s2 ->
       if String.equal s s2 then advance len state
-      else parser_error "%d: string \"%s\" not found" state.offset s
+      else parser_error state "%d: string \"%s\" not found" state.offset s
   | None    ->
-      parser_error "%d: got EOF while parsing string \"%s\"" state.offset s
+      parser_error
+        state
+        "%d: got EOF while parsing string \"%s\""
+        state.offset
+        s
 
 let rec skip_while f state =
   try
@@ -220,3 +251,120 @@ let line state =
     | `Eof, _                -> (state, None)
   in
   loop (Buffer.create 1) state
+
+let char_parser name p state =
+  try p state
+  with _ ->
+    parser_error
+      state
+      "current char '%a' is not a '%s' character."
+      pp_current_char
+      state.cc
+      name
+
+let alpha =
+  char_parser
+    "alpha"
+    (char_if (function
+        | 'a' .. 'z'
+        | 'A' .. 'Z' ->
+            true
+        | _ -> false))
+
+let bit =
+  char_parser
+    "bit"
+    (char_if (function
+        | '0'
+        | '1' ->
+            true
+        | _ -> false))
+
+let ascii_char =
+  char_parser
+    "US-ASCII"
+    (char_if (function
+        | '\x00' .. '\x7F' -> true
+        | _                -> false))
+
+let cr =
+  char_parser
+    "CR"
+    (char_if (function
+        | '\r' -> true
+        | _    -> false))
+
+let crlf state =
+  try string "\r\n" state with _ -> parser_error state "unable to parse CRLF"
+
+let control =
+  char_parser
+    "CONTROL"
+    (char_if (function
+        | '\x00' .. '\x1F'
+        | '\x7F' ->
+            true
+        | _ -> false))
+
+let is_digit = function
+  | '0' .. '9' -> true
+  | _          -> false
+
+let digit = char_parser "DIGIT" (char_if is_digit)
+
+let dquote =
+  char_parser
+    "DQUOTE"
+    (char_if (function
+        | '"' -> true
+        | _   -> false))
+
+let hex_digit =
+  char_parser
+    "HEX DIGIT"
+    (char_if (function
+        | c when is_digit c -> true
+        | 'A' .. 'F' -> true
+        | _ -> false))
+
+let htab =
+  char_parser
+    "HTAB"
+    (char_if (function
+        | '\t' -> true
+        | _    -> false))
+
+let lf =
+  char_parser
+    "LF"
+    (char_if (function
+        | '\n' -> true
+        | _    -> false))
+
+let octect state =
+  match state.cc with
+  | `Char c -> (state, c)
+  | `Eof    -> parser_error state "EOF reached."
+
+let space =
+  char_parser
+    "SPACE"
+    (char_if (function
+        | '\x20' -> true
+        | _      -> false))
+
+let vchar =
+  char_parser
+    "VCHAR"
+    (char_if (function
+        | '\x21' .. '\x7E' -> true
+        | _                -> false))
+
+let whitespace =
+  char_parser
+    "VCHAR"
+    (char_if (function
+        | '\x20'
+        | '\x09' ->
+            true
+        | _ -> false))
