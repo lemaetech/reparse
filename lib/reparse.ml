@@ -252,37 +252,56 @@ let line state =
   in
   loop (Buffer.create 1) state
 
-let alpha state =
-  try
-    char_if
-      (function
+let char_parser name p state =
+  try p state
+  with _ ->
+    parser_error
+      state
+      "current char '%a' is not a '%s' character."
+      pp_current_char
+      state.cc
+      name
+
+let alpha =
+  char_parser
+    "alpha"
+    (char_if (function
         | 'a' .. 'z'
         | 'A' .. 'Z' ->
             true
-        | _ -> false)
-      state
-  with _ ->
-    parser_error
-      state
-      "current char '%a' is not an 'alpha' character."
-      pp_current_char
-      state.cc
+        | _ -> false))
 
-let bit state =
-  try
-    char_if
-      (function
+let bit =
+  char_parser
+    "bit"
+    (char_if (function
         | '0'
         | '1' ->
             true
-        | _ -> false)
-      state
-  with _ ->
-    parser_error
-      state
-      "current char '%a' is not an 'bit' character."
-      pp_current_char
-      state.cc
+        | _ -> false))
+
+let ascii_char =
+  char_parser
+    "US-ASCII"
+    (char_if (function
+        | '\x00' .. '\x7F' -> true
+        | _                -> false))
+
+let cr =
+  char_parser
+    "CR"
+    (char_if (function
+        | '\r' -> true
+        | _    -> false))
 
 let crlf state =
   try string "\r\n" state with _ -> parser_error state "unable to parse CRLF"
+
+let control =
+  char_parser
+    "CONTROL"
+    (char_if (function
+        | '\x00' .. '\x1F'
+        | '\x7F' ->
+            true
+        | _ -> false))

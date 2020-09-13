@@ -132,5 +132,14 @@ val alpha : char t
 val bit : char t
 (** [bit] returns a character which is wither '0' or '1'. *)
 
+val ascii_char : char t
+(** [ascii_char] parses any US-ASCII character. *)
+
+val cr : char t
+(** [cr] parser CR '\r' character. *)
+
 val crlf : unit t
-(** [crlf] parses CRLF. *)
+(** [crlf] parses CRLF - \r\n - string. *)
+
+val control : char t
+(** [control] parser characters in range %x00-1F or %x7F. *)
