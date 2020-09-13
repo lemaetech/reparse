@@ -78,6 +78,13 @@ let ( <$$$> ) f p q r state =
   let state, c = r state in
   (state, f a b c)
 
+let ( <$$$$> ) f p q r s state =
+  let state, a = p state in
+  let state, b = q state in
+  let state, c = r state in
+  let state, d = s state in
+  (state, f a b c d)
+
 let ( *> ) p q state =
   let state, _ = p state in
   q state

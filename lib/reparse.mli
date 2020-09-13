@@ -58,6 +58,9 @@ val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
 val ( <$$> ) : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
 val ( <$$$> ) : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
 
+val ( <$$$$> ) :
+  ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
+
 val ( *> ) : _ t -> 'a t -> 'a t
 (** [p *> q] executes parser [p] and [q]. However, the result of [p] is
     discarded. The parse value of [q] is returned instead. *)
