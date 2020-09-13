@@ -136,6 +136,16 @@ let end_of_input state =
   (state, is_eof)
 
 let fail msg state = raise @@ Parse_error (state.lnum, state.cnum, msg)
+
+let failing p state =
+  let succeed =
+    try
+      let _, _ = p state in
+      false
+    with _ -> true
+  in
+  if succeed then (state, ()) else parser_error state "[failing]"
+
 let lnum state = (state, state.lnum)
 let cnum state = (state, state.cnum)
 

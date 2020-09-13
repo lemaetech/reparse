@@ -91,6 +91,9 @@ val end_of_input : bool t
 val fail : string -> 'a t
 (** [fail msg] fails the parser with [msg]. *)
 
+val failing : 'a t -> unit t
+(** [failing p] succeeds if and only if its [p] fails to parse. *)
+
 val lnum : int t
 (** [lnum] return the current line number. *)
 
