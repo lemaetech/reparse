@@ -15,29 +15,13 @@ type +'a t
 
 exception Parse_error of string
 
-val return : 'a -> 'a t
-(** [return v] creates a new parser that always returns constant [v]. *)
-
-val advance : int -> unit t
-(** [advance n] advances parser by the given [n] number of characters. *)
-
-val end_of_input : bool t
-(** [end_of_input] returns [true] if parser has reached end of input. *)
-
-(** {2 Executing} *)
-
 val parse : string -> 'a t -> ('a, exn) result
 (** [parse input p] executes parser [p] with [input]. *)
 
-(** {2 Combinators} *)
+val return : 'a -> 'a t
+(** [return v] creates a new parser that always returns constant [v]. *)
 
-val ( <|> ) : 'a t -> 'a t -> 'a t
-(** [p <|> q] creates a parser that executes [p] and returns the result if it is
-    successful. If false then it executes [q] and returns it. See [delay]. *)
-
-val delay : (unit -> 'a t) -> 'a t
-(** [delay f] delays the computation of [p] until it is required. [p] is
-    [p = f ()]. Use it together with [<|>]. *)
+(** {2 Operators} *)
 
 val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 (** [p >>= q] executes [p] and if it succeeds executes [q] and returns it's
@@ -52,6 +36,20 @@ val ( *> ) : _ t -> 'a t -> 'a t
 
 val ( <* ) : 'a t -> _ t -> 'a t
 (** [p <* q] discards result from [q] and returns [p] *)
+
+val ( <|> ) : 'a t -> 'a t -> 'a t
+(** [p <|> q] creates a parser that executes [p] and returns the result if it is
+    successful. If false then it executes [q] and returns it. See [delay]. *)
+
+val delay : (unit -> 'a t) -> 'a t
+(** [delay f] delays the computation of [p] until it is required. [p] is
+    [p = f ()]. Use it together with [<|>]. *)
+
+val advance : int -> unit t
+(** [advance n] advances parser by the given [n] number of characters. *)
+
+val end_of_input : bool t
+(** [end_of_input] returns [true] if parser has reached end of input. *)
 
 (** {2 Basic Parsers} *)
 
