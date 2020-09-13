@@ -326,3 +326,17 @@ let hex_digit =
         | c when is_digit c -> true
         | 'A' .. 'F' -> true
         | _ -> false))
+
+let htab =
+  char_parser
+    "HTAB"
+    (char_if (function
+        | '\t' -> true
+        | _    -> false))
+
+let lf =
+  char_parser
+    "LF"
+    (char_if (function
+        | '\n' -> true
+        | _    -> false))

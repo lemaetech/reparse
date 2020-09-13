@@ -152,3 +152,9 @@ val dquote : char t
 
 val hex_digit : char t
 (** [hex_digit] parse a hexadecimal digit - [0..9, A, B, C, D, E, F]. *)
+
+val htab : char t
+(** [htab] parse a horizontal tab ('\t') character. *)
+
+val lf : char t
+(** [lf] parse a linefeed ('\n') character. *)
