@@ -51,7 +51,7 @@ let ( >>= ) p f state =
   f a state
 
 let ( >|= ) p f = p >>= fun a -> return (f a)
-let ( <*> ) pf q = pf >>= fun f -> q >|= f
+let ( <*> ) p q = p >>= fun f -> q >|= f
 let ( <$> ) f p = return f <*> p
 let ( <$$> ) f p q = return f <*> p <*> q
 let ( <$$$> ) f p q r = return f <*> p <*> q <*> r

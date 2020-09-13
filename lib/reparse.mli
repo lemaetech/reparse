@@ -38,7 +38,7 @@ val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
     [f a] which returns value [c]. This is same as [p >>= (fun a -> return a)]. *)
 
 val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
-(** [pf <*> q] Applicative. Executes parsers [pf] and [q] which returns function
+(** [p <*> q] Applicative. Executes parsers [p] and [q] which returns function
     [f] and [a] respectively. It then applies [f a].
 
     {[
