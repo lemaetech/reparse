@@ -130,18 +130,14 @@ let char c state =
 
 let char_if f state =
   match state.cc with
-  | `Char c when f c ->
-      let state, () = advance 1 state in
-      (state, c)
+  | `Char c when f c -> (c <$ advance 1) state
   | `Eof
   | `Char _ ->
       parser_error state "%a doesn't match char_if." pp_current_char state.cc
 
 let satisfy f state =
   match state.cc with
-  | `Char c when f c ->
-      let state, () = advance 1 state in
-      (state, c)
+  | `Char c when f c -> (c <$ advance 1) state
   | `Char _
   | `Eof ->
       parser_error
