@@ -152,6 +152,10 @@ val not_followed_by : 'a t -> 'b t -> 'a t
 (** [not_followed_by a b] Succeeds if parser [p] succeeds and parser [q] fails.
     The second parser [q] never consumes any input. *)
 
+val optional : 'a t -> 'a option t
+(** [optional p] parses [p] and retruns [SOME a] if successful. Otherwise
+    returns [NONE]. *)
+
 val line : string option t
 (** [line] accepts and returns a line of input delimited by either [\n] or
     [\r\n]. Returns [None] if end of input is reached. *)
@@ -203,6 +207,8 @@ val octect : char t
 
 val space : char t
 (** [space] parse a space character. *)
+
+val spaces : char list t
 
 val vchar : char t
 (** [vchar] parse a Visible (printing) character. *)
