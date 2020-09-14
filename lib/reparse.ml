@@ -112,7 +112,7 @@ let lnum state = (state, state.lnum)
 let cnum state = (state, state.cnum)
 
 let char c =
-  next
+  peek_char
   >>= fun c2 ->
   if Char.equal c c2 then c <$ advance 1
   else fail @@ Format.sprintf "char '%c' expected instead of %c" c c2
@@ -277,7 +277,7 @@ let lf =
         | '\n' -> true
         | _    -> false))
 
-let octect = next <* advance 1
+let octect = next
 
 let space =
   char_parser
