@@ -55,11 +55,9 @@ val ( <$ ) : 'b -> 'a t -> 'b t
 (** Mappers over pairs of parsers. Joins their parsing results together. *)
 
 val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
-val ( <$$> ) : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
-val ( <$$$> ) : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
-
-val ( <$$$$> ) :
-  ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
+val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
+val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
+val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
 
 val ( *> ) : _ t -> 'a t -> 'a t
 (** [p *> q] executes parser [p] and [q]. However, the result of [p] is
@@ -109,8 +107,15 @@ val cnum : int t
 
 (** {2 Parsers} *)
 
+val peek_char : char t
+(** [peek_char t] returns a character from input without consuming it. *)
+
+val peek_string : int -> string t
+(** [peek_string n] attempts to retrieve string of length [n] from input exactly
+    and return it. No input is consumed. *)
+
 val next : char t
-(** [next] returns the next char of input. *)
+(** [next] consumes and returns the next char of input. *)
 
 val char : char -> char t
 (** [char c] accepts character [c] from input exactly and returns it. Fails
@@ -118,14 +123,6 @@ val char : char -> char t
 
 val satisfy : (char -> bool) -> char t
 (** [satisfy f] accepts a char [c] from input if [f c] is true and returns it. *)
-
-val peek_char : char option t
-(** [peek_char t] returns a character at the current position in the parser. No
-    input is consumed. *)
-
-val peek_string : int -> string option t
-(** [peek_string n] attempts to retrieve string of length [n] from input exactly
-    and return it. No input is consumed. *)
 
 val string : string -> unit t
 (** [string s] accepts [s] exactly. *)
