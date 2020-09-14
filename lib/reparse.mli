@@ -140,12 +140,13 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 
 val many :
   ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t
-(** [many ~at_least ~up_to p] executes [p] zero or more times up to the given
-    [up_to] upper bound. If [at_least] is given, [p] is expected to succeed the
-    lower bound of [at_least] times. Default of [at_least] is [0]. If [up_to] is
-    not given, no upper bound is placed on the execution of [p]. Returns the
-    count of times [p] was executed along with the list of successfully parsed
-    values. *)
+(** [many ~at_least ~up_to ~sep_by p] executes [p] zero or more times up to the
+    given upper bound [up_to]. If [at_least] is given, [p] is expected to
+    succeed the lower bound of [at_least] times. Default of [at_least] is [0].
+    Thre is no upper bound on execution of [p] is [up_to] is not given. If
+    [sep_by] is given execution of [p] must be followed by successful execution
+    of [sep_by]. Returns the count of times [p] was executed along with the list
+    of successfully parsed values. *)
 
 val line : string option t
 (** [line] accepts and returns a line of input delimited by either [\n] or
