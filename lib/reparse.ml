@@ -131,15 +131,11 @@ let next state =
   | `Char c -> (state, c)
   | `Eof    -> parser_error state "EOF"
 
-let char c state =
-  if state.cc = `Char c then (c <$ advance 1) state
-  else
-    parser_error
-      state
-      "char '%c' expected instead of '%a'"
-      c
-      pp_current_char
-      state.cc
+let char c =
+  next
+  >>= fun c2 ->
+  if Char.equal c c2 then c <$ advance 1
+  else fail @@ Format.sprintf "char '%c' expected instead of %c" c c2
 
 let satisfy f state =
   match state.cc with
