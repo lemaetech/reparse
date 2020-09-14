@@ -22,15 +22,6 @@ type 'a t = state -> state * 'a
 
 exception Parse_error of int * int * string
 
-let pp_current_char fmt = function
-  | `Char c -> Format.fprintf fmt "%c" c
-  | `Eof    -> Format.fprintf fmt "EOF"
-
-let parser_error state fmt =
-  Format.kasprintf
-    (fun s -> raise @@ Parse_error (state.lnum, state.cnum, s))
-    fmt
-
 let parse ?(track_lnum = false) src p =
   let lnum, cnum = if track_lnum then (1, 0) else (0, 0) in
   let state = {src; offset = 0; track_lnum; lnum; cnum; cc = `Eof} in
@@ -68,6 +59,8 @@ let advance n state =
     let state = {state with offset = len; cc = `Eof} in
     (state, ())
 
+let fail msg state = raise @@ Parse_error (state.lnum, state.cnum, msg)
+
 let ( >>= ) p f state =
   let state, a = p state in
   f a state
@@ -82,14 +75,14 @@ let ( <$ ) v p = (fun _ -> v) <$> p
 let ( *> ) p q = p >>= fun _ -> q
 let ( <* ) p q = p >>= fun a -> q *> return a
 let ( <|> ) p q state = try p state with (_ : exn) -> q state
-
-let ( <?> ) p err_msg state =
-  try p state with (_ : exn) -> parser_error state "%s" err_msg
+let ( <?> ) p err_msg state = try p state with (_ : exn) -> fail err_msg state
 
 let named name p state =
   try p state
   with exn ->
-    parser_error state "%s failed with error %s" name (Printexc.to_string exn)
+    fail
+      (Format.sprintf "%s failed with error %s" name (Printexc.to_string exn))
+      state
 
 let delay f state = f () state
 
@@ -107,8 +100,6 @@ let eoi =
   | true  -> ()
   | false -> failwith "not EOF"
 
-let fail msg state = raise @@ Parse_error (state.lnum, state.cnum, msg)
-
 let failing p state =
   let succeed =
     try
@@ -116,7 +107,7 @@ let failing p state =
       false
     with _ -> true
   in
-  if succeed then (state, ()) else parser_error state "[failing]"
+  if succeed then (state, ()) else fail "parsing failing failed" state
 
 let lnum state = (state, state.lnum)
 let cnum state = (state, state.cnum)
@@ -124,7 +115,7 @@ let cnum state = (state, state.cnum)
 let next state =
   match state.cc with
   | `Char c -> (state, c)
-  | `Eof    -> parser_error state "EOF"
+  | `Eof    -> fail "EOF" state
 
 let char c =
   next
@@ -151,8 +142,8 @@ let string s =
   >>= function
   | Some s2 ->
       if String.equal s s2 then advance len
-      else fail @@ Format.sprintf "\"%s\" not found" s
-  | None    -> fail @@ Format.sprintf "parsing string '%s' failed" s
+      else fail @@ Format.sprintf "unable to parse \"%s\"" s
+  | None    -> fail @@ Format.sprintf "parsing string '%s' failed with EOF" s
 
 let skip ?(at_least = 0) ?up_to p =
   if at_least < 0 then invalid_arg "at_least"
@@ -216,13 +207,10 @@ let line state =
 
 let char_parser name p state =
   try p state
-  with _ ->
-    parser_error
+  with exn ->
+    fail
+      (Format.sprintf "parsing '%s' failed - %s" name (Printexc.to_string exn))
       state
-      "parsing '%s' failed at character '%a'."
-      name
-      pp_current_char
-      state.cc
 
 let is_alpha = function
   | 'a' .. 'z'
@@ -262,8 +250,7 @@ let cr =
         | '\r' -> true
         | _    -> false))
 
-let crlf state =
-  try string "\r\n" state with _ -> parser_error state "unable to parse CRLF"
+let crlf = try string "\r\n" with _ -> fail "unable to parse CRLF"
 
 let control =
   char_parser
@@ -305,10 +292,7 @@ let lf =
         | '\n' -> true
         | _    -> false))
 
-let octect state =
-  match state.cc with
-  | `Char c -> (state, c)
-  | `Eof    -> parser_error state "EOF reached."
+let octect = next <* advance 1
 
 let space =
   char_parser
