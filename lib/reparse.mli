@@ -131,9 +131,8 @@ val peek_string : int -> string option t
 val string : string -> unit t
 (** [string s] accepts [s] exactly. *)
 
-val skip_while : (char -> bool) -> unit t
-(** [skip_while f] keeps accepting [c] if [f c] is [true]. [c] is discarded.
-    Always succeeds. *)
+val skip : _ t -> unit t
+(** [skip p] parses [p] zero or more times while discarding the results. *)
 
 val count_skip_while : (char -> bool) -> int t
 (** [count_skip_while f] accepts characters from input while [f c] is true and

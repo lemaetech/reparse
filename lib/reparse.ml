@@ -176,11 +176,7 @@ let string s state =
         state.offset
         s
 
-let rec skip_while f state =
-  try
-    let state, (_ : char) = satisfy f state in
-    skip_while f state
-  with (_ : exn) -> (state, ())
+let rec skip p = try p *> skip p with (_ : exn) -> return ()
 
 let count_skip_while f state =
   let rec loop count state =
