@@ -56,6 +56,7 @@ let ( >>= ) p f state =
 let ( >|= ) p f = p >>= fun a -> return (f a)
 let ( <*> ) p q = p >>= fun f -> q >|= f
 let ( <$> ) f p = return f <*> p
+let map = ( <$> )
 let map2 f p q = return f <*> p <*> q
 let map3 f p q r = return f <*> p <*> q <*> r
 let map4 f p q r s = return f <*> p <*> q <*> r <*> s
