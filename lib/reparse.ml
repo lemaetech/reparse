@@ -116,9 +116,7 @@ let lnum state = (state, state.lnum)
 let cnum state = (state, state.cnum)
 
 let char c state =
-  if state.cc = `Char c then
-    let state, () = advance 1 state in
-    (state, c)
+  if state.cc = `Char c then (c <$ advance 1) state
   else
     parser_error
       state
@@ -247,11 +245,9 @@ let line state =
   let rec loop buf state =
     match peek_2chars state with
     | `Char '\r', `Char '\n' ->
-        let state, () = advance 2 state in
-        (state, Buffer.contents buf |> Option.some)
+        (Option.some @@ Buffer.contents buf <$ advance 2) state
     | `Char '\n', _          ->
-        let state, () = advance 1 state in
-        (state, Buffer.contents buf |> Option.some)
+        (Option.some @@ Buffer.contents buf <$ advance 1) state
     | `Char c1, _            ->
         Buffer.add_char buf c1 ;
         let state, () = advance 1 state in
