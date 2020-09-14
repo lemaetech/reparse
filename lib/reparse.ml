@@ -209,6 +209,13 @@ let many ?(at_least = 0) ?up_to ?(sep_by = return ()) p =
          "parser didn't execute successfully at least %d times"
          at_least)
 
+let not_followed_by p q state =
+  let state, a = p state in
+  try
+    let _, _ = q state in
+    parser_error state "second parser did not fail in not_followed_by"
+  with _ -> (state, a)
+
 let line state =
   let peek_2chars state =
     let c1 = state.cc in
