@@ -31,11 +31,6 @@ let parser_error state fmt =
     (fun s -> raise @@ Parse_error (state.lnum, state.cnum, s))
     fmt
 
-let substring len state =
-  if state.offset + len < String.length state.src then
-    String.sub state.src state.offset len |> Option.some
-  else None
-
 let parse ?(track_lnum = false) src p =
   let lnum, cnum = if track_lnum then (1, 0) else (0, 0) in
   let state = {src; offset = 0; track_lnum; lnum; cnum; cc = `Eof} in
@@ -137,39 +132,27 @@ let char c =
   if Char.equal c c2 then c <$ advance 1
   else fail @@ Format.sprintf "char '%c' expected instead of %c" c c2
 
-let satisfy f state =
-  match state.cc with
-  | `Char c when f c -> (c <$ advance 1) state
-  | `Char _
-  | `Eof ->
-      parser_error
-        state
-        "satisfy is 'false' for char '%a'"
-        pp_current_char
-        state.cc
+let satisfy f =
+  next
+  >>= fun c2 ->
+  if f c2 then c2 <$ advance 1
+  else fail @@ Format.sprintf "satisfy failed on char '%c'" c2
 
-let peek_char state =
-  let v =
-    match state.cc with
-    | `Char c -> Some c
-    | `Eof    -> None
-  in
-  (state, v)
+let peek_char = try Option.some <$> next with _ -> return None
 
-let peek_string n state = (state, substring n state)
+let peek_string len state =
+  if state.offset + len < String.length state.src then
+    (state, Some (String.sub state.src state.offset len))
+  else (state, None)
 
-let string s state =
+let string s =
   let len = String.length s in
-  match substring len state with
+  peek_string len
+  >>= function
   | Some s2 ->
-      if String.equal s s2 then advance len state
-      else parser_error state "%d: string \"%s\" not found" state.offset s
-  | None    ->
-      parser_error
-        state
-        "%d: got EOF while parsing string \"%s\""
-        state.offset
-        s
+      if String.equal s s2 then advance len
+      else fail @@ Format.sprintf "\"%s\" not found" s
+  | None    -> fail @@ Format.sprintf "parsing string '%s' failed" s
 
 let skip ?(at_least = 0) ?up_to p =
   if at_least < 0 then invalid_arg "at_least"
@@ -202,7 +185,7 @@ let many ?(at_least = 0) ?up_to ?(sep_by = return ()) p =
   else
     failwith
       (Format.sprintf
-         "parser didn't execute successfully at least %d times"
+         "parser many didn't execute successfully at least %d times"
          at_least)
 
 let not_followed_by p q = p <* failing q
@@ -236,10 +219,10 @@ let char_parser name p state =
   with _ ->
     parser_error
       state
-      "current char '%a' is not a '%s' character."
+      "parsing '%s' failed at character '%a'."
+      name
       pp_current_char
       state.cc
-      name
 
 let is_alpha = function
   | 'a' .. 'z'
