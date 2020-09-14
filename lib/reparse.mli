@@ -131,12 +131,9 @@ val peek_string : int -> string option t
 val string : string -> unit t
 (** [string s] accepts [s] exactly. *)
 
-val skip : _ t -> unit t
-(** [skip p] parses [p] zero or more times while discarding the results. *)
-
-val count_skip : _ t -> int t
-(** [count_skip p] parses [p] zero or more times while discarding the result and
-    keeping count of iteration. *)
+val skip : _ t -> int t
+(** [count_skip p] parses [p] zero or more times while discarding the result.
+    Returns the number of times [p] was skipped. *)
 
 val take_while_n : int -> (char -> bool) -> string t
 (** [take_while_n n f] similar in functionality to [take_while]. The parser

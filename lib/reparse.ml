@@ -176,9 +176,7 @@ let string s state =
         state.offset
         s
 
-let rec skip p = try p *> skip p with (_ : exn) -> return ()
-
-let count_skip p =
+let skip p =
   let rec loop count =
     try p *> loop (count + 1) with (_ : exn) -> return count
   in
