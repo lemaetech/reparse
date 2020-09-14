@@ -106,6 +106,9 @@ val cnum : int t
 
 (** {2 Parsers} *)
 
+val next : char t
+(** [next] returns the next char of input. *)
+
 val char : char -> char t
 (** [char c] accepts character [c] from input exactly and returns it. Fails
     Otherwise.*)

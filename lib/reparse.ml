@@ -118,6 +118,11 @@ let failing p state =
 let lnum state = (state, state.lnum)
 let cnum state = (state, state.cnum)
 
+let next state =
+  match state.cc with
+  | `Char c -> (state, c)
+  | `Eof    -> parser_error state "EOF"
+
 let char c state =
   if state.cc = `Char c then (c <$ advance 1) state
   else
