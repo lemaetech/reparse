@@ -27,7 +27,7 @@ let parse ?(track_lnum = false) src p =
 
 let advance n state =
   let len = String.length state.src in
-  if state.offset + n < len then
+  if state.offset + n <= len then
     let offset = state.offset + n in
     let state =
       if state.track_lnum then (
@@ -139,13 +139,13 @@ let skip ?(at_least = 0) ?up_to p state =
 
   let up_to = Option.value up_to ~default:(-1) in
   let rec loop count state =
-    if up_to = -1 || count <= up_to then
+    if up_to = -1 || count < up_to then
       match p state with
       | state, _       -> (loop [@tailcall]) (count + 1) state
       | exception _exn -> (state, count)
     else (state, count)
   in
-  loop 1 state
+  loop 0 state
 
 let many :
     ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t =
