@@ -29,21 +29,18 @@ let advance n state =
   let len = String.length state.src in
   if state.offset + n <= len then
     let offset = state.offset + n in
-    let state =
-      if state.track_lnum then (
-        let lnum = ref state.lnum in
-        let cnum = ref state.cnum in
-        for i = state.offset to offset do
-          let c = state.src.[i] in
-          if Char.equal c '\n' then (
-            lnum := !lnum + 1 ;
-            cnum := 0 )
-          else cnum := !cnum + 1
-        done ;
-        {state with offset; lnum = !lnum; cnum = !cnum} )
-      else {state with offset}
-    in
-    (state, ())
+    if state.track_lnum then (
+      let lnum = ref state.lnum in
+      let cnum = ref state.cnum in
+      for i = state.offset to offset do
+        let c = state.src.[i] in
+        if Char.equal c '\n' then (
+          lnum := !lnum + 1 ;
+          cnum := 0 )
+        else cnum := !cnum + 1
+      done ;
+      ({state with offset; lnum = !lnum; cnum = !cnum}, ()) )
+    else ({state with offset}, ())
   else raise @@ Parse_error (state.lnum, state.cnum, "advance failed - EOF.")
 
 let return v state = (state, v)
