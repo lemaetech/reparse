@@ -89,8 +89,11 @@ val delay : (unit -> 'a t) -> 'a t
 val advance : int -> unit t
 (** [advance n] advances parser by the given [n] number of characters. *)
 
-val end_of_input : bool t
-(** [end_of_input] returns [true] if parser has reached end of input. *)
+val is_eoi : bool t
+(** [is_eoi] returns [true] if parser has reached end of input. *)
+
+val eoi : unit t
+(** [eoi] Parse the end of input to be successful. *)
 
 val fail : string -> 'a t
 (** [fail msg] fails the parser with [msg]. *)
@@ -106,58 +109,52 @@ val cnum : int t
 
 (** {2 Parsers} *)
 
+val next : char t
+(** [next] returns the next char of input. *)
+
 val char : char -> char t
 (** [char c] accepts character [c] from input exactly and returns it. Fails
     Otherwise.*)
 
-val char_if : (char -> bool) -> char t
-(** [char_if f] accepts and returns [c] if [f c] is true. *)
-
 val satisfy : (char -> bool) -> char t
-(** [satisfy f] accepts a char [c] from input if [f c] is true and returns it.
-    Otherwise it fails. *)
+(** [satisfy f] accepts a char [c] from input if [f c] is true and returns it. *)
 
 val peek_char : char option t
-(** [peek_char t] returns a character at the current position in the parser.
-    Always suceeds and returns [None] if EOF is reached. *)
+(** [peek_char t] returns a character at the current position in the parser. No
+    input is consumed. *)
 
 val peek_string : int -> string option t
-(** [peek_string n] attempts to match string of length [n] from input exactly
-    and return it. If it isn't matched [None] is returned. *)
+(** [peek_string n] attempts to retrieve string of length [n] from input exactly
+    and return it. No input is consumed. *)
 
 val string : string -> unit t
 (** [string s] accepts [s] exactly. *)
 
-val skip_while : (char -> bool) -> unit t
-(** [skip_while f] keeps accepting [c] if [f c] is [true]. [c] is discarded.
-    Always succeeds. *)
+val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
+(** [skip ~at_least ~up_to p] parses [p] zero or more times while discarding the
+    result. If [at_least] is given, then [p] must execute successfully
+    [at_least] times to be considered successful. Default of [at_least] is 0. If
+    [up_to] is given then [p] is executed maximum [up_to] times. By default
+    [up_to] doesn't have an upper bound value. Returns the count of times [p]
+    was skipped successfully. *)
 
-val count_skip_while : (char -> bool) -> int t
-(** [count_skip_while f] accepts characters from input while [f c] is true and
-    records the count of times the input char was accepted. The accepted chars
-    are discarded and the count is returned. *)
+val many :
+  ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t
+(** [many ~at_least ~up_to ~sep_by p] executes [p] zero or more times up to the
+    given upper bound [up_to]. If [at_least] is given, [p] is expected to
+    succeed the lower bound of [at_least] times. Default of [at_least] is [0].
+    Thre is no upper bound on execution of [p] is [up_to] is not given. If
+    [sep_by] is given execution of [p] must be followed by successful execution
+    of [sep_by]. Returns the count of times [p] was executed along with the list
+    of successfully parsed values. *)
 
-val count_skip_while_string : int -> (string -> bool) -> int t
-(** [count_skip_while_string n f] accepts string [s] of length [n] if [f s] is
-    true. The accepted string [s] is discarded and the count of times the string
-    was accepted is noted. The count is then returned. *)
+val not_followed_by : 'a t -> 'b t -> 'a t
+(** [not_followed_by a b] Succeeds if parser [p] succeeds and parser [q] fails.
+    The second parser [q] never consumes any input. *)
 
-val take_while : (char -> bool) -> string t
-(** [take_while f] keeps accepting character [c] from input while [f c] is true.
-    It then concatenates the accepted characters and converts it into a string
-    and returns it. *)
-
-val take_while_n : int -> (char -> bool) -> string t
-(** [take_while_n n f] similar in functionality to [take_while]. The parser
-    however has a maximum upper bound [n] on the number of characters it
-    accepts. *)
-
-val many : 'a t -> 'a list t
-(** [many p] runs p zero or more times and returns a list of results from the
-    runs of p.*)
-
-val count_skip_many : 'a t -> int t
-(** [count_skip_many p] runs [p] zeor or more times *)
+val optional : 'a t -> 'a option t
+(** [optional p] parses [p] and retruns [SOME a] if successful. Otherwise
+    returns [NONE]. *)
 
 val line : string option t
 (** [line] accepts and returns a line of input delimited by either [\n] or
@@ -210,6 +207,8 @@ val octect : char t
 
 val space : char t
 (** [space] parse a space character. *)
+
+val spaces : char list t
 
 val vchar : char t
 (** [vchar] parse a Visible (printing) character. *)

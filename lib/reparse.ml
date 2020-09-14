@@ -85,24 +85,32 @@ let ( <$$$> ) f p q r = return f <*> p <*> q <*> r
 let ( <$$$$> ) f p q r s = return f <*> p <*> q <*> r <*> s
 let ( <$ ) v p = (fun _ -> v) <$> p
 let ( *> ) p q = p >>= fun _ -> q
-let ( <* ) p q = q >>= fun _ -> p
+let ( <* ) p q = p >>= fun a -> q *> return a
 let ( <|> ) p q state = try p state with (_ : exn) -> q state
 
 let ( <?> ) p err_msg state =
   try p state with (_ : exn) -> parser_error state "%s" err_msg
 
 let named name p state =
-  try p state with _ -> parser_error state "%s failed." name
+  try p state
+  with exn ->
+    parser_error state "%s failed with error %s" name (Printexc.to_string exn)
 
 let delay f state = f () state
 
-let end_of_input state =
+let is_eoi state =
   let is_eof =
     match state.cc with
     | `Char _ -> false
     | `Eof    -> true
   in
   (state, is_eof)
+
+let eoi =
+  is_eoi
+  >|= function
+  | true  -> ()
+  | false -> failwith "not EOF"
 
 let fail msg state = raise @@ Parse_error (state.lnum, state.cnum, msg)
 
@@ -118,23 +126,20 @@ let failing p state =
 let lnum state = (state, state.lnum)
 let cnum state = (state, state.cnum)
 
+let next state =
+  match state.cc with
+  | `Char c -> (state, c)
+  | `Eof    -> parser_error state "EOF"
+
 let char c state =
   if state.cc = `Char c then (c <$ advance 1) state
   else
     parser_error
       state
-      "%d: char '%c' expected instead of '%a'"
-      state.offset
+      "char '%c' expected instead of '%a'"
       c
       pp_current_char
       state.cc
-
-let char_if f state =
-  match state.cc with
-  | `Char c when f c -> (c <$ advance 1) state
-  | `Eof
-  | `Char _ ->
-      parser_error state "%a doesn't match char_if." pp_current_char state.cc
 
 let satisfy f state =
   match state.cc with
@@ -143,8 +148,7 @@ let satisfy f state =
   | `Eof ->
       parser_error
         state
-        "%d: satisfy is 'false' for char '%a'"
-        state.offset
+        "satisfy is 'false' for char '%a'"
         pp_current_char
         state.cc
 
@@ -171,70 +175,42 @@ let string s state =
         state.offset
         s
 
-let rec skip_while f state =
-  try
-    let state, (_ : char) = satisfy f state in
-    skip_while f state
-  with (_ : exn) -> (state, ())
+let skip ?(at_least = 0) ?up_to p =
+  if at_least < 0 then invalid_arg "at_least"
+  else if Option.is_some up_to && Option.get up_to < 0 then invalid_arg "up_to"
+  else () ;
 
-let count_skip_while f state =
-  let rec loop count state =
-    try
-      let state, (_ : char) = satisfy f state in
-      loop (count + 1) state
-    with (_ : exn) -> (state, count)
-  in
-  loop 0 state
-
-let count_skip_while_string n f =
+  let up_to = Option.value up_to ~default:(-1) in
   let rec loop count =
-    peek_string n
-    >>= function
-    | Some s -> if f s then advance n *> loop (count + 1) else return count
-    | None   -> return count
+    if up_to = -1 || count < up_to then
+      try p *> loop (count + 1) with (_ : exn) -> return count
+    else return count
   in
   loop 0
 
-let take_while f state =
-  let rec loop buf state =
-    try
-      let state, c = satisfy f state in
-      Buffer.add_char buf c ;
-      loop buf state
-    with (_ : exn) -> (state, Buffer.contents buf)
-  in
-  loop (Buffer.create 10) state
+let many ?(at_least = 0) ?up_to ?(sep_by = return ()) p =
+  if at_least < 0 then invalid_arg "at_least"
+  else if Option.is_some up_to && Option.get up_to < 0 then invalid_arg "up_to"
+  else () ;
 
-let take_while_n n f state =
-  let rec loop count buf state =
-    if count < n then
-      try
-        let state, c = satisfy f state in
-        Buffer.add_char buf c ;
-        loop (count + 1) buf state
-      with (_ : exn) -> (state, Buffer.contents buf)
-    else (state, Buffer.contents buf)
+  let upto = Option.value up_to ~default:(-1) in
+  let rec loop count acc =
+    if upto = -1 || count < upto then
+      try p <* sep_by >>= fun a -> loop (count + 1) (a :: acc)
+      with (_ : exn) -> return (count, acc)
+    else return (count, acc)
   in
-  loop 0 (Buffer.create n) state
+  loop 0 []
+  >|= fun (count, acc) ->
+  if count >= at_least then (count, List.rev acc)
+  else
+    failwith
+      (Format.sprintf
+         "parser didn't execute successfully at least %d times"
+         at_least)
 
-let many t state =
-  let rec loop l state =
-    try
-      let state, a = t state in
-      loop (a :: l) state
-    with (_ : exn) -> (state, l)
-  in
-  let state, v = loop [] state in
-  (state, List.rev v)
-
-let count_skip_many t state =
-  let rec loop count state =
-    try
-      let state, _ = t state in
-      loop (count + 1) state
-    with (_ : exn) -> (state, count)
-  in
-  loop 0 state
+let not_followed_by p q = p <* failing q
+let optional p = try Option.some <$> p with _ -> return None
 
 let line state =
   let peek_2chars state =
@@ -279,15 +255,15 @@ let is_digit = function
   | '0' .. '9' -> true
   | _          -> false
 
-let alpha = char_parser "ALPHA" (char_if is_alpha)
+let alpha = char_parser "ALPHA" (satisfy is_alpha)
 
 let alpha_num =
-  char_parser "ALPHA NUM" (char_if (function c -> is_alpha c || is_digit c))
+  char_parser "ALPHA NUM" (satisfy (function c -> is_alpha c || is_digit c))
 
 let bit =
   char_parser
     "BIT"
-    (char_if (function
+    (satisfy (function
         | '0'
         | '1' ->
             true
@@ -296,14 +272,14 @@ let bit =
 let ascii_char =
   char_parser
     "US-ASCII"
-    (char_if (function
+    (satisfy (function
         | '\x00' .. '\x7F' -> true
         | _                -> false))
 
 let cr =
   char_parser
     "CR"
-    (char_if (function
+    (satisfy (function
         | '\r' -> true
         | _    -> false))
 
@@ -313,25 +289,25 @@ let crlf state =
 let control =
   char_parser
     "CONTROL"
-    (char_if (function
+    (satisfy (function
         | '\x00' .. '\x1F'
         | '\x7F' ->
             true
         | _ -> false))
 
-let digit = char_parser "DIGIT" (char_if is_digit)
+let digit = char_parser "DIGIT" (satisfy is_digit)
 
 let dquote =
   char_parser
     "DQUOTE"
-    (char_if (function
+    (satisfy (function
         | '"' -> true
         | _   -> false))
 
 let hex_digit =
   char_parser
     "HEX DIGIT"
-    (char_if (function
+    (satisfy (function
         | c when is_digit c -> true
         | 'A' .. 'F' -> true
         | _ -> false))
@@ -339,14 +315,14 @@ let hex_digit =
 let htab =
   char_parser
     "HTAB"
-    (char_if (function
+    (satisfy (function
         | '\t' -> true
         | _    -> false))
 
 let lf =
   char_parser
     "LF"
-    (char_if (function
+    (satisfy (function
         | '\n' -> true
         | _    -> false))
 
@@ -358,21 +334,23 @@ let octect state =
 let space =
   char_parser
     "SPACE"
-    (char_if (function
+    (satisfy (function
         | '\x20' -> true
         | _      -> false))
+
+let spaces = snd <$> many space
 
 let vchar =
   char_parser
     "VCHAR"
-    (char_if (function
+    (satisfy (function
         | '\x21' .. '\x7E' -> true
         | _                -> false))
 
 let whitespace =
   char_parser
     "VCHAR"
-    (char_if (function
+    (satisfy (function
         | '\x20'
         | '\x09' ->
             true
