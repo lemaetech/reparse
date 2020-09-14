@@ -11,12 +11,7 @@ type state =
   ; offset : int
   ; track_lnum : bool
   ; lnum : int (* line count. *)
-  ; cnum : int (* column count. *)
-  ; cc : current_char }
-
-and current_char =
-  [ `Char of char
-  | `Eof ]
+  ; cnum : int (* column count. *) }
 
 type 'a t = state -> state * 'a
 
@@ -24,7 +19,7 @@ exception Parse_error of int * int * string
 
 let parse ?(track_lnum = false) src p =
   let lnum, cnum = if track_lnum then (1, 0) else (0, 0) in
-  let state = {src; offset = 0; track_lnum; lnum; cnum; cc = `Eof} in
+  let state = {src; offset = 0; track_lnum; lnum; cnum} in
   try
     let (_ : state), a = p state in
     Ok a
@@ -45,25 +40,16 @@ let advance n state =
             cnum := 0 )
           else cnum := !cnum + 1
         done ;
-        { state with
-          offset
-        ; lnum = !lnum
-        ; cnum = !cnum
-        ; cc = `Char state.src.[offset] } )
-      else {state with offset; cc = `Char state.src.[offset]}
+        {state with offset; lnum = !lnum; cnum = !cnum} )
+      else {state with offset}
     in
     (state, ())
   else
-    let state = {state with offset = len; cc = `Eof} in
+    let state = {state with offset = len} in
     (state, ())
 
 let return v state = (state, v)
 let fail msg state = raise @@ Parse_error (state.lnum, state.cnum, msg)
-
-let next state =
-  match state.src.[state.offset] with
-  | c -> (state, c)
-  | exception Invalid_argument _ -> fail "EOF" state
 
 let ( >>= ) p f state =
   let state, a = p state in
@@ -72,14 +58,15 @@ let ( >>= ) p f state =
 let ( >|= ) p f = p >>= fun a -> return (f a)
 let ( <*> ) p q = p >>= fun f -> q >|= f
 let ( <$> ) f p = return f <*> p
-let ( <$$> ) f p q = return f <*> p <*> q
-let ( <$$$> ) f p q r = return f <*> p <*> q <*> r
-let ( <$$$$> ) f p q r s = return f <*> p <*> q <*> r <*> s
+let map2 f p q = return f <*> p <*> q
+let map3 f p q r = return f <*> p <*> q <*> r
+let map4 f p q r s = return f <*> p <*> q <*> r <*> s
 let ( <$ ) v p = (fun _ -> v) <$> p
 let ( *> ) p q = p >>= fun _ -> q
 let ( <* ) p q = p >>= fun a -> q *> return a
 let ( <|> ) p q state = try p state with (_ : exn) -> q state
 let ( <?> ) p err_msg state = try p state with (_ : exn) -> fail err_msg state
+let delay f state = f () state
 
 let named name p state =
   try p state
@@ -88,13 +75,23 @@ let named name p state =
       (Format.sprintf "%s failed with error %s" name (Printexc.to_string exn))
       state
 
-let delay f state = f () state
+let peek_char state =
+  match state.src.[state.offset] with
+  | c -> (state, c)
+  | exception Invalid_argument _ -> fail "EOF" state
+
+let peek_string len state =
+  if state.offset + len < String.length state.src then
+    (state, String.sub state.src state.offset len)
+  else fail "peek_string failed - EOF." state
+
+let next = peek_char <* advance 1
 
 let is_eoi state =
   let is_eof =
-    match state.cc with
-    | `Char _ -> false
-    | `Eof    -> true
+    match peek_char state with
+    | _, _                -> false
+    | exception (_ : exn) -> true
   in
   (state, is_eof)
 
@@ -128,21 +125,13 @@ let satisfy f =
   if f c2 then c2 <$ advance 1
   else fail @@ Format.sprintf "satisfy failed on char '%c'" c2
 
-let peek_char = try Option.some <$> next with _ -> return None
-
-let peek_string len state =
-  if state.offset + len < String.length state.src then
-    (state, Some (String.sub state.src state.offset len))
-  else (state, None)
-
 let string s =
   let len = String.length s in
   peek_string len
-  >>= function
-  | Some s2 ->
-      if String.equal s s2 then advance len
-      else fail @@ Format.sprintf "unable to parse \"%s\"" s
-  | None    -> fail @@ Format.sprintf "parsing string '%s' failed with EOF" s
+  <?> "parsing string '%s' failed with EOF"
+  >>= fun s2 ->
+  if String.equal s s2 then advance len
+  else fail @@ Format.sprintf "unable to parse \"%s\"" s
 
 let skip ?(at_least = 0) ?up_to p =
   if at_least < 0 then invalid_arg "at_least"
@@ -181,28 +170,18 @@ let many ?(at_least = 0) ?up_to ?(sep_by = return ()) p =
 let not_followed_by p q = p <* failing q
 let optional p = try Option.some <$> p with _ -> return None
 
-let line state =
-  let peek_2chars state =
-    let c1 = state.cc in
-    let c2 =
-      let state2, () = advance 1 state in
-      state2.cc
-    in
-    (c1, c2)
-  in
-  let rec loop buf state =
-    match peek_2chars state with
-    | `Char '\r', `Char '\n' ->
-        (Option.some @@ Buffer.contents buf <$ advance 2) state
-    | `Char '\n', _          ->
-        (Option.some @@ Buffer.contents buf <$ advance 1) state
-    | `Char c1, _            ->
+let line =
+  peek_string 2
+  >>= fun s ->
+  let rec loop buf =
+    match (s.[0], s.[1]) with
+    | '\r', '\n' -> Option.some @@ Buffer.contents buf <$ advance 2
+    | '\n', _    -> Option.some @@ Buffer.contents buf <$ advance 1
+    | c1, _      ->
         Buffer.add_char buf c1 ;
-        let state, () = advance 1 state in
-        loop buf state
-    | `Eof, _                -> (state, None)
+        advance 1 *> loop buf
   in
-  loop (Buffer.create 1) state
+  loop (Buffer.create 1)
 
 let char_parser name p state =
   try p state
