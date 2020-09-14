@@ -182,36 +182,27 @@ let skip p =
   in
   loop 0
 
-let take_while_n n f state =
-  let rec loop count buf state =
-    if count < n then
+let many ?(at_least = 0) ?up_to p state =
+  if at_least < 0 then invalid_arg "at_least"
+  else if Option.is_some up_to && Option.get up_to < 0 then invalid_arg "up_to"
+  else () ;
+
+  let upto = Option.value up_to ~default:(-1) in
+  let rec loop count l state =
+    if upto = -1 || count < upto then
       try
-        let state, c = satisfy f state in
-        Buffer.add_char buf c ;
-        loop (count + 1) buf state
-      with (_ : exn) -> (state, Buffer.contents buf)
-    else (state, Buffer.contents buf)
+        let state, a = p state in
+        loop (count + 1) (a :: l) state
+      with (_ : exn) -> (count, state, l)
+    else (count, state, l)
   in
-  loop 0 (Buffer.create n) state
-
-let many t state =
-  let rec loop l state =
-    try
-      let state, a = t state in
-      loop (a :: l) state
-    with (_ : exn) -> (state, l)
-  in
-  let state, v = loop [] state in
-  (state, List.rev v)
-
-let count_skip_many t state =
-  let rec loop count state =
-    try
-      let state, _ = t state in
-      loop (count + 1) state
-    with (_ : exn) -> (state, count)
-  in
-  loop 0 state
+  let count, state, v = loop 0 [] state in
+  if count >= at_least then (state, (count, List.rev v))
+  else
+    parser_error
+      state
+      "[many] parser didn't execute successfully at least %d times"
+      at_least
 
 let line state =
   let peek_2chars state =

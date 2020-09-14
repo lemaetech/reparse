@@ -132,20 +132,16 @@ val string : string -> unit t
 (** [string s] accepts [s] exactly. *)
 
 val skip : _ t -> int t
-(** [count_skip p] parses [p] zero or more times while discarding the result.
-    Returns the number of times [p] was skipped. *)
+(** [skip p] parses [p] zero or more times while discarding the result. Returns
+    the count [p] was skipped. *)
 
-val take_while_n : int -> (char -> bool) -> string t
-(** [take_while_n n f] similar in functionality to [take_while]. The parser
-    however has a maximum upper bound [n] on the number of characters it
-    accepts. *)
-
-val many : 'a t -> 'a list t
-(** [many p] runs p zero or more times and returns a list of results from the
-    runs of p.*)
-
-val count_skip_many : 'a t -> int t
-(** [count_skip_many p] runs [p] zeor or more times *)
+val many : ?at_least:int -> ?up_to:int -> 'a t -> (int * 'a list) t
+(** [many ~at_least ~up_to p] executes [p] zero or more times up to the given
+    [up_to] upper bound. If [at_least] is given, [p] is expected to succeed the
+    lower bound of [at_least] times. Default of [at_least] is [0]. If [up_to] is
+    not given, no upper bound is placed on the execution of [p]. Returns the
+    count of times [p] was executed along with the list of successfully parsed
+    values. *)
 
 val line : string option t
 (** [line] accepts and returns a line of input delimited by either [\n] or
