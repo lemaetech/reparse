@@ -287,7 +287,7 @@ let space =
         | '\x20' -> true
         | _      -> false))
 
-(* let spaces = snd <$> many space *)
+let spaces = snd <$> many space
 
 let vchar =
   char_parser

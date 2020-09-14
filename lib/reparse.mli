@@ -233,7 +233,7 @@ val octect : char t
 val space : char t
 (** [space] parse a space character. *)
 
-(* val spaces : char list t *)
+val spaces : char list t
 
 val vchar : char t
 (** [vchar] parse a Visible (printing) character. *)
