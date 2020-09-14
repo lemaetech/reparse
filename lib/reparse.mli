@@ -138,11 +138,6 @@ val count_skip : _ t -> int t
 (** [count_skip p] parses [p] zero or more times while discarding the result and
     keeping count of iteration. *)
 
-val take_while : (char -> bool) -> string t
-(** [take_while f] keeps accepting character [c] from input while [f c] is true.
-    It then concatenates the accepted characters and converts it into a string
-    and returns it. *)
-
 val take_while_n : int -> (char -> bool) -> string t
 (** [take_while_n n f] similar in functionality to [take_while]. The parser
     however has a maximum upper bound [n] on the number of characters it

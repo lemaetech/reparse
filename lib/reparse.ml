@@ -184,16 +184,6 @@ let count_skip p =
   in
   loop 0
 
-let take_while f state =
-  let rec loop buf state =
-    try
-      let state, c = satisfy f state in
-      Buffer.add_char buf c ;
-      loop buf state
-    with (_ : exn) -> (state, Buffer.contents buf)
-  in
-  loop (Buffer.create 10) state
-
 let take_while_n n f state =
   let rec loop count buf state =
     if count < n then
