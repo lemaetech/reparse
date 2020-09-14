@@ -133,7 +133,14 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
     [at_least] times to be considered successful. Default of [at_least] is 0. If
     [up_to] is given then [p] is executed maximum [up_to] times. By default
     [up_to] doesn't have an upper bound value. Returns the count of times [p]
-    was skipped successfully. *)
+    was skipped successfully.
+
+    {[
+      open Reparse
+
+      let r = parse "     " (skip space) in
+      r = Ok 5
+    ]} *)
 
 val many :
   ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t
@@ -160,8 +167,7 @@ val line : string t
     {[
       open Reparse
 
-      let s = "line1\r\nline2" in
-      let l = parse s line in
+      let l = parse "line1\r\nline2" line in
       l = Ok "line1"
     ]} *)
 

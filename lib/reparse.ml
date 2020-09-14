@@ -118,7 +118,7 @@ let char c =
   else fail @@ Format.sprintf "char '%c' expected instead of %c" c c2
 
 let satisfy f =
-  next
+  peek_char
   >>= fun c2 ->
   if f c2 then c2 <$ advance 1
   else fail @@ Format.sprintf "satisfy failed on char '%c'" c2
@@ -131,18 +131,20 @@ let string s =
   if String.equal s s2 then advance len
   else fail @@ Format.sprintf "unable to parse \"%s\"" s
 
-let skip ?(at_least = 0) ?up_to p =
+let skip ?(at_least = 0) ?up_to p state =
   if at_least < 0 then invalid_arg "at_least"
   else if Option.is_some up_to && Option.get up_to < 0 then invalid_arg "up_to"
   else () ;
 
   let up_to = Option.value up_to ~default:(-1) in
-  let rec loop count =
-    if up_to = -1 || count < up_to then
-      try p *> loop (count + 1) with (_ : exn) -> return count
-    else return count
+  let rec loop count state =
+    if up_to = -1 || count <= up_to then
+      match p state with
+      | state, _       -> (loop [@tailcall]) (count + 1) state
+      | exception _exn -> (state, count)
+    else (state, count)
   in
-  loop 0
+  loop 1 state
 
 let many ?(at_least = 0) ?up_to ?(sep_by = return ()) p =
   if at_least < 0 then invalid_arg "at_least"
@@ -183,7 +185,7 @@ let line state =
     | Some c1, _           ->
         Buffer.add_char buf c1 ;
         let state, () = advance 1 state in
-        loop buf state
+        (loop [@tailcall]) buf state
     | None, _              -> fail "parsing line failed, EOF reached." state
   in
   loop (Buffer.create 1) state
