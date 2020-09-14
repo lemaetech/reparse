@@ -38,7 +38,7 @@ val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
     [f a] which returns value [c]. This is same as [p >>= (fun a -> return a)]. *)
 
 val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
-(** [pf <*> q] Applicative. Executes parsers [pf] and [q] which returns function
+(** [p <*> q] Applicative. Executes parsers [p] and [q] which returns function
     [f] and [a] respectively. It then applies [f a].
 
     {[
@@ -69,9 +69,9 @@ val ( <* ) : 'a t -> _ t -> 'a t
 (** [p <* q] discards result of parser [q] and returns [p] instead. *)
 
 val ( <|> ) : 'a t -> 'a t -> 'a t
-(** [p <|> q] tries both parsers. Takes the result of the first if success.
-    Otherwise returns the result of the second. {b Note} If you want [q] to be
-    lazy evaluated then use it with [delay] combinator. *)
+(** [p <|> q] tries both parsers. Takes the result of [p] if it succeeds.
+    Otherwise returns the result of the [q]. {b Note} If you want [q] to be lazy
+    evaluated then use it with [delay] combinator. *)
 
 val ( <?> ) : 'a t -> string -> 'a t
 (** [p <?> err_mg] parse [p]. If it fails then fail with error message
@@ -92,7 +92,7 @@ val fail : string -> 'a t
 (** [fail msg] fails the parser with [msg]. *)
 
 val failing : 'a t -> unit t
-(** [failing p] succeeds if and only if its [p] fails to parse. *)
+(** [failing p] succeeds if and only if [p] fails to parse. *)
 
 val lnum : int t
 (** [lnum] return the current line number. *)

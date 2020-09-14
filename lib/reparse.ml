@@ -46,60 +46,6 @@ let parse ?(track_lnum = false) src p =
 
 let return v state = (state, v)
 
-let ( >>= ) p f state =
-  let state, a = p state in
-  f a state
-
-let ( >|= ) p f state =
-  let state, a = p state in
-  (state, f a)
-
-let ( <*> ) pf q state =
-  let state, f = pf state in
-  let state, a = q state in
-  (state, f a)
-
-let ( <$ ) v p state =
-  let state, _ = p state in
-  (state, v)
-
-let ( <$> ) f p state =
-  let state, a = p state in
-  (state, f a)
-
-let ( <$$> ) f p q state =
-  let state, a = p state in
-  let state, b = q state in
-  (state, f a b)
-
-let ( <$$$> ) f p q r state =
-  let state, a = p state in
-  let state, b = q state in
-  let state, c = r state in
-  (state, f a b c)
-
-let ( <$$$$> ) f p q r s state =
-  let state, a = p state in
-  let state, b = q state in
-  let state, c = r state in
-  let state, d = s state in
-  (state, f a b c d)
-
-let ( *> ) p q state =
-  let state, _ = p state in
-  q state
-
-let ( <* ) p q state =
-  let state, _ = q state in
-  p state
-
-let ( <|> ) p q state = try p state with (_ : exn) -> q state
-
-let ( <?> ) p err_msg state =
-  try p state with (_ : exn) -> parser_error state "%s" err_msg
-
-let delay f state = f () state
-
 let advance n state =
   let len = String.length state.src in
   if state.offset + n < len then
@@ -126,6 +72,26 @@ let advance n state =
   else
     let state = {state with offset = len; cc = `Eof} in
     (state, ())
+
+let ( >>= ) p f state =
+  let state, a = p state in
+  f a state
+
+let ( >|= ) p f = p >>= fun a -> return (f a)
+let ( <*> ) p q = p >>= fun f -> q >|= f
+let ( <$> ) f p = return f <*> p
+let ( <$$> ) f p q = return f <*> p <*> q
+let ( <$$$> ) f p q r = return f <*> p <*> q <*> r
+let ( <$$$$> ) f p q r s = return f <*> p <*> q <*> r <*> s
+let ( <$ ) v p = (fun _ -> v) <$> p
+let ( *> ) p q = p >>= fun _ -> q
+let ( <* ) p q = q >>= fun _ -> p
+let ( <|> ) p q state = try p state with (_ : exn) -> q state
+
+let ( <?> ) p err_msg state =
+  try p state with (_ : exn) -> parser_error state "%s" err_msg
+
+let delay f state = f () state
 
 let end_of_input state =
   let is_eof =
