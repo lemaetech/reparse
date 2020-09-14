@@ -62,7 +62,7 @@ let map3 f p q r = return f <*> p <*> q <*> r
 let map4 f p q r s = return f <*> p <*> q <*> r <*> s
 let ( <$ ) v p = (fun _ -> v) <$> p
 let ( *> ) p q = p >>= fun _ -> q
-let ( <* ) p q = p >>= fun a -> q *> return a
+let ( <* ) p q = p >>= fun a -> a <$ q
 let ( <|> ) p q state = try p state with (_ : exn) -> q state
 let ( <?> ) p err_msg state = try p state with (_ : exn) -> fail err_msg state
 let delay f state = f () state
