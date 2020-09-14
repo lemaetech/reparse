@@ -91,6 +91,9 @@ let ( <|> ) p q state = try p state with (_ : exn) -> q state
 let ( <?> ) p err_msg state =
   try p state with (_ : exn) -> parser_error state "%s" err_msg
 
+let named name p state =
+  try p state with _ -> parser_error state "%s failed." name
+
 let delay f state = f () state
 
 let end_of_input state =

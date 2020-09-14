@@ -78,6 +78,10 @@ val ( <?> ) : 'a t -> string -> 'a t
     [err_msg]. Used as a last choice in [<|>], e.g.
     [a <|> b <|> c <?> "expected a b c"]. *)
 
+val named : string -> 'a t -> 'a t
+(** [named name p] names parser [p] with [name]. The name is used on error
+    message. This may be helpful when debugging parsers. *)
+
 val delay : (unit -> 'a t) -> 'a t
 (** [delay f] delays the computation of [p] until it is required. [p] is
     [p = f ()]. Use it together with [<|>]. *)
