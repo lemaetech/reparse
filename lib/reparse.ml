@@ -37,7 +37,7 @@ let substring len state =
   else None
 
 let parse ?(track_lnum = false) src p =
-  let lnum, cnum = if track_lnum then (1, 1) else (0, 0) in
+  let lnum, cnum = if track_lnum then (1, 0) else (0, 0) in
   let state = {src; offset = 0; track_lnum; lnum; cnum; cc = `Eof} in
   try
     let (_ : state), a = p state in
@@ -58,7 +58,7 @@ let advance n state =
           let c = state.src.[i] in
           if Char.equal c '\n' then (
             lnum := !lnum + 1 ;
-            cnum := 1 )
+            cnum := 0 )
           else cnum := !cnum + 1
         done ;
         { state with
