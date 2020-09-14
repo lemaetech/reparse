@@ -113,27 +113,27 @@ val char : char -> char t
 (** [char c] accepts character [c] from input exactly and returns it. Fails
     Otherwise.*)
 
-val char_if : (char -> bool) -> char t
-(** [char_if f] accepts and returns [c] if [f c] is true. *)
-
 val satisfy : (char -> bool) -> char t
-(** [satisfy f] accepts a char [c] from input if [f c] is true and returns it.
-    Otherwise it fails. *)
+(** [satisfy f] accepts a char [c] from input if [f c] is true and returns it. *)
 
 val peek_char : char option t
-(** [peek_char t] returns a character at the current position in the parser.
-    Always suceeds and returns [None] if EOF is reached. *)
+(** [peek_char t] returns a character at the current position in the parser. No
+    input is consumed. *)
 
 val peek_string : int -> string option t
-(** [peek_string n] attempts to match string of length [n] from input exactly
-    and return it. If it isn't matched [None] is returned. *)
+(** [peek_string n] attempts to retrieve string of length [n] from input exactly
+    and return it. No input is consumed. *)
 
 val string : string -> unit t
 (** [string s] accepts [s] exactly. *)
 
-val skip : _ t -> int t
-(** [skip p] parses [p] zero or more times while discarding the result. Returns
-    the count [p] was skipped. *)
+val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
+(** [skip ~at_least ~up_to p] parses [p] zero or more times while discarding the
+    result. If [at_least] is given, then [p] must execute successfully
+    [at_least] times to be considered successful. Default of [at_least] is 0. If
+    [up_to] is given then [p] is executed maximum [up_to] times. By default
+    [up_to] doesn't have an upper bound value. Returns the count of times [p]
+    was skipped successfully. *)
 
 val many : ?at_least:int -> ?up_to:int -> 'a t -> (int * 'a list) t
 (** [many ~at_least ~up_to p] executes [p] zero or more times up to the given
