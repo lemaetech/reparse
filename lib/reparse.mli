@@ -134,15 +134,9 @@ val string : string -> unit t
 val skip : _ t -> unit t
 (** [skip p] parses [p] zero or more times while discarding the results. *)
 
-val count_skip_while : (char -> bool) -> int t
-(** [count_skip_while f] accepts characters from input while [f c] is true and
-    records the count of times the input char was accepted. The accepted chars
-    are discarded and the count is returned. *)
-
-val count_skip_while_string : int -> (string -> bool) -> int t
-(** [count_skip_while_string n f] accepts string [s] of length [n] if [f s] is
-    true. The accepted string [s] is discarded and the count of times the string
-    was accepted is noted. The count is then returned. *)
+val count_skip : _ t -> int t
+(** [count_skip p] parses [p] zero or more times while discarding the result and
+    keeping count of iteration. *)
 
 val take_while : (char -> bool) -> string t
 (** [take_while f] keeps accepting character [c] from input while [f c] is true.

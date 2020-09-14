@@ -178,21 +178,9 @@ let string s state =
 
 let rec skip p = try p *> skip p with (_ : exn) -> return ()
 
-let count_skip_while f state =
-  let rec loop count state =
-    try
-      let state, (_ : char) = satisfy f state in
-      loop (count + 1) state
-    with (_ : exn) -> (state, count)
-  in
-  loop 0 state
-
-let count_skip_while_string n f =
+let count_skip p =
   let rec loop count =
-    peek_string n
-    >>= function
-    | Some s -> if f s then advance n *> loop (count + 1) else return count
-    | None   -> return count
+    try p *> loop (count + 1) with (_ : exn) -> return count
   in
   loop 0
 
