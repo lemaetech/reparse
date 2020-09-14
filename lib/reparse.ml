@@ -92,7 +92,9 @@ let ( <?> ) p err_msg state =
   try p state with (_ : exn) -> parser_error state "%s" err_msg
 
 let named name p state =
-  try p state with _ -> parser_error state "%s failed." name
+  try p state
+  with exn ->
+    parser_error state "%s failed with error %s" name (Printexc.to_string exn)
 
 let delay f state = f () state
 
