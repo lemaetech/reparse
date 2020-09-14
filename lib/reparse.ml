@@ -44,9 +44,7 @@ let advance n state =
       else {state with offset}
     in
     (state, ())
-  else
-    let state = {state with offset = len} in
-    (state, ())
+  else raise @@ Parse_error (state.lnum, state.cnum, "advance failed - EOF.")
 
 let return v state = (state, v)
 let fail msg state = raise @@ Parse_error (state.lnum, state.cnum, msg)
@@ -170,18 +168,25 @@ let many ?(at_least = 0) ?up_to ?(sep_by = return ()) p =
 let not_followed_by p q = p <* failing q
 let optional p = try Option.some <$> p with _ -> return None
 
-let line =
-  peek_string 2
-  >>= fun s ->
-  let rec loop buf =
-    match (s.[0], s.[1]) with
-    | '\r', '\n' -> Option.some @@ Buffer.contents buf <$ advance 2
-    | '\n', _    -> Option.some @@ Buffer.contents buf <$ advance 1
-    | c1, _      ->
+let backtrack p state =
+  let _, a = p state in
+  (state, a)
+
+let line state =
+  let rec loop buf state =
+    let _, (c1, c2) =
+      (map2 (fun c1 c2 -> (c1, c2)) (optional next) (optional next)) state
+    in
+    match (c1, c2) with
+    | Some '\r', Some '\n' -> (Buffer.contents buf <$ advance 2) state
+    | Some '\n', _         -> (Buffer.contents buf <$ advance 1) state
+    | Some c1, _           ->
         Buffer.add_char buf c1 ;
-        advance 1 *> loop buf
+        let state, () = advance 1 state in
+        loop buf state
+    | None, _              -> fail "parsing line failed, EOF reached." state
   in
-  loop (Buffer.create 1)
+  loop (Buffer.create 1) state
 
 let char_parser name p state =
   try p state
