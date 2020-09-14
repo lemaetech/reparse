@@ -138,7 +138,8 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
     [up_to] doesn't have an upper bound value. Returns the count of times [p]
     was skipped successfully. *)
 
-val many : ?at_least:int -> ?up_to:int -> 'a t -> (int * 'a list) t
+val many :
+  ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t
 (** [many ~at_least ~up_to p] executes [p] zero or more times up to the given
     [up_to] upper bound. If [at_least] is given, [p] is expected to succeed the
     lower bound of [at_least] times. Default of [at_least] is [0]. If [up_to] is

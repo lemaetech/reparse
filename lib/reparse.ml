@@ -85,7 +85,7 @@ let ( <$$$> ) f p q r = return f <*> p <*> q <*> r
 let ( <$$$$> ) f p q r s = return f <*> p <*> q <*> r <*> s
 let ( <$ ) v p = (fun _ -> v) <$> p
 let ( *> ) p q = p >>= fun _ -> q
-let ( <* ) p q = q >>= fun _ -> p
+let ( <* ) p q = p >>= fun a -> q *> return a
 let ( <|> ) p q state = try p state with (_ : exn) -> q state
 
 let ( <?> ) p err_msg state =
@@ -188,7 +188,7 @@ let skip ?(at_least = 0) ?up_to p =
   in
   loop 0
 
-let many ?(at_least = 0) ?up_to p =
+let many ?(at_least = 0) ?up_to ?(sep_by = return ()) p =
   if at_least < 0 then invalid_arg "at_least"
   else if Option.is_some up_to && Option.get up_to < 0 then invalid_arg "up_to"
   else () ;
@@ -196,7 +196,7 @@ let many ?(at_least = 0) ?up_to p =
   let upto = Option.value up_to ~default:(-1) in
   let rec loop count acc =
     if upto = -1 || count < upto then
-      try p >>= fun a -> loop (count + 1) (a :: acc)
+      try p <* sep_by >>= fun a -> loop (count + 1) (a :: acc)
       with (_ : exn) -> return (count, acc)
     else return (count, acc)
   in
