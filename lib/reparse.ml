@@ -30,8 +30,6 @@ let parse ?(track_lnum = false) src p =
     Ok a
   with exn -> Error exn
 
-let return v state = (state, v)
-
 let advance n state =
   let len = String.length state.src in
   if state.offset + n < len then
@@ -59,7 +57,13 @@ let advance n state =
     let state = {state with offset = len; cc = `Eof} in
     (state, ())
 
+let return v state = (state, v)
 let fail msg state = raise @@ Parse_error (state.lnum, state.cnum, msg)
+
+let next state =
+  match state.src.[state.offset] with
+  | c -> (state, c)
+  | exception Invalid_argument _ -> fail "EOF" state
 
 let ( >>= ) p f state =
   let state, a = p state in
@@ -111,11 +115,6 @@ let failing p state =
 
 let lnum state = (state, state.lnum)
 let cnum state = (state, state.cnum)
-
-let next state =
-  match state.cc with
-  | `Char c -> (state, c)
-  | `Eof    -> fail "EOF" state
 
 let char c =
   next
