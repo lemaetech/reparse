@@ -98,13 +98,19 @@ let named name p state =
 
 let delay f state = f () state
 
-let end_of_input state =
+let is_eoi state =
   let is_eof =
     match state.cc with
     | `Char _ -> false
     | `Eof    -> true
   in
   (state, is_eof)
+
+let eoi =
+  is_eoi
+  >|= function
+  | true  -> ()
+  | false -> failwith "not EOF"
 
 let fail msg state = raise @@ Parse_error (state.lnum, state.cnum, msg)
 

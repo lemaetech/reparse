@@ -89,8 +89,11 @@ val delay : (unit -> 'a t) -> 'a t
 val advance : int -> unit t
 (** [advance n] advances parser by the given [n] number of characters. *)
 
-val end_of_input : bool t
-(** [end_of_input] returns [true] if parser has reached end of input. *)
+val is_eoi : bool t
+(** [is_eoi] returns [true] if parser has reached end of input. *)
+
+val eoi : unit t
+(** [eoi] Parse the end of input to be successful. *)
 
 val fail : string -> 'a t
 (** [fail msg] fails the parser with [msg]. *)
