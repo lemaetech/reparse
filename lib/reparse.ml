@@ -9,9 +9,9 @@
 type state =
   { src : string
   ; offset : int
-  ; track_lnum : bool
-  ; lnum : int (* line count. *)
-  ; cnum : int (* column count. *) }
+  ; track_lnum : bool (* Track line numbers. *)
+  ; lnum : int (* Line count. *)
+  ; cnum : int (* Column count. *) }
 
 type 'a t = state -> state * 'a
 
@@ -147,26 +147,29 @@ let skip ?(at_least = 0) ?up_to p state =
   in
   loop 1 state
 
-let many ?(at_least = 0) ?up_to ?(sep_by = return ()) p =
+let many :
+    ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t =
+ fun ?(at_least = 0) ?up_to ?(sep_by = return ()) p state ->
   if at_least < 0 then invalid_arg "at_least"
   else if Option.is_some up_to && Option.get up_to < 0 then invalid_arg "up_to"
   else () ;
 
   let upto = Option.value up_to ~default:(-1) in
-  let rec loop count acc =
+  let rec loop count acc state =
     if upto = -1 || count < upto then
-      try p <* sep_by >>= fun a -> loop (count + 1) (a :: acc)
-      with (_ : exn) -> return (count, acc)
-    else return (count, acc)
+      match (p <* sep_by) state with
+      | state, a       -> (loop [@tailcall]) (count + 1) (a :: acc) state
+      | exception _exn -> (state, (count, acc))
+    else (state, (count, acc))
   in
-  loop 0 []
-  >|= fun (count, acc) ->
-  if count >= at_least then (count, List.rev acc)
+  let state, (count, acc) = loop 0 [] state in
+  if count >= at_least then (state, (count, List.rev acc))
   else
-    failwith
+    fail
       (Format.sprintf
          "parser many didn't execute successfully at least %d times"
          at_least)
+      state
 
 let not_followed_by p q = p <* failing q
 let optional p = try Option.some <$> p with _ -> return None
@@ -287,7 +290,7 @@ let space =
         | '\x20' -> true
         | _      -> false))
 
-let spaces = snd <$> many space
+(* let spaces = snd <$> many space *)
 
 let vchar =
   char_parser

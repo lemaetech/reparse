@@ -139,6 +139,7 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
     {[
       open Reparse
 
+      ;;
       let r = parse "     " (skip space) in
       r = Ok 5
     ]} *)
@@ -151,7 +152,15 @@ val many :
     Thre is no upper bound on execution of [p] is [up_to] is not given. If
     [sep_by] is given execution of [p] must be followed by successful execution
     of [sep_by]. Returns the count of times [p] was executed along with the list
-    of successfully parsed values. *)
+    of successfully parsed values.
+
+    {[
+      open Reparse
+
+      ;;
+      let r = parse "aaaaa" (many (char 'a')) in
+      r = Ok (5, ['a'; 'a'; 'a'; 'a'; 'a'])
+    ]} *)
 
 val not_followed_by : 'a t -> 'b t -> 'a t
 (** [not_followed_by a b] Succeeds if parser [p] succeeds and parser [q] fails.
@@ -224,7 +233,7 @@ val octect : char t
 val space : char t
 (** [space] parse a space character. *)
 
-val spaces : char list t
+(* val spaces : char list t *)
 
 val vchar : char t
 (** [vchar] parse a Visible (printing) character. *)
