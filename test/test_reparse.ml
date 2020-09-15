@@ -25,12 +25,36 @@ let test_lnum_cnum_is_0_0 () =
   let r = parse ~track_lnum:false "hello world\nsecond line\naaaaa" p in
   Alcotest.(check (result (pair int int) string) "3/5" (Ok (0, 0)) r)
 
-let test_lnum_cnum_suite =
+let line_column_number_test_suite =
   [ ("1/11", `Quick, test_lnum_cnum_is_1_11)
   ; ("3/0", `Quick, test_lnum_cnum_is_3_0)
   ; ("3/5", `Quick, test_lnum_cnum_is_3_5)
   ; ("0/0", `Quick, test_lnum_cnum_is_0_0) ]
 
+(* Peek tests. *)
+let test_peek_char_h () =
+  let p = peek_char in
+  let r = parse "hello" p in
+  Alcotest.(check (result char string) "'h'" (Ok 'h') r)
+
+let test_peek_char_offset () =
+  let p = peek_char *> offset in
+  let r = parse "hello" p in
+  Alcotest.(check (result int string) "0" (Ok 0) r)
+
+let test_peek_char_many () =
+  let p = peek_char *> peek_char *> offset in
+  let r = parse "hello" p in
+  Alcotest.(check (result int string) "0" (Ok 0) r)
+
+let peek_char_test_suite =
+  [ ("char is 'h'", `Quick, test_peek_char_h)
+  ; ("offset is 0", `Quick, test_peek_char_offset)
+  ; ("many/offset is 0", `Quick, test_peek_char_many) ]
+
 let () =
   Printexc.record_backtrace true ;
-  Alcotest.run "reparse" [("line/column", test_lnum_cnum_suite)]
+  Alcotest.run
+    "reparse"
+    [ ("line/column number", line_column_number_test_suite)
+    ; ("peek_char", peek_char_test_suite) ]

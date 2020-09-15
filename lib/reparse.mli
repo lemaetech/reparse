@@ -106,6 +106,9 @@ val lnum : int t
 val cnum : int t
 (** [cnum] returns the current column number. *)
 
+val offset : int t
+(** [offset] returns the current input offset. *)
+
 (** {2 Parsers} *)
 
 val peek_char : char t
