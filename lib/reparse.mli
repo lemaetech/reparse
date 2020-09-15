@@ -22,7 +22,20 @@ exception Parse_error of int * int * string
 val parse : ?track_lnum:bool -> string -> 'a t -> ('a, string) result
 (** [parse ~count_lines input p] executes parser [p] with [input]. If
     [track_lnum] is true then the parser tracks both line and column numbers. It
-    is set to [false] by default. *)
+    is set to [false] by default.
+
+    {[
+      open Reparse
+      let p = many next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum in
+
+      (* Track line, column number. *)
+      let r = parse ~track_lnum:true "hello world" p in
+      r = Ok (1, 11)
+
+      (* Don't track line column number. *)
+      let r = parse ~track_lnum:true "hello world" p in
+      r = Ok (0, 0)
+    ]} *)
 
 val return : 'a -> 'a t
 (** [return v] creates a new parser that always returns [v].
