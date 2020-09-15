@@ -26,10 +26,10 @@ let test_lnum_cnum_is_0_0 () =
   Alcotest.(check (result (pair int int) string) "3/5" (Ok (0, 0)) r)
 
 let line_column_number_test_suite =
-  [ ("1/11", `Quick, test_lnum_cnum_is_1_11)
-  ; ("3/0", `Quick, test_lnum_cnum_is_3_0)
-  ; ("3/5", `Quick, test_lnum_cnum_is_3_5)
-  ; ("0/0", `Quick, test_lnum_cnum_is_0_0) ]
+  [ ("lnum/cnum : 1/11", `Quick, test_lnum_cnum_is_1_11)
+  ; ("lnum/cnum : 3/0", `Quick, test_lnum_cnum_is_3_0)
+  ; ("lnum/cnum : 3/5", `Quick, test_lnum_cnum_is_3_5)
+  ; ("lnum/cnum : 0/0", `Quick, test_lnum_cnum_is_0_0) ]
 
 (* Peek tests. *)
 let test_peek_char_h () =
@@ -48,9 +48,9 @@ let test_peek_char_many () =
   Alcotest.(check (result int string) "0" (Ok 0) r)
 
 let peek_char_test_suite =
-  [ ("char is 'h'", `Quick, test_peek_char_h)
-  ; ("offset is 0", `Quick, test_peek_char_offset)
-  ; ("many/offset is 0", `Quick, test_peek_char_many) ]
+  [ ("char : 'h'", `Quick, test_peek_char_h)
+  ; ("offset :0 0", `Quick, test_peek_char_offset)
+  ; ("many/offset : 0", `Quick, test_peek_char_many) ]
 
 (* Next tests. *)
 let test_next () =
@@ -60,10 +60,25 @@ let test_next () =
 
 let next_test_suite = [("next is ('h', 1)", `Quick, test_next)]
 
+(* Return. *)
+
+let test_return_int () =
+  let r = parse "" (return 5) in
+  Alcotest.(check (result int string) "5" (Ok 5) r)
+
+let test_return_string () =
+  let r = parse "" (return "hello") in
+  Alcotest.(check (result string string) "hello" (Ok "hello") r)
+
+let others_test_suite =
+  [ ("return : 5", `Quick, test_return_int)
+  ; ("return : \"hello\"", `Quick, test_return_string) ]
+
 let () =
   Printexc.record_backtrace true ;
   Alcotest.run
     "reparse"
     [ ("line/column number", line_column_number_test_suite)
     ; ("peek_char", peek_char_test_suite)
-    ; ("next", next_test_suite) ]
+    ; ("next", next_test_suite)
+    ; ("others", others_test_suite) ]
