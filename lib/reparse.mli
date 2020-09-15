@@ -25,7 +25,16 @@ val parse : ?track_lnum:bool -> string -> 'a t -> ('a, string) result
     is set to [false] by default. *)
 
 val return : 'a -> 'a t
-(** [return v] creates a new parser that always returns [v]. *)
+(** [return v] creates a new parser that always returns [v].
+
+    {[
+      open Reparse
+      let r = parse "" (return 5) in
+      r = Ok 5
+
+      let r = parse "" (return "hello") in
+      r = Ok "hello"
+    ]} *)
 
 (** {2 Operators} *)
 
