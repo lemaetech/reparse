@@ -32,7 +32,7 @@ val parse : ?track_lnum:bool -> string -> 'a t -> ('a, string) result
       let r = parse ~track_lnum:true "hello world" p in
       r = Ok (1, 11)
 
-      (* Don't track line column number. *)
+      (* Don't track line, column number. *)
       let r = parse "hello world" p in
       r = Ok (0, 0)
     ]} *)
