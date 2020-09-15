@@ -32,10 +32,7 @@ let advance n state =
     if state.track_lnum then (
       let lnum = ref state.lnum in
       let cnum = ref state.cnum in
-      Printf.printf "offset: %d\n" offset ;
-      Printf.printf "state.offset: %d\n" state.offset ;
       for i = state.offset to offset - 1 do
-        Printf.printf "cnum: %d\n" !cnum ;
         let c = state.src.[i] in
         if Char.equal c '\n' then (
           lnum := !lnum + 1 ;
