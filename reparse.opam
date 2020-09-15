@@ -11,10 +11,12 @@ homepage: "https://github.com/lemaetech/reparse"
 bug-reports: "https://github.com/lemaetech/reparse/issues"
 depends: [
   "ocaml" {>= "4.10.0"}
-  "dune" {>= "2.6"}
+  "dune" {>= "2.7"}
+  "alcotest" {with-test}
+  "odoc" {with-doc}
 ]
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"

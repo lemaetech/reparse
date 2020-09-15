@@ -19,23 +19,61 @@ exception Parse_error of int * int * string
     [msg] contains a descriptive error message. {b Note} [lnum], [cnum] is both
     [0] if line tracking is disabled. *)
 
-val parse : ?track_lnum:bool -> string -> 'a t -> ('a, exn) result
+val parse : ?track_lnum:bool -> string -> 'a t -> ('a, string) result
 (** [parse ~count_lines input p] executes parser [p] with [input]. If
     [track_lnum] is true then the parser tracks both line and column numbers. It
-    is set to [false] by default. *)
+    is set to [false] by default.
+
+    {[
+      open Reparse
+      let p = many next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum in
+
+      (* Track line, column number. *)
+      let r = parse ~track_lnum:true "hello world" p in
+      r = Ok (1, 11)
+
+      (* Don't track line, column number. *)
+      let r = parse "hello world" p in
+      r = Ok (0, 0)
+    ]} *)
 
 val return : 'a -> 'a t
-(** [return v] creates a new parser that always returns [v]. *)
+(** [return v] creates a new parser that always returns [v].
+
+    {[
+      open Reparse
+      let r = parse "" (return 5) in
+      r = Ok 5
+
+      let r = parse "" (return "hello") in
+      r = Ok "hello"
+    ]} *)
 
 (** {2 Operators} *)
 
 val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 (** [p >>= f] Bind. Executes parser [p] which returns value [a]. If it succeeds
-    then it executes [f a] which returns a new parse [q]. *)
+    then it executes [f a] which returns a new parse [q].
+
+    {[
+      open Reparse
+
+      let p = char 'h' >>= fun c -> return (Char.code c) in
+      let r = parse "hello" p in
+      r = Ok 104
+    ]} *)
 
 val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
 (** [p >|= f] Map. Executes parser [p] which returns value [a]. It then executes
-    [f a] which returns value [c]. This is same as [p >>= (fun a -> return a)]. *)
+    [f a] which returns value [c]. This is same as [p >>= (fun a -> return a)].
+
+    {[
+      open Reparse
+
+      let p = char 'h' >|= fun c -> Char.code c in
+      let r = parse "hello" p in
+      r = Ok 104
+    ]} *)
 
 val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
 (** [p <*> q] Applicative. Executes parsers [p] and [q] which returns function
@@ -106,10 +144,25 @@ val lnum : int t
 val cnum : int t
 (** [cnum] returns the current column number. *)
 
+val offset : int t
+(** [offset] returns the current input offset. *)
+
 (** {2 Parsers} *)
 
 val peek_char : char t
-(** [peek_char t] returns a character from input without consuming it. *)
+(** [peek_char t] returns a character from input without consuming it.
+
+    {[
+      open Reparse
+      let p = peek_char in
+      let r = parse "hello" p in
+      r = (Ok 'h')
+
+      (* Input offset value remains the same. *)
+      let p = peek_char *> offset in
+      let r = parse "hello" p in
+      r = (Ok 0)
+    ]} *)
 
 val peek_string : int -> string t
 (** [peek_string n] attempts to retrieve string of length [n] from input exactly
