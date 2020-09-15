@@ -65,7 +65,15 @@ val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 
 val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
 (** [p >|= f] Map. Executes parser [p] which returns value [a]. It then executes
-    [f a] which returns value [c]. This is same as [p >>= (fun a -> return a)]. *)
+    [f a] which returns value [c]. This is same as [p >>= (fun a -> return a)].
+
+    {[
+      open Reparse
+
+      let p = char 'h' >|= fun c -> Char.code c in
+      let r = parse "hello" p in
+      r = Ok 104
+    ]} *)
 
 val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
 (** [p <*> q] Applicative. Executes parsers [p] and [q] which returns function

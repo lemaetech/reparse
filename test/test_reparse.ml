@@ -6,4 +6,5 @@ let () =
     ; ("peek.ml", Peek.suite)
     ; ("next", Next.suite)
     ; ("return.ml", Return.suite)
-    ; ("bind.ml", Bind.suite) ]
+    ; ("bind.ml", Bind.suite)
+    ; ("map.ml", Map.suite) ]
