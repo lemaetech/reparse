@@ -189,7 +189,7 @@ let line state =
         Buffer.add_char buf c1 ;
         let state, () = advance 1 state in
         (loop [@tailcall]) buf state
-    | None, _              -> fail "parsing line failed, EOF reached." state
+    | None, _              -> fail "parsing line failed." state
   in
   loop (Buffer.create 1) state
 
