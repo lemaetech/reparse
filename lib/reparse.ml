@@ -23,7 +23,7 @@ let parse ?(track_lnum = false) src p =
   try
     let (_ : state), a = p state in
     Ok a
-  with exn -> Error exn
+  with exn -> Error (Printexc.to_string exn)
 
 let advance n state =
   let len = String.length state.src in
@@ -32,12 +32,15 @@ let advance n state =
     if state.track_lnum then (
       let lnum = ref state.lnum in
       let cnum = ref state.cnum in
-      for i = state.offset to offset do
+      Printf.printf "offset: %d\n" offset ;
+      Printf.printf "state.offset: %d\n" state.offset ;
+      for i = state.offset to offset - 1 do
+        Printf.printf "cnum: %d\n" !cnum ;
         let c = state.src.[i] in
         if Char.equal c '\n' then (
           lnum := !lnum + 1 ;
           cnum := 0 )
-        else cnum := !cnum + 1
+        else incr cnum
       done ;
       ({state with offset; lnum = !lnum; cnum = !cnum}, ()) )
     else ({state with offset}, ())

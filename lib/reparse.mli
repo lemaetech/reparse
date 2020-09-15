@@ -19,7 +19,7 @@ exception Parse_error of int * int * string
     [msg] contains a descriptive error message. {b Note} [lnum], [cnum] is both
     [0] if line tracking is disabled. *)
 
-val parse : ?track_lnum:bool -> string -> 'a t -> ('a, exn) result
+val parse : ?track_lnum:bool -> string -> 'a t -> ('a, string) result
 (** [parse ~count_lines input p] executes parser [p] with [input]. If
     [track_lnum] is true then the parser tracks both line and column numbers. It
     is set to [false] by default. *)
