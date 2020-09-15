@@ -142,7 +142,19 @@ val offset : int t
 (** {2 Parsers} *)
 
 val peek_char : char t
-(** [peek_char t] returns a character from input without consuming it. *)
+(** [peek_char t] returns a character from input without consuming it.
+
+    {[
+      open Reparse
+      let p = peek_char in
+      let r = parse "hello" p in
+      r = (Ok 'h')
+
+      (* Input offset value remains the same. *)
+      let p = peek_char *> offset in
+      let r = parse "hello" p in
+      r = (Ok 0)
+    ]} *)
 
 val peek_string : int -> string t
 (** [peek_string n] attempts to retrieve string of length [n] from input exactly
