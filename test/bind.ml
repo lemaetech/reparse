@@ -5,4 +5,4 @@ let test_bind () =
   let r = parse "hello" p in
   Alcotest.(check (result int string) "104" (Ok 104) r)
 
-let suite = [(">>=", `Quick, test_bind)]
+let suite = [(">>= ", `Quick, test_bind)]
