@@ -52,9 +52,18 @@ let peek_char_test_suite =
   ; ("offset is 0", `Quick, test_peek_char_offset)
   ; ("many/offset is 0", `Quick, test_peek_char_many) ]
 
+(* Next tests. *)
+let test_next () =
+  let p = map2 (fun c o -> (c, o)) next offset in
+  let r = parse "hello" p in
+  Alcotest.(check (result (pair char int) string) "'h',1" (Ok ('h', 1)) r)
+
+let next_test_suite = [("next is ('h', 1)", `Quick, test_next)]
+
 let () =
   Printexc.record_backtrace true ;
   Alcotest.run
     "reparse"
     [ ("line/column number", line_column_number_test_suite)
-    ; ("peek_char", peek_char_test_suite) ]
+    ; ("peek_char", peek_char_test_suite)
+    ; ("next", next_test_suite) ]
