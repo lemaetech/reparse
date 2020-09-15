@@ -81,4 +81,4 @@ let () =
     [ ("line/column number", line_column_number_test_suite)
     ; ("peek_char", peek_char_test_suite)
     ; ("next", next_test_suite)
-    ; ("others", others_test_suite) ]
+    ; ("return", others_test_suite) ]
