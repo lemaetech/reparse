@@ -40,7 +40,15 @@ val return : 'a -> 'a t
 
 val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 (** [p >>= f] Bind. Executes parser [p] which returns value [a]. If it succeeds
-    then it executes [f a] which returns a new parse [q]. *)
+    then it executes [f a] which returns a new parse [q].
+
+    {[
+      open Reparse
+
+      let p = char 'h' >>= fun c -> return (Char.code c) in
+      let r = parse "hello" p in
+      r = Ok 104
+    ]} *)
 
 val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
 (** [p >|= f] Map. Executes parser [p] which returns value [a]. It then executes
