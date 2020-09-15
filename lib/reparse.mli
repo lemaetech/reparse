@@ -147,6 +147,9 @@ val cnum : int t
 val offset : int t
 (** [offset] returns the current input offset. *)
 
+val unit : unit t
+(** [unit] is [return ()]. *)
+
 (** {2 Parsers} *)
 
 val peek_char : char t

@@ -109,6 +109,7 @@ let failing p state =
 let lnum state = (state, state.lnum)
 let cnum state = (state, state.cnum)
 let offset state = (state, state.offset)
+let unit = return ()
 
 let char c =
   peek_char
