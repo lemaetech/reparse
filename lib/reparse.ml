@@ -22,8 +22,11 @@ let parse ?(track_lnum = false) src p =
   let state = {src; offset = 0; track_lnum; lnum; cnum} in
   try
     let (_ : state), a = p state in
-    Ok a
-  with exn -> Error (Printexc.to_string exn)
+    a
+  with
+  | Parse_error _ as e -> raise e
+  | exn                ->
+      raise @@ Parse_error (state.lnum, state.cnum, Printexc.to_string exn)
 
 let advance n state =
   let len = String.length state.src in
