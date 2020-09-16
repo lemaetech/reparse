@@ -8,6 +8,7 @@ let char_h () =
 let string_hello () =
   let p = R.map2 (fun s o -> (s, o)) (R.string "hello") R.offset in
   let r = R.parse "hello" p in
-  Alcotest.(check (pair unit int) "\"hello\", 4" ((), 4) r)
+  Alcotest.(check (pair unit int) "\"hello\", 4" ((), 5) r)
 
-let suite = [("char 'h'", `Quick, char_h)]
+let suite =
+  [("char 'h'", `Quick, char_h); ("string \"hello\"", `Quick, string_hello)]
