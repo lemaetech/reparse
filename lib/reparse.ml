@@ -15,7 +15,20 @@ type state =
 
 type 'a t = state -> state * 'a
 
-exception Parse_error of int * int * string
+exception
+  Parse_error of
+    { offset : int
+    ; line_number : int
+    ; column_number : int
+    ; msg : string }
+
+let fail msg state =
+  raise
+  @@ Parse_error
+       { offset = state.offset
+       ; line_number = state.lnum
+       ; column_number = state.cnum
+       ; msg }
 
 let parse ?(track_lnum = false) src p =
   let lnum, cnum = if track_lnum then (1, 0) else (0, 0) in
@@ -25,8 +38,7 @@ let parse ?(track_lnum = false) src p =
     a
   with
   | Parse_error _ as e -> raise e
-  | exn                ->
-      raise @@ Parse_error (state.lnum, state.cnum, Printexc.to_string exn)
+  | exn                -> fail (Printexc.to_string exn) state
 
 let advance n state =
   let len = String.length state.src in
@@ -44,10 +56,9 @@ let advance n state =
       done ;
       ({state with offset; lnum = !lnum; cnum = !cnum}, ()) )
     else ({state with offset}, ())
-  else raise @@ Parse_error (state.lnum, state.cnum, "advance failed - EOF.")
+  else fail "[advance] EOF" state
 
 let return v state = (state, v)
-let fail msg state = raise @@ Parse_error (state.lnum, state.cnum, msg)
 
 let ( >>= ) p f state =
   let state, a = p state in
@@ -70,19 +81,17 @@ let delay f state = f () state
 let named name p state =
   try p state
   with exn ->
-    fail
-      (Format.sprintf "%s failed with error %s" name (Printexc.to_string exn))
-      state
+    fail (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state
 
 let peek_char state =
   match state.src.[state.offset] with
   | c -> (state, c)
-  | exception Invalid_argument _ -> fail "EOF" state
+  | exception Invalid_argument _ -> fail "[peek_char]" state
 
 let peek_string len state =
-  if state.offset + len < String.length state.src then
+  if state.offset + len <= String.length state.src then
     (state, String.sub state.src state.offset len)
-  else fail "peek_string failed - EOF." state
+  else fail "[peek_string]" state
 
 let next = peek_char <* advance 1
 
@@ -98,7 +107,7 @@ let eoi =
   is_eoi
   >|= function
   | true  -> ()
-  | false -> failwith "not EOF"
+  | false -> failwith "[eoi]"
 
 let failing p state =
   let succeed =
@@ -107,7 +116,7 @@ let failing p state =
       false
     with _ -> true
   in
-  if succeed then (state, ()) else fail "parsing failing failed" state
+  if succeed then (state, ()) else fail "[failing]" state
 
 let lnum state = (state, state.lnum)
 let cnum state = (state, state.cnum)
@@ -129,7 +138,6 @@ let satisfy f =
 let string s =
   let len = String.length s in
   peek_string len
-  <?> "parsing string '%s' failed with EOF"
   >>= fun s2 ->
   if String.equal s s2 then advance len
   else fail @@ Format.sprintf "unable to parse \"%s\"" s

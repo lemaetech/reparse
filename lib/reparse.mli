@@ -13,7 +13,12 @@
 type +'a t
 (** Represents a parser which can parse value ['a]. *)
 
-exception Parse_error of int * int * string
+exception
+  Parse_error of
+    { offset : int
+    ; line_number : int
+    ; column_number : int
+    ; msg : string }
 (** [Parser_error (lnum, cnum, msg)] Raised by failed parsers. [lnum], [cnum] is
     line number and column number respectively at the time of parser failure.
     [msg] contains a descriptive error message. {b Note} [lnum], [cnum] is both
