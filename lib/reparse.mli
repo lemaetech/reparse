@@ -13,7 +13,12 @@
 type +'a t
 (** Represents a parser which can parse value ['a]. *)
 
-exception Parse_error of int * int * string
+exception
+  Parse_error of
+    { offset : int
+    ; line_number : int
+    ; column_number : int
+    ; msg : string }
 (** [Parser_error (lnum, cnum, msg)] Raised by failed parsers. [lnum], [cnum] is
     line number and column number respectively at the time of parser failure.
     [msg] contains a descriptive error message. {b Note} [lnum], [cnum] is both
@@ -31,11 +36,11 @@ val parse : ?track_lnum:bool -> string -> 'a t -> 'a
 
       (* Track line, column number. *)
       let r = parse ~track_lnum:true "hello world" p in
-      r = Ok (1, 11)
+      r = (1, 11)
 
       (* Don't track line, column number. *)
       let r = parse "hello world" p in
-      r = Ok (0, 0)
+      r = (0, 0)
     ]} *)
 
 val return : 'a -> 'a t
@@ -44,10 +49,10 @@ val return : 'a -> 'a t
     {[
       open Reparse
       let r = parse "" (return 5) in
-      r = Ok 5
+      r = 5
 
       let r = parse "" (return "hello") in
-      r = Ok "hello"
+      r = "hello"
     ]} *)
 
 (** {2 Operators} *)
@@ -58,10 +63,9 @@ val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 
     {[
       open Reparse
-
       let p = char 'h' >>= fun c -> return (Char.code c) in
       let r = parse "hello" p in
-      r = Ok 104
+      r = 104
     ]} *)
 
 val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
@@ -70,10 +74,9 @@ val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
 
     {[
       open Reparse
-
       let p = char 'h' >|= fun c -> Char.code c in
       let r = parse "hello" p in
-      r = Ok 104
+      r = 104
     ]} *)
 
 val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
@@ -81,11 +84,10 @@ val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
     [f] and [a] respectively. It then applies [f a].
 
     {[
-      let pf = return (fun a -> a + 2) in
-      let q = return 2 in
-      let c = pf <*> q in
+      open Reparse
+      let c = return (fun a -> a + 2) <*> return 2 in
       let r = parse "" c in
-      r = Ok 4
+      r = 4
     ]} *)
 
 val ( <$ ) : 'b -> 'a t -> 'b t
@@ -114,7 +116,19 @@ val ( <|> ) : 'a t -> 'a t -> 'a t
 val ( <?> ) : 'a t -> string -> 'a t
 (** [p <?> err_mg] parse [p]. If it fails then fail with error message
     [err_msg]. Used as a last choice in [<|>], e.g.
-    [a <|> b <|> c <?> "expected a b c"]. *)
+    [a <|> b <|> c <?> "expected a b c"].
+
+    {[
+      open Reparse
+      let p = next <?> "[error]" in
+      let r =
+        try let _ = parse "" p in false
+        with
+          | Parse_error {offset=0;line_number=0;column_number=0;msg="[error]"} -> true
+          | _ -> false
+      in
+      r = true
+    ]} *)
 
 val named : string -> 'a t -> 'a t
 (** [named name p] names parser [p] with [name]. The name is used on error
@@ -140,13 +154,13 @@ val failing : 'a t -> unit t
 (** [failing p] succeeds if and only if [p] fails to parse. *)
 
 val lnum : int t
-(** [lnum] return the current line number. *)
+(** [lnum] return the current line number. The first line number is [1]. *)
 
 val cnum : int t
-(** [cnum] returns the current column number. *)
+(** [cnum] returns the current column number. The first column number is [1]. *)
 
 val offset : int t
-(** [offset] returns the current input offset. *)
+(** [offset] returns the current input offset. The first offset is [0]. *)
 
 val unit : unit t
 (** [unit] is [return ()]. *)
@@ -160,30 +174,62 @@ val peek_char : char t
       open Reparse
       let p = peek_char in
       let r = parse "hello" p in
-      r = (Ok 'h')
+      r = 'h'
 
       (* Input offset value remains the same. *)
       let p = peek_char *> offset in
       let r = parse "hello" p in
-      r = (Ok 0)
+      r = 0
     ]} *)
 
 val peek_string : int -> string t
 (** [peek_string n] attempts to retrieve string of length [n] from input exactly
-    and return it. No input is consumed. *)
+    and return it. No input is consumed.
+
+    {[
+      open Reparse
+      let r = parse "hello" (peek_string 5) in
+      r = "hello"
+    ]} *)
 
 val next : char t
-(** [next] consumes and returns the next char of input. *)
+(** [next] consumes and returns the next char of input.
 
-val char : char -> char t
-(** [char c] accepts character [c] from input exactly and returns it. Fails
-    Otherwise.*)
+    {[
+      open Reparse
+      let r = parse "hello" next in
+      r = 'h'
+    ]} *)
+
+val char : char -> unit t
+(** [char c] accepts character [c] from input exactly.
+
+    {[
+      open Reparse
+      let p = char 'h' in
+      let r = parse "hello" p in
+      r = ()
+    ]} *)
 
 val satisfy : (char -> bool) -> char t
-(** [satisfy f] accepts a char [c] from input if [f c] is true and returns it. *)
+(** [satisfy f] accepts a char [c] from input if [f c] is true and returns it.
+
+    {[
+      open Reparse
+      let p = satisfy (function 'a' -> true | _ -> false) in
+      let r = parse "abc" p in
+      r = 'a'
+    ]} *)
 
 val string : string -> unit t
-(** [string s] accepts [s] exactly. *)
+(** [string s] accepts [s] exactly.
+
+    {[
+      open Reparse
+      let p = string "hello" in
+      let r = parse "hello" p in
+      r = ()
+    ]} *)
 
 val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 (** [skip ~at_least ~up_to p] parses [p] zero or more times while discarding the
@@ -198,7 +244,7 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 
       ;;
       let r = parse "     " (skip space) in
-      r = Ok 5
+      r = 5
     ]} *)
 
 val many :
@@ -216,7 +262,7 @@ val many :
 
       ;;
       let r = parse "aaaaa" (many (char 'a')) in
-      r = Ok (5, ['a'; 'a'; 'a'; 'a'; 'a'])
+      r = (5, ['a'; 'a'; 'a'; 'a'; 'a'])
     ]} *)
 
 val not_followed_by : 'a t -> 'b t -> 'a t
@@ -235,14 +281,14 @@ val line : string t
       open Reparse
 
       let l = parse "line1\r\nline2" line in
-      l = Ok "line1"
+      l = "line1"
     ]} *)
 
 val backtrack : 'a t -> 'a t
 (** [backtrack p] executes parser [p] and returns it value. After which the
     parser state is reset to the state equal to before the execution of [p]. *)
 
-(** {2 Core parsers - RFC 5254, Appending B.1. *)
+(** {2 Core parsers - RFC 5254, Appending B.1} *)
 
 val alpha : char t
 (** [alpha] parse a character in range [A- Z] or [a-z]. *)
