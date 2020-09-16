@@ -154,13 +154,13 @@ val failing : 'a t -> unit t
 (** [failing p] succeeds if and only if [p] fails to parse. *)
 
 val lnum : int t
-(** [lnum] return the current line number. *)
+(** [lnum] return the current line number. The first line number is [1]. *)
 
 val cnum : int t
-(** [cnum] returns the current column number. *)
+(** [cnum] returns the current column number. The first column number is [1]. *)
 
 val offset : int t
-(** [offset] returns the current input offset. *)
+(** [offset] returns the current input offset. The first offset is [0]. *)
 
 val unit : unit t
 (** [unit] is [return ()]. *)

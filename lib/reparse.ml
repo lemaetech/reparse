@@ -31,7 +31,7 @@ let fail msg state =
        ; msg }
 
 let parse ?(track_lnum = false) src p =
-  let lnum, cnum = if track_lnum then (1, 0) else (0, 0) in
+  let lnum, cnum = if track_lnum then (1, 1) else (0, 0) in
   let state = {src; offset = 0; track_lnum; lnum; cnum} in
   try
     let (_ : state), a = p state in
@@ -51,12 +51,12 @@ let advance n state =
         let c = state.src.[i] in
         if Char.equal c '\n' then (
           lnum := !lnum + 1 ;
-          cnum := 0 )
+          cnum := 1 )
         else incr cnum
       done ;
       ({state with offset; lnum = !lnum; cnum = !cnum}, ()) )
     else ({state with offset}, ())
-  else fail "[advance] EOF" state
+  else fail "[advance]" state
 
 let return v state = (state, v)
 
