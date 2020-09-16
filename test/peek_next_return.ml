@@ -53,6 +53,14 @@ let next_exn () =
          {offset = 2; line_number = 0; column_number = 0; msg = "[next]"})
       p)
 
+let return_int () =
+  let r = R.parse "" (R.return 5) in
+  Alcotest.(check int "5" 5 r)
+
+let return_string () =
+  let r = R.parse "" (R.return "hello") in
+  Alcotest.(check string "hello" "hello" r)
+
 let suite =
   [ ("char : 'h'", `Quick, peek_char_h)
   ; ("offset :0 0", `Quick, peek_char_offset)
@@ -61,4 +69,6 @@ let suite =
   ; ("peek_string exn", `Quick, peek_string_exn)
   ; ("peek_char exn", `Quick, peek_char_exn)
   ; ("next", `Quick, next)
-  ; ("next exn", `Quick, next_exn) ]
+  ; ("next exn", `Quick, next_exn)
+  ; ("return : 5", `Quick, return_int)
+  ; ("return : \"hello\"", `Quick, return_string) ]

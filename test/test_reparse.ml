@@ -3,7 +3,5 @@ let () =
   Alcotest.run
     "reparse"
     [ ("track_lnum_cnum.ml", Track_lnum_cnum.suite)
-    ; ("peek.ml", Peek.suite)
-    ; ("next", Next.suite)
-    ; ("return.ml", Return.suite)
+    ; ("peek_next_return.ml", Peek_next_return.suite)
     ; ("infix.ml", Infix.suite) ]
