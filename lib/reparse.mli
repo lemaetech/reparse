@@ -182,10 +182,22 @@ val peek_char : char t
 
 val peek_string : int -> string t
 (** [peek_string n] attempts to retrieve string of length [n] from input exactly
-    and return it. No input is consumed. *)
+    and return it. No input is consumed.
+
+    {[
+      open Reparse
+      let r = parse "hello" (peek_string 5) in
+      r = "hello"
+    ]} *)
 
 val next : char t
-(** [next] consumes and returns the next char of input. *)
+(** [next] consumes and returns the next char of input.
+
+    {[
+      open Reparse
+      let r = parse "hello" next in
+      r = 'h'
+    ]} *)
 
 val char : char -> unit t
 (** [char c] accepts character [c] from input exactly.
@@ -198,7 +210,14 @@ val char : char -> unit t
     ]} *)
 
 val satisfy : (char -> bool) -> char t
-(** [satisfy f] accepts a char [c] from input if [f c] is true and returns it. *)
+(** [satisfy f] accepts a char [c] from input if [f c] is true and returns it.
+
+    {[
+      open Reparse
+      let p = satisfy (function 'a' -> true | _ -> false) in
+      let r = parse "abc" p in
+      r = 'a'
+    ]} *)
 
 val string : string -> unit t
 (** [string s] accepts [s] exactly.
