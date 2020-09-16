@@ -126,7 +126,7 @@ let unit = return ()
 let char c =
   peek_char
   >>= fun c2 ->
-  if Char.equal c c2 then c <$ advance 1
+  if Char.equal c c2 then () <$ advance 1
   else fail @@ Format.sprintf "char '%c' expected instead of %c" c c2
 
 let satisfy f =

@@ -187,15 +187,28 @@ val peek_string : int -> string t
 val next : char t
 (** [next] consumes and returns the next char of input. *)
 
-val char : char -> char t
-(** [char c] accepts character [c] from input exactly and returns it. Fails
-    Otherwise.*)
+val char : char -> unit t
+(** [char c] accepts character [c] from input exactly.
+
+    {[
+      open Reparse
+      let p = char 'h' in
+      let r = parse "hello" p in
+      r = ()
+    ]} *)
 
 val satisfy : (char -> bool) -> char t
 (** [satisfy f] accepts a char [c] from input if [f c] is true and returns it. *)
 
 val string : string -> unit t
-(** [string s] accepts [s] exactly. *)
+(** [string s] accepts [s] exactly.
+
+    {[
+      open Reparse
+      let p = string "hello" in
+      let r = parse "hello" p in
+      r = ()
+    ]} *)
 
 val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 (** [skip ~at_least ~up_to p] parses [p] zero or more times while discarding the
@@ -254,7 +267,7 @@ val backtrack : 'a t -> 'a t
 (** [backtrack p] executes parser [p] and returns it value. After which the
     parser state is reset to the state equal to before the execution of [p]. *)
 
-(** {2 Core parsers - RFC 5254, Appending B.1. *)
+(** {2 Core parsers - RFC 5254, Appending B.1} *)
 
 val alpha : char t
 (** [alpha] parse a character in range [A- Z] or [a-z]. *)
