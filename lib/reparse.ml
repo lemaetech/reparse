@@ -242,9 +242,7 @@ let cr =
         | '\r' -> true
         | _    -> false))
 
-let crlf =
-  peek_string 2
-  >>= fun s -> if String.equal s "\r\n" then advance 2 else fail "crlf"
+let crlf = string "\r\n" <?> "[crlf]"
 
 let control =
   char_parser
