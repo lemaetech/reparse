@@ -175,12 +175,7 @@ let many :
       state
 
 let not_followed_by p q = p <* failing q
-
-let optional p state =
-  try (Option.some <$> p) state
-  with _ ->
-    Printf.printf "optional exn\n" ;
-    (state, None)
+let optional p state = try (Option.some <$> p) state with _ -> (state, None)
 
 let backtrack p state =
   let _, a = p state in
