@@ -63,7 +63,6 @@ val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 
     {[
       open Reparse
-
       let p = char 'h' >>= fun c -> return (Char.code c) in
       let r = parse "hello" p in
       r = 104
@@ -75,7 +74,6 @@ val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
 
     {[
       open Reparse
-
       let p = char 'h' >|= fun c -> Char.code c in
       let r = parse "hello" p in
       r = 104
@@ -86,9 +84,8 @@ val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
     [f] and [a] respectively. It then applies [f a].
 
     {[
-      let pf = return (fun a -> a + 2) in
-      let q = return 2 in
-      let c = pf <*> q in
+      open Reparse
+      let c = return (fun a -> a + 2) <*> return 2 in
       let r = parse "" c in
       r = 4
     ]} *)

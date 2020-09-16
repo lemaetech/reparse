@@ -15,7 +15,13 @@ let test_applicative () =
   let r = parse "" c in
   Alcotest.(check int "4" 4 r)
 
+let test_less_dollar (* <$ *) () =
+  let p = 4 <$ char 'h' in
+  let r = parse "hello" p in
+  Alcotest.(check int "4" 4 r)
+
 let suite =
   [ (">>= ", `Quick, test_bind)
   ; (">|= ", `Quick, test_map)
-  ; ("<*>", `Quick, test_applicative) ]
+  ; ("<*>", `Quick, test_applicative)
+  ; ("<$", `Quick, test_less_dollar) ]
