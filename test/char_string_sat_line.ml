@@ -5,10 +5,30 @@ let char_h () =
   let r = R.parse "hello" p in
   Alcotest.(check (pair unit int) "'h', 1" ((), 1) r)
 
-let string_hello () =
+let char_exn () =
+  let p = R.char 'h' in
+  let r () = ignore (R.parse "aaaa" p) in
+  Alcotest.(
+    check_raises
+      "char"
+      (R.Parse_error
+         {offset = 0; line_number = 0; column_number = 0; msg = "[char]"})
+      r)
+
+let string () =
   let p = R.map2 (fun s o -> (s, o)) (R.string "hello") R.offset in
   let r = R.parse "hello" p in
   Alcotest.(check (pair unit int) "\"hello\", 4" ((), 5) r)
+
+let string_exn () =
+  let p = R.string "hello" in
+  let r () = ignore (R.parse "world" p) in
+  Alcotest.(
+    check_raises
+      "string"
+      (R.Parse_error
+         {offset = 0; line_number = 0; column_number = 0; msg = "[string]"})
+      r)
 
 let is_char = function
   | 'a'
@@ -33,7 +53,9 @@ let satisfy_exn () =
       r)
 
 let suite =
-  [ ("char 'h'", `Quick, char_h)
-  ; ("string \"hello\"", `Quick, string_hello)
-  ; ("satisfy 'a'", `Quick, satisfy)
+  [ ("char ", `Quick, char_h)
+  ; ("char exn", `Quick, char_exn)
+  ; ("string", `Quick, string)
+  ; ("string exn", `Quick, string_exn)
+  ; ("satisfy", `Quick, satisfy)
   ; ("satisfy exn", `Quick, satisfy_exn) ]

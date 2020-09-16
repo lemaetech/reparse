@@ -133,9 +133,7 @@ let satisfy f =
 let string s =
   let len = String.length s in
   peek_string len
-  >>= fun s2 ->
-  if String.equal s s2 then advance len
-  else fail @@ Format.sprintf "unable to parse \"%s\"" s
+  >>= fun s2 -> if String.equal s s2 then advance len else fail "[string]"
 
 let skip ?(at_least = 0) ?up_to p state =
   if at_least < 0 then invalid_arg "at_least"
