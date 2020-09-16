@@ -175,7 +175,12 @@ let many :
       state
 
 let not_followed_by p q = p <* failing q
-let optional p = try Option.some <$> p with _ -> return None
+
+let optional p state =
+  try (Option.some <$> p) state
+  with _ ->
+    Printf.printf "optional exn\n" ;
+    (state, None)
 
 let backtrack p state =
   let _, a = p state in
@@ -200,9 +205,7 @@ let line state =
 let char_parser name p state =
   try p state
   with exn ->
-    fail
-      (Format.sprintf "parsing '%s' failed - %s" name (Printexc.to_string exn))
-      state
+    fail (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state
 
 let is_alpha = function
   | 'a' .. 'z'

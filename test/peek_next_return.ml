@@ -61,6 +61,16 @@ let return_string () =
   let r = R.parse "" (R.return "hello") in
   Alcotest.(check string "hello" "hello" r)
 
+let optional () =
+  let p = R.optional (R.char 'h') in
+  let r = R.parse "hello" p in
+  Alcotest.(check (option unit) "'h'" (Some ()) r)
+
+let optional_none () =
+  let p = R.optional (R.char 'h') in
+  let r = R.parse "world" p in
+  Alcotest.(check (option unit) "'h'" None r)
+
 let suite =
   [ ("char : 'h'", `Quick, peek_char_h)
   ; ("offset :0 0", `Quick, peek_char_offset)
@@ -71,4 +81,6 @@ let suite =
   ; ("next", `Quick, next)
   ; ("next exn", `Quick, next_exn)
   ; ("return : 5", `Quick, return_int)
-  ; ("return : \"hello\"", `Quick, return_string) ]
+  ; ("return : \"hello\"", `Quick, return_string)
+  ; ("optional Some", `Quick, optional)
+  ; ("optional None", `Quick, optional_none) ]
