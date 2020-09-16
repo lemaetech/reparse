@@ -38,10 +38,27 @@ let peek_string_exn () =
          {offset = 0; line_number = 0; column_number = 0; msg = "[peek_string]"})
       p)
 
+let next () =
+  let p = R.map2 (fun c o -> (c, o)) R.next R.offset in
+  let r = R.parse "hello" p in
+  Alcotest.(check (pair char int) "'h',1" ('h', 1) r)
+
+let next_exn () =
+  let p1 = R.next *> R.next *> R.next in
+  let p () = ignore (R.parse "hh" p1) in
+  Alcotest.(
+    check_raises
+      "next exn"
+      (R.Parse_error
+         {offset = 2; line_number = 0; column_number = 0; msg = "[next]"})
+      p)
+
 let suite =
   [ ("char : 'h'", `Quick, peek_char_h)
   ; ("offset :0 0", `Quick, peek_char_offset)
   ; ("many/offset : 0", `Quick, peek_char_many)
   ; ("peek_string 5", `Quick, peek_string_5)
   ; ("peek_string exn", `Quick, peek_string_exn)
-  ; ("peek_char exn", `Quick, peek_char_exn) ]
+  ; ("peek_char exn", `Quick, peek_char_exn)
+  ; ("next", `Quick, next)
+  ; ("next exn", `Quick, next_exn) ]

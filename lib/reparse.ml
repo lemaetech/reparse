@@ -93,7 +93,7 @@ let peek_string len state =
     (state, String.sub state.src state.offset len)
   else fail "[peek_string]" state
 
-let next = peek_char <* advance 1
+let next = peek_char <?> "[next]" <* advance 1
 
 let is_eoi state =
   let is_eof =
