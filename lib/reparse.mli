@@ -36,11 +36,11 @@ val parse : ?track_lnum:bool -> string -> 'a t -> 'a
 
       (* Track line, column number. *)
       let r = parse ~track_lnum:true "hello world" p in
-      r = Ok (1, 11)
+      r = (1, 11)
 
       (* Don't track line, column number. *)
       let r = parse "hello world" p in
-      r = Ok (0, 0)
+      r = (0, 0)
     ]} *)
 
 val return : 'a -> 'a t
@@ -49,10 +49,10 @@ val return : 'a -> 'a t
     {[
       open Reparse
       let r = parse "" (return 5) in
-      r = Ok 5
+      r = 5
 
       let r = parse "" (return "hello") in
-      r = Ok "hello"
+      r = "hello"
     ]} *)
 
 (** {2 Operators} *)
@@ -66,7 +66,7 @@ val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 
       let p = char 'h' >>= fun c -> return (Char.code c) in
       let r = parse "hello" p in
-      r = Ok 104
+      r = 104
     ]} *)
 
 val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
@@ -78,7 +78,7 @@ val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
 
       let p = char 'h' >|= fun c -> Char.code c in
       let r = parse "hello" p in
-      r = Ok 104
+      r = 104
     ]} *)
 
 val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
@@ -90,7 +90,7 @@ val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
       let q = return 2 in
       let c = pf <*> q in
       let r = parse "" c in
-      r = Ok 4
+      r = 4
     ]} *)
 
 val ( <$ ) : 'b -> 'a t -> 'b t
@@ -165,12 +165,12 @@ val peek_char : char t
       open Reparse
       let p = peek_char in
       let r = parse "hello" p in
-      r = (Ok 'h')
+      r = 'h'
 
       (* Input offset value remains the same. *)
       let p = peek_char *> offset in
       let r = parse "hello" p in
-      r = (Ok 0)
+      r = 0
     ]} *)
 
 val peek_string : int -> string t
@@ -203,7 +203,7 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 
       ;;
       let r = parse "     " (skip space) in
-      r = Ok 5
+      r = 5
     ]} *)
 
 val many :
@@ -221,7 +221,7 @@ val many :
 
       ;;
       let r = parse "aaaaa" (many (char 'a')) in
-      r = Ok (5, ['a'; 'a'; 'a'; 'a'; 'a'])
+      r = (5, ['a'; 'a'; 'a'; 'a'; 'a'])
     ]} *)
 
 val not_followed_by : 'a t -> 'b t -> 'a t
@@ -240,7 +240,7 @@ val line : string t
       open Reparse
 
       let l = parse "line1\r\nline2" line in
-      l = Ok "line1"
+      l = "line1"
     ]} *)
 
 val backtrack : 'a t -> 'a t
