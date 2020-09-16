@@ -122,9 +122,11 @@ val ( <?> ) : 'a t -> string -> 'a t
       open Reparse
       let p = next <?> "[error]" in
       let r =
-      try let _ = parse "" p in false
-      with Parse_error {offset=0;line_number=0;column_number=0;msg="[error]"} -> true
-      | _ -> false in
+        try let _ = parse "" p in false
+        with
+          | Parse_error {offset=0;line_number=0;column_number=0;msg="[error]"} -> true
+          | _ -> false
+      in
       r = true
     ]} *)
 
