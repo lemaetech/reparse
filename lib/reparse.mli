@@ -116,7 +116,17 @@ val ( <|> ) : 'a t -> 'a t -> 'a t
 val ( <?> ) : 'a t -> string -> 'a t
 (** [p <?> err_mg] parse [p]. If it fails then fail with error message
     [err_msg]. Used as a last choice in [<|>], e.g.
-    [a <|> b <|> c <?> "expected a b c"]. *)
+    [a <|> b <|> c <?> "expected a b c"].
+
+    {[
+      open Reparse
+      let p = next <?> "[error]" in
+      let r =
+      try let _ = parse "" p in false
+      with Parse_error {offset=0;line_number=0;column_number=0;msg="[error]"} -> true
+      | _ -> false in
+      r = true
+    ]} *)
 
 val named : string -> 'a t -> 'a t
 (** [named name p] names parser [p] with [name]. The name is used on error
