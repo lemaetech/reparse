@@ -296,3 +296,15 @@ val vchar : char t
 
 val whitespace : char t
 (** [whitespace] parse a space or horizontal - ' ' or '\t' - character. *)
+
+module Infix : sig
+  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+  val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
+  val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
+  val ( <$ ) : 'b -> 'a t -> 'b t
+  val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
+  val ( *> ) : _ t -> 'a t -> 'a t
+  val ( <* ) : 'a t -> _ t -> 'a t
+  val ( <|> ) : 'a t -> 'a t -> 'a t
+  val ( <?> ) : 'a t -> string -> 'a t
+end

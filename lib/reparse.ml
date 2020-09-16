@@ -306,3 +306,15 @@ let whitespace =
         | '\x09' ->
             true
         | _ -> false))
+
+module Infix = struct
+  let ( >>= ) = ( >>= )
+  let ( >|= ) = ( >|= )
+  let ( <*> ) = ( <*> )
+  let ( <$ ) = ( <$ )
+  let ( <$> ) = ( <$> )
+  let ( *> ) = ( *> )
+  let ( <* ) = ( <* )
+  let ( <|> ) = ( <|> )
+  let ( <?> ) = ( <?> )
+end
