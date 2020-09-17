@@ -10,7 +10,9 @@
 
 (** {2 Types} *)
 
-type +'a t
+type state
+
+type +'a t = state -> ok:('a -> unit) -> err:(exn -> unit) -> unit
 (** Represents a parser which can parse value ['a]. *)
 
 exception
@@ -138,7 +140,7 @@ val delay : (unit -> 'a t) -> 'a t
 (** [delay f] delays the computation of [p] until it is required. [p] is
     [p = f ()]. Use it together with [<|>]. *)
 
-val advance : int -> unit t
+(* val advance : int -> unit t *)
 (** [advance n] advances parser by the given [n] number of characters. *)
 
 val is_eoi : bool t
@@ -147,7 +149,7 @@ val is_eoi : bool t
 val eoi : unit t
 (** [eoi] Parse the end of input to be successful. *)
 
-val fail : string -> 'a t
+(* val fail : (unit -> string) -> 'a t *)
 (** [fail msg] fails the parser with [msg]. *)
 
 val failing : 'a t -> unit t
@@ -247,9 +249,9 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
       r = 5
     ]} *)
 
-val many :
+val take :
   ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t
-(** [many ~at_least ~up_to ~sep_by p] executes [p] zero or more times up to the
+(** [take ~at_least ~up_to ~sep_by p] executes [p] zero or more times up to the
     given upper bound [up_to]. If [at_least] is given, [p] is expected to
     succeed the lower bound of [at_least] times. Default of [at_least] is [0].
     Thre is no upper bound on execution of [p] is [up_to] is not given. If
@@ -261,9 +263,11 @@ val many :
       open Reparse
 
       ;;
-      let r = parse "aaaaa" (many (char 'a')) in
+      let r = parse "aaaaa" (take (char 'a')) in
       r = (5, ['a'; 'a'; 'a'; 'a'; 'a'])
     ]} *)
+
+val take_while : bool t -> consume:(char -> unit) -> unit t
 
 val not_followed_by : 'a t -> 'b t -> 'a t
 (** [not_followed_by a b] Succeeds if parser [p] succeeds and parser [q] fails.
@@ -273,20 +277,16 @@ val optional : 'a t -> 'a option t
 (** [optional p] parses [p] and retruns [SOME a] if successful. Otherwise
     returns [NONE]. *)
 
-val line : string t
-(** [line] accepts and returns a line of input delimited by either [\n] or
-    [\r\n]. Returns [None] if end of input is reached.
+val line : (int * string) t
+(** [line] consumes and returns a line of input along with line length. The line
+    is delimited by either [\n] or [\r\n].
 
     {[
       open Reparse
 
       let l = parse "line1\r\nline2" line in
-      l = "line1"
+      l = (5, "line1")
     ]} *)
-
-val backtrack : 'a t -> 'a t
-(** [backtrack p] executes parser [p] and returns it value. After which the
-    parser state is reset to the state equal to before the execution of [p]. *)
 
 (** {2 Core parsers - RFC 5254, Appending B.1} *)
 
