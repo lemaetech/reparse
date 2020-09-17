@@ -191,9 +191,7 @@ let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
           res := count)
     else res := count
   in
-
   loop state.offset 0 ;
-
   if !res >= at_least then ok !res
   else
     error
@@ -236,7 +234,6 @@ let take :
     else ok2 (count, acc)
   in
   loop 0 state.offset [] ;
-
   if !count >= at_least then ok (!count, List.rev !items)
   else
     error
@@ -256,13 +253,11 @@ let take_while : bool t -> consume:(char -> unit) -> unit t =
       ~err:(fun _ -> cond := false) ;
     backtrack state bt
   in
-
   do_condition () ;
   while !cond && not (is_done state) do
     next state ~ok:consume ~err ;
     do_condition ()
   done ;
-
   ok ()
 
 let line : string t =
