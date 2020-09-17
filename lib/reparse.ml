@@ -86,12 +86,11 @@ let ( <?> ) : 'a t -> string -> 'a t =
   p state ~ok ~err:(fun e ->
       if state.offset = ofs then error ~err err_msg state else err e)
 
-(* let delay f state ~err = f () state ~err *)
+let delay f state ~ok ~err = f () state ~ok ~err
 
-(* let named name p state ~err = *)
-(*   try p state *)
-(*   with exn -> *)
-(*     fail (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state *)
+let named name p state ~ok ~err =
+  p state ~ok ~err:(fun e ->
+      error ~err (Format.sprintf "[%s] %s" name (Printexc.to_string e)) state)
 
 let peek_char : char t =
  fun state ~ok ~err ->
