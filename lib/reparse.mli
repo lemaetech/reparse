@@ -277,20 +277,16 @@ val optional : 'a t -> 'a option t
 (** [optional p] parses [p] and retruns [SOME a] if successful. Otherwise
     returns [NONE]. *)
 
-val line : string t
-(** [line] accepts and returns a line of input delimited by either [\n] or
-    [\r\n]. Returns [None] if end of input is reached.
+val line : (int * string) t
+(** [line] consumes and returns a line of input along with line length. The line
+    is delimited by either [\n] or [\r\n].
 
     {[
       open Reparse
 
       let l = parse "line1\r\nline2" line in
-      l = "line1"
+      l = (5, "line1")
     ]} *)
-
-(* val backtrack : 'a t -> 'a t *)
-(** [backtrack p] executes parser [p] and returns it value. After which the
-    parser state is reset to the state equal to before the execution of [p]. *)
 
 (** {2 Core parsers - RFC 5254, Appending B.1} *)
 

@@ -98,10 +98,12 @@ let peek_char : char t =
   | c           -> ok c
   | exception _ -> error ~err "[peek_char]" state
 
-let peek_string len state ~ok ~err =
-  if state.offset + len <= String.length state.src then
-    ok (String.sub state.src state.offset len)
-  else error ~err "[peek_string]" state
+let peek_string len state ~ok ~err:_ =
+  let len' =
+    if state.offset + len <= String.length state.src then len
+    else String.length state.src - state.offset
+  in
+  ok (String.sub state.src state.offset len')
 
 let is_done state = state.offset = String.length state.src
 let next = peek_char <?> "[next]" <* advance 1
@@ -260,34 +262,32 @@ let take_while : bool t -> consume:(char -> unit) -> unit t =
   done ;
   ok ()
 
-let line : string t =
+let line : (int * string) t =
  fun state ~ok ~err ->
-  let f _ = () in
-  let buf = Buffer.create 0 in
-
-  let rec loop () =
-    let c1 = ref None in
-    let c2 = ref None in
-    map2
-      (fun a b ->
-        c1 := a ;
-        c2 := b)
-      (optional next)
-      (optional next)
-      state
-      ~ok:f
-      ~err:f ;
-
-    match (!c1, !c2) with
-    | Some '\r', Some '\n' -> (Buffer.contents buf <$ advance 2) state ~ok ~err
-    | Some '\n', _         -> (Buffer.contents buf <$ advance 1) state ~ok ~err
-    | Some c1, _           ->
-        Buffer.add_char buf c1 ;
-        advance 1 state ~ok:f ~err ;
-        (loop [@tailcall]) ()
-    | None, _              -> ok (Buffer.contents buf)
+  let starts_with_newline s =
+    match s.[0] with
+    | c           -> Char.equal '\n' c
+    | exception _ -> false
   in
-  loop ()
+  let is_crlf =
+    peek_string 2
+    >|= function
+    | "\r\n" -> false
+    | s when starts_with_newline s -> false
+    | _ -> true
+  in
+  let buf = Buffer.create 0 in
+  let cnt = ref 0 in
+
+  take_while
+    is_crlf
+    ~consume:(fun c ->
+      cnt := !cnt + 1 ;
+      Buffer.add_char buf c)
+    state
+    ~ok:Fun.id
+    ~err ;
+  ok (!cnt, Buffer.contents buf)
 
 let char_parser name p state ~ok ~err =
   p state ~ok ~err:(fun exn ->
