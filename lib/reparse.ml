@@ -164,24 +164,25 @@ let backtrack state (o, l, c) =
   state.cnum <- c
 
 let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
- fun ?(at_least = 0) ?up_to p state ~ok ~err:_ ->
+ fun ?(at_least = 0) ?up_to p state ~ok ~err ->
   if at_least < 0 then invalid_arg "at_least"
   else if Option.is_some up_to && Option.get up_to < 0 then invalid_arg "up_to"
   else () ;
 
   let up_to = Option.value up_to ~default:(-1) in
   let rec loop count =
-    if up_to = -1 || count <= up_to then
+    if (up_to = -1 || count < up_to) && not (is_done state) then
       let bt = pos state in
       p
         state
         ~ok:(fun _ -> (loop [@tailcall]) (count + 1))
-        ~err:(fun _ ->
+        ~err:(fun e ->
           backtrack state bt ;
+          err e ;
           ok count)
     else ok count
   in
-  loop 1
+  loop 0
 
 let many :
     ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t =
@@ -203,9 +204,10 @@ let many :
       (p <* sep_by)
         state
         ~ok:(fun a -> (loop [@tailcall]) (count + 1) (a :: acc))
-        ~err:(fun _ ->
+        ~err:(fun e ->
           backtrack state bt ;
-          ok2 (count, acc))
+          ok2 (count, acc) ;
+          err e)
     else ok2 (count, acc)
   in
   loop 0 [] ;
@@ -228,6 +230,7 @@ let line : string t =
  fun state ~ok ~err ->
   let f _ = () in
   let buf = Buffer.create 0 in
+
   let rec loop () =
     let c1 = ref None in
     let c2 = ref None in
@@ -247,7 +250,7 @@ let line : string t =
     | Some c1, _           ->
         Buffer.add_char buf c1 ;
         advance 1 state ~ok:f ~err ;
-        loop ()
+        (loop [@tailcall]) ()
     | None, _              -> ok (Buffer.contents buf)
   in
   loop ()
@@ -356,7 +359,7 @@ let vchar =
 
 let whitespace =
   char_parser
-    "VCHAR"
+    "WSP"
     (satisfy (function
         | '\x20'
         | '\x09' ->
