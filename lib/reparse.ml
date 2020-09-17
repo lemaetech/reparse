@@ -240,8 +240,29 @@ let take :
   else
     error
       ~err
-      (Format.sprintf "[many] unable to parse at least %d times" at_least)
+      (Format.sprintf "[take] unable to parse at least %d times" at_least)
       state
+
+let take_while : bool t -> consume:(char -> unit) -> unit t =
+ fun condition ~consume state ~ok ~err ->
+  let cond = ref true in
+
+  let do_condition () =
+    let bt = pos state in
+    condition
+      state
+      ~ok:(fun cond' -> cond := cond')
+      ~err:(fun _ -> cond := false) ;
+    backtrack state bt
+  in
+
+  do_condition () ;
+  while !cond && not (is_done state) do
+    next state ~ok:consume ~err ;
+    do_condition ()
+  done ;
+
+  ok ()
 
 let line : string t =
  fun state ~ok ~err ->
