@@ -170,19 +170,31 @@ let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
   else () ;
 
   let up_to = Option.value up_to ~default:(-1) in
-  let rec loop count =
+  let res = ref 0 in
+
+  let rec loop offset count =
     if (up_to = -1 || count < up_to) && not (is_done state) then
       let bt = pos state in
       p
         state
-        ~ok:(fun _ -> (loop [@tailcall]) (count + 1))
-        ~err:(fun e ->
+        ~ok:(fun _ ->
+          if offset <> state.offset then
+            (loop [@tailcall]) state.offset (count + 1)
+          else res := count)
+        ~err:(fun _ ->
           backtrack state bt ;
-          err e ;
-          ok count)
-    else ok count
+          res := count)
+    else res := count
   in
-  loop 0
+
+  loop state.offset 0 ;
+
+  if !res >= at_least then ok !res
+  else
+    error
+      ~err
+      (Format.sprintf "[skip] unable to parse at_least %d times" at_least)
+      state
 
 let many :
     ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t =
