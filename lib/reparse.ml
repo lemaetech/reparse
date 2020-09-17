@@ -49,7 +49,7 @@ let advance : int -> unit t =
         let c = state.src.[i] in
         if Char.equal c '\n' then (
           state.lnum <- state.lnum + 1 ;
-          state.cnum <- state.cnum + 1 )
+          state.cnum <- 1 )
         else state.cnum <- state.cnum + 1
       done ;
     state.offset <- offset ;
