@@ -227,7 +227,7 @@ let take :
       | None   -> (a, false) )
         state
         ~ok:(fun (a, sep_by_parsed) ->
-          if not sep_by_parsed then ok2 (count, a :: acc)
+          if not sep_by_parsed then ok2 (count + 1, a :: acc)
           else if offset <> state.offset then
             (loop [@tailcall]) (count + 1) state.offset (a :: acc)
           else ok2 (count, acc))
