@@ -8,12 +8,12 @@
  *-------------------------------------------------------------------------*)
 type state =
   { src : string
-  ; offset : int
   ; track_lnum : bool (* Track line numbers. *)
-  ; lnum : int (* Line count. *)
-  ; cnum : int (* Column count. *) }
+  ; mutable offset : int (* Input offset. *)
+  ; mutable lnum : int (* Line count. *)
+  ; mutable cnum : int (* Column count. *) }
 
-type 'a t = state -> state * 'a
+type 'a t = state -> ok:('a -> unit) -> err:(exn -> unit) -> unit
 
 exception
   Parse_error of
@@ -22,49 +22,48 @@ exception
     ; column_number : int
     ; msg : string }
 
-let fail msg state =
-  raise
-  @@ Parse_error
+let error ~err msg state =
+  err
+    (Parse_error
        { offset = state.offset
        ; line_number = state.lnum
        ; column_number = state.cnum
-       ; msg }
+       ; msg })
 
 let parse ?(track_lnum = false) src p =
   let lnum, cnum = if track_lnum then (1, 1) else (0, 0) in
   let state = {src; offset = 0; track_lnum; lnum; cnum} in
-  try
-    let (_ : state), a = p state in
-    a
-  with
-  | Parse_error _ as e -> raise e
-  | exn                -> fail (Printexc.to_string exn) state
+  let res = ref None in
+  p state ~ok:(fun a -> res := Some a) ~err:(fun e -> raise e) ;
+  match !res with
+  | None   -> assert false
+  | Some a -> a
 
-let advance n state =
+let advance : int -> unit t =
+ fun n state ~ok ~err ->
   let len = String.length state.src in
-  if state.offset + n <= len then
+  if state.offset + n <= len then (
     let offset = state.offset + n in
-    if state.track_lnum then (
-      let lnum = ref state.lnum in
-      let cnum = ref state.cnum in
+    if state.track_lnum then
       for i = state.offset to offset - 1 do
         let c = state.src.[i] in
         if Char.equal c '\n' then (
-          lnum := !lnum + 1 ;
-          cnum := 1 )
-        else incr cnum
+          state.lnum <- state.lnum + 1 ;
+          state.cnum <- state.cnum + 1 )
+        else state.cnum <- state.cnum + 1
       done ;
-      ({state with offset; lnum = !lnum; cnum = !cnum}, ()) )
-    else ({state with offset}, ())
-  else fail "[advance]" state
+    state.offset <- offset ;
+    ok () )
+  else error ~err "[advance]" state
 
-let return v state = (state, v)
+let return : 'a -> 'a t = fun v _state ~ok ~err:_ -> ok v
 
-let ( >>= ) p f state =
-  let state, a = p state in
-  f a state
+let ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t =
+ fun p f state ~ok ~err -> p state ~ok:(fun a -> f a state ~ok ~err) ~err
 
-let ( >|= ) p f = p >>= fun a -> return (f a)
+let ( >|= ) : 'a t -> ('a -> 'b) -> 'b t =
+ fun p f st ~ok ~err -> p st ~ok:(fun a -> ok (f a)) ~err
+
 let ( <*> ) p q = p >>= fun f -> q >|= f
 let ( <$> ) f p = return f <*> p
 let map = ( <$> )
@@ -74,133 +73,188 @@ let map4 f p q r s = return f <*> p <*> q <*> r <*> s
 let ( <$ ) v p = (fun _ -> v) <$> p
 let ( *> ) p q = p >>= fun _ -> q
 let ( <* ) p q = p >>= fun a -> a <$ q
-let ( <|> ) p q state = try p state with (_ : exn) -> q state
-let ( <?> ) p err_msg state = try p state with (_ : exn) -> fail err_msg state
-let delay f state = f () state
 
-let named name p state =
-  try p state
-  with exn ->
-    fail (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state
+let ( <|> ) : 'a t -> 'a t -> 'a t =
+ fun p q state ~ok ~err ->
+  let ofs = state.offset in
+  p state ~ok ~err:(fun e ->
+      if ofs = state.offset then q state ~ok ~err else err e)
 
-let peek_char state =
+let ( <?> ) : 'a t -> string -> 'a t =
+ fun p err_msg state ~ok ~err ->
+  let ofs = state.offset in
+  p state ~ok ~err:(fun e ->
+      if state.offset = ofs then error ~err err_msg state else err e)
+
+(* let delay f state ~err = f () state ~err *)
+
+(* let named name p state ~err = *)
+(*   try p state *)
+(*   with exn -> *)
+(*     fail (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state *)
+
+let peek_char : char t =
+ fun state ~ok ~err ->
   match state.src.[state.offset] with
-  | c -> (state, c)
-  | exception Invalid_argument _ -> fail "[peek_char]" state
+  | c           -> ok c
+  | exception _ -> error ~err "[peek_char]" state
 
-let peek_string len state =
+let peek_string len state ~ok ~err =
   if state.offset + len <= String.length state.src then
-    (state, String.sub state.src state.offset len)
-  else fail "[peek_string]" state
+    ok (String.sub state.src state.offset len)
+  else error ~err "[peek_string]" state
 
+let is_done state = state.offset = String.length state.src
 let next = peek_char <?> "[next]" <* advance 1
+let is_eoi state ~ok ~err:_ = ok (is_done state)
 
-let is_eoi state =
-  let is_eof =
-    match peek_char state with
-    | _, _                -> false
-    | exception (_ : exn) -> true
-  in
-  (state, is_eof)
+let eoi : unit t =
+ fun state ~ok ~err ->
+  if is_done state then ok () else error ~err "[eoi] expected EOI" state
 
-let eoi =
-  is_eoi
-  >|= function
-  | true  -> ()
-  | false -> failwith "[eoi]"
+let failing : 'a t -> unit t =
+ fun p state ~ok ~err ->
+  let ofs = state.offset in
+  let error' () = error ~err "[failing] expected failure to succeed" state in
+  p
+    state
+    ~ok:(fun _ -> error' ())
+    ~err:(fun _ -> if ofs = state.offset then error' () else ok ())
 
-let failing p state =
-  let succeed =
-    try
-      let _, _ = p state in
-      false
-    with _ -> true
-  in
-  if succeed then (state, ()) else fail "[failing]" state
-
-let lnum state = (state, state.lnum)
-let cnum state = (state, state.cnum)
-let offset state = (state, state.offset)
+let lnum state ~ok ~err:_ = ok state.lnum
+let cnum state ~ok ~err:_ = ok state.cnum
+let offset state ~ok ~err:_ = ok state.offset
 let unit = return ()
 
-let char c =
+let char : char -> unit t =
+ fun c state ~ok ~err ->
   peek_char
-  >>= fun c2 -> if Char.equal c c2 then () <$ advance 1 else fail "[char]"
+    state
+    ~ok:(fun c2 ->
+      if Char.equal c c2 then (advance 1) state ~ok ~err
+      else error ~err (Format.sprintf "[char] expected '%c'" c) state)
+    ~err
 
-let satisfy f =
-  peek_char >>= fun c2 -> if f c2 then c2 <$ advance 1 else fail "[satisfy]"
+let satisfy : (char -> bool) -> char t =
+ fun f state ~ok ~err ->
+  peek_char
+    state
+    ~ok:(fun c2 ->
+      if f c2 then (c2 <$ advance 1) state ~ok ~err
+      else error ~err "[satisfy]" state)
+    ~err
 
-let string s =
+let string : string -> unit t =
+ fun s state ~ok ~err ->
   let len = String.length s in
-  peek_string len
-  >>= fun s2 -> if String.equal s s2 then advance len else fail "[string]"
+  peek_string
+    len
+    state
+    ~ok:(fun s2 ->
+      if String.equal s s2 then advance len state ~ok ~err
+      else error ~err "[string]" state)
+    ~err
 
-let skip ?(at_least = 0) ?up_to p state =
+let pos state = (state.offset, state.lnum, state.cnum)
+
+let backtrack state (o, l, c) =
+  assert (0 <= o && o <= state.offset) ;
+  state.offset <- o ;
+  state.lnum <- l ;
+  state.cnum <- c
+
+let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
+ fun ?(at_least = 0) ?up_to p state ~ok ~err:_ ->
   if at_least < 0 then invalid_arg "at_least"
   else if Option.is_some up_to && Option.get up_to < 0 then invalid_arg "up_to"
   else () ;
 
   let up_to = Option.value up_to ~default:(-1) in
-  let rec loop count state =
-    if up_to = -1 || count < up_to then
-      match p state with
-      | state, _       -> (loop [@tailcall]) (count + 1) state
-      | exception _exn -> (state, count)
-    else (state, count)
+  let rec loop count =
+    if up_to = -1 || count <= up_to then
+      let bt = pos state in
+      p
+        state
+        ~ok:(fun _ -> (loop [@tailcall]) (count + 1))
+        ~err:(fun _ ->
+          backtrack state bt ;
+          ok count)
+    else ok count
   in
-  loop 0 state
+  loop 1
 
 let many :
     ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t =
- fun ?(at_least = 0) ?up_to ?(sep_by = return ()) p state ->
+ fun ?(at_least = 0) ?up_to ?(sep_by = return ()) p state ~ok ~err ->
   if at_least < 0 then invalid_arg "at_least"
   else if Option.is_some up_to && Option.get up_to < 0 then invalid_arg "up_to"
   else () ;
 
   let upto = Option.value up_to ~default:(-1) in
-  let rec loop count acc state =
-    if upto = -1 || count < upto then
-      match (p <* sep_by) state with
-      | state, a       -> (loop [@tailcall]) (count + 1) (a :: acc) state
-      | exception _exn -> (state, (count, acc))
-    else (state, (count, acc))
+  let count = ref 0 in
+  let items = ref [] in
+  let ok2 (count', items') =
+    count := count' ;
+    items := items'
   in
-  let state, (count, acc) = loop 0 [] state in
-  if count >= at_least then (state, (count, List.rev acc))
+  let rec loop count acc =
+    if (upto = -1 || count < upto) && not (is_done state) then
+      let bt = pos state in
+      (p <* sep_by)
+        state
+        ~ok:(fun a -> (loop [@tailcall]) (count + 1) (a :: acc))
+        ~err:(fun _ ->
+          backtrack state bt ;
+          ok2 (count, acc))
+    else ok2 (count, acc)
+  in
+  loop 0 [] ;
+  if !count >= at_least then ok (!count, List.rev !items)
   else
-    fail
+    error
+      ~err
       (Format.sprintf
          "parser many didn't execute successfully at least %d times"
          at_least)
       state
 
 let not_followed_by p q = p <* failing q
-let optional p state = try (Option.some <$> p) state with _ -> (state, None)
 
-let backtrack p state =
-  let _, a = p state in
-  (state, a)
+let optional : 'a t -> 'a option t =
+ fun p state ~ok ~err:_ ->
+  p state ~ok:(fun a -> ok (Some a)) ~err:(fun _ -> ok None)
 
-let line state =
-  let rec loop buf state =
-    let _, (c1, c2) =
-      (map2 (fun c1 c2 -> (c1, c2)) (optional next) (optional next)) state
-    in
-    match (c1, c2) with
-    | Some '\r', Some '\n' -> (Buffer.contents buf <$ advance 2) state
-    | Some '\n', _         -> (Buffer.contents buf <$ advance 1) state
+let line : string t =
+ fun state ~ok ~err ->
+  let f _ = () in
+  let buf = Buffer.create 0 in
+  let rec loop () =
+    let c1 = ref None in
+    let c2 = ref None in
+    map2
+      (fun a b ->
+        c1 := a ;
+        c2 := b)
+      (optional next)
+      (optional next)
+      state
+      ~ok:f
+      ~err:f ;
+
+    match (!c1, !c2) with
+    | Some '\r', Some '\n' -> (Buffer.contents buf <$ advance 2) state ~ok ~err
+    | Some '\n', _         -> (Buffer.contents buf <$ advance 1) state ~ok ~err
     | Some c1, _           ->
         Buffer.add_char buf c1 ;
-        let state, () = advance 1 state in
-        (loop [@tailcall]) buf state
-    | None, _              -> fail "parsing line failed." state
+        advance 1 state ~ok:f ~err ;
+        loop ()
+    | None, _              -> ok (Buffer.contents buf)
   in
-  loop (Buffer.create 1) state
+  loop ()
 
-let char_parser name p state =
-  try p state
-  with exn ->
-    fail (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state
+let char_parser name p state ~ok ~err =
+  p state ~ok ~err:(fun exn ->
+      error ~err (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state)
 
 let is_alpha = function
   | 'a' .. 'z'

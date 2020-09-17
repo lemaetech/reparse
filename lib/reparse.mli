@@ -10,7 +10,9 @@
 
 (** {2 Types} *)
 
-type +'a t
+type state
+
+type +'a t = state -> ok:('a -> unit) -> err:(exn -> unit) -> unit
 (** Represents a parser which can parse value ['a]. *)
 
 exception
@@ -130,15 +132,15 @@ val ( <?> ) : 'a t -> string -> 'a t
       r = true
     ]} *)
 
-val named : string -> 'a t -> 'a t
+(* val named : string -> 'a t -> 'a t *)
 (** [named name p] names parser [p] with [name]. The name is used on error
     message. This may be helpful when debugging parsers. *)
 
-val delay : (unit -> 'a t) -> 'a t
+(* val delay : (unit -> 'a t) -> 'a t *)
 (** [delay f] delays the computation of [p] until it is required. [p] is
     [p = f ()]. Use it together with [<|>]. *)
 
-val advance : int -> unit t
+(* val advance : int -> unit t *)
 (** [advance n] advances parser by the given [n] number of characters. *)
 
 val is_eoi : bool t
@@ -147,7 +149,7 @@ val is_eoi : bool t
 val eoi : unit t
 (** [eoi] Parse the end of input to be successful. *)
 
-val fail : string -> 'a t
+(* val fail : (unit -> string) -> 'a t *)
 (** [fail msg] fails the parser with [msg]. *)
 
 val failing : 'a t -> unit t
@@ -284,7 +286,7 @@ val line : string t
       l = "line1"
     ]} *)
 
-val backtrack : 'a t -> 'a t
+(* val backtrack : 'a t -> 'a t *)
 (** [backtrack p] executes parser [p] and returns it value. After which the
     parser state is reset to the state equal to before the execution of [p]. *)
 
