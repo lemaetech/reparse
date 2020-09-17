@@ -249,9 +249,9 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
       r = 5
     ]} *)
 
-val many :
+val take :
   ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t
-(** [many ~at_least ~up_to ~sep_by p] executes [p] zero or more times up to the
+(** [take ~at_least ~up_to ~sep_by p] executes [p] zero or more times up to the
     given upper bound [up_to]. If [at_least] is given, [p] is expected to
     succeed the lower bound of [at_least] times. Default of [at_least] is [0].
     Thre is no upper bound on execution of [p] is [up_to] is not given. If
@@ -263,7 +263,7 @@ val many :
       open Reparse
 
       ;;
-      let r = parse "aaaaa" (many (char 'a')) in
+      let r = parse "aaaaa" (take (char 'a')) in
       r = (5, ['a'; 'a'; 'a'; 'a'; 'a'])
     ]} *)
 

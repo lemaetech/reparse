@@ -155,6 +155,12 @@ let string : string -> unit t =
       else error ~err "[string]" state)
     ~err
 
+let not_followed_by p q = p <* failing q
+
+let optional : 'a t -> 'a option t =
+ fun p state ~ok ~err:_ ->
+  p state ~ok:(fun a -> ok (Some a)) ~err:(fun _ -> ok None)
+
 let pos state = (state.offset, state.lnum, state.cnum)
 
 let backtrack state (o, l, c) =
@@ -196,7 +202,7 @@ let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
       (Format.sprintf "[skip] unable to parse at_least %d times" at_least)
       state
 
-let many :
+let take :
     ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t =
  fun ?(at_least = 0) ?up_to ?(sep_by = return ()) p state ~ok ~err ->
   if at_least < 0 then invalid_arg "at_least"
@@ -210,33 +216,33 @@ let many :
     count := count' ;
     items := items'
   in
-  let rec loop count acc =
+  let rec loop count offset acc =
     if (upto = -1 || count < upto) && not (is_done state) then
       let bt = pos state in
-      (p <* sep_by)
+      ( p
+      >>= fun a ->
+      optional sep_by
+      >|= function
+      | Some _ -> (a, true)
+      | None   -> (a, false) )
         state
-        ~ok:(fun a -> (loop [@tailcall]) (count + 1) (a :: acc))
-        ~err:(fun e ->
+        ~ok:(fun (a, sep_by_parsed) ->
+          if not sep_by_parsed then ok2 (count, a :: acc)
+          else if offset <> state.offset then
+            (loop [@tailcall]) (count + 1) state.offset (a :: acc)
+          else ok2 (count, acc))
+        ~err:(fun _ ->
           backtrack state bt ;
-          ok2 (count, acc) ;
-          err e)
+          ok2 (count, acc))
     else ok2 (count, acc)
   in
-  loop 0 [] ;
+  loop 0 state.offset [] ;
   if !count >= at_least then ok (!count, List.rev !items)
   else
     error
       ~err
-      (Format.sprintf
-         "parser many didn't execute successfully at least %d times"
-         at_least)
+      (Format.sprintf "[many] unable to parse at least %d times" at_least)
       state
-
-let not_followed_by p q = p <* failing q
-
-let optional : 'a t -> 'a option t =
- fun p state ~ok ~err:_ ->
-  p state ~ok:(fun a -> ok (Some a)) ~err:(fun _ -> ok None)
 
 let line : string t =
  fun state ~ok ~err ->
@@ -360,7 +366,7 @@ let space =
         | '\x20' -> true
         | _      -> false))
 
-let spaces = snd <$> many space
+let spaces = snd <$> take space
 
 let vchar =
   char_parser
