@@ -251,8 +251,8 @@ let take :
       (Format.sprintf "[take] unable to parse at least %d times" at_least)
       state
 
-let take_while : bool t -> consume:(char -> unit) -> unit t =
- fun condition ~consume state ~ok ~err ->
+let take_while : 'a t -> condition:bool t -> consume:('a -> unit) -> unit t =
+ fun p ~condition ~consume state ~ok ~err ->
   let cond = ref true in
 
   let do_condition () =
@@ -265,37 +265,10 @@ let take_while : bool t -> consume:(char -> unit) -> unit t =
   in
   do_condition () ;
   while !cond && not (is_done state) do
-    next state ~ok:consume ~err ;
+    p state ~ok:consume ~err ;
     do_condition ()
   done ;
   ok ()
-
-let line : (int * string) t =
- fun state ~ok ~err ->
-  let starts_with_newline s =
-    match s.[0] with
-    | c           -> Char.equal '\n' c
-    | exception _ -> false
-  in
-  let is_crlf =
-    peek_string 2
-    >|= function
-    | "\r\n" -> false
-    | s when starts_with_newline s -> false
-    | _ -> true
-  in
-  let buf = Buffer.create 0 in
-  let cnt = ref 0 in
-
-  take_while
-    is_crlf
-    ~consume:(fun c ->
-      cnt := !cnt + 1 ;
-      Buffer.add_char buf c)
-    state
-    ~ok:Fun.id
-    ~err ;
-  ok (!cnt, Buffer.contents buf)
 
 let char_parser name p state ~ok ~err =
   p state ~ok ~err:(fun exn ->
@@ -407,6 +380,33 @@ let whitespace =
         | '\x09' ->
             true
         | _ -> false))
+
+let line : (int * string) t =
+ fun state ~ok ~err ->
+  let is_crlf = is_not (crlf *> unit <|> lf *> unit) in
+  let buf = Buffer.create 0 in
+  let cnt = ref 0 in
+
+  take_while
+    next
+    ~condition:is_crlf
+    ~consume:(fun c ->
+      cnt := !cnt + 1 ;
+      Buffer.add_char buf c)
+    state
+    ~ok:Fun.id
+    ~err ;
+
+  ok (!cnt, Buffer.contents buf)
+
+let lines : (int * string) list t =
+ fun state ~ok ~err ->
+  take
+    ~sep_by:(crlf *> unit <|> lf *> unit)
+    line
+    state
+    ~ok:(fun (_, l) -> ok l)
+    ~err
 
 module Infix = struct
   let ( >>= ) = ( >>= )

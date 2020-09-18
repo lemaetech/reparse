@@ -287,7 +287,7 @@ val take :
       r = (5, ['a'; 'a'; 'a'; 'a'; 'a'])
     ]} *)
 
-val take_while : bool t -> consume:(char -> unit) -> unit t
+val take_while : 'a t -> condition:bool t -> consume:('a -> unit) -> unit t
 
 val not_followed_by : 'a t -> 'b t -> 'a t
 (** [not_followed_by a b] Succeeds if parser [p] succeeds and parser [q] fails.
@@ -307,6 +307,8 @@ val line : (int * string) t
       let l = parse "line1\r\nline2" line in
       l = (5, "line1")
     ]} *)
+
+val lines : (int * string) list t
 
 (** {2 Core parsers - RFC 5254, Appending B.1} *)
 
