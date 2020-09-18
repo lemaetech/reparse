@@ -57,7 +57,8 @@ val return : 'a -> 'a t
       r = "hello"
     ]} *)
 
-(** {2 Operators} *)
+val fail : string -> 'a t
+(** [fail err_msg] creates a parser that always fails with [err_msg]. *)
 
 val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 (** [p >>= f] Bind. Executes parser [p] which returns value [a]. If it succeeds

@@ -39,6 +39,9 @@ let parse ?(track_lnum = false) src p =
   | None   -> assert false
   | Some a -> a
 
+let fail : string -> 'a t =
+ fun err_msg state ~ok:_ ~err -> error ~err err_msg state
+
 let advance : int -> unit t =
  fun n state ~ok ~err ->
   let len = String.length state.src in
