@@ -289,6 +289,7 @@ val take :
       r = (5, ['a'; 'a'; 'a'; 'a'; 'a'])
     ]} *)
 
+val take_while : 'a t -> while_:bool t -> (int * 'a list) t
 val take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t
 
 val not_followed_by : 'a t -> 'b t -> 'a t

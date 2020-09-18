@@ -292,6 +292,21 @@ let take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
   done ;
   ok !take_count
 
+let take_while : 'a t -> while_:bool t -> (int * 'a list) t =
+ fun p ~while_ state ~ok ~err ->
+  let items = ref [] in
+  let count = ref 0 in
+  let on_take a = items := a :: !items in
+  take_while_on
+    p
+    ~while_
+    ~on_take
+    state
+    ~ok:(fun count' -> count := count')
+    ~err ;
+
+  ok (!count, !items)
+
 let char_parser name p state ~ok ~err =
   p state ~ok ~err:(fun exn ->
       error ~err (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state)
