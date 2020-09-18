@@ -108,6 +108,13 @@ let peek_string len state ~ok ~err:_ =
 let is_done state = state.offset = String.length state.src
 let next = peek_char <?> "[next]" <* advance 1
 let is_eoi state ~ok ~err:_ = ok (is_done state)
+let pos state = (state.offset, state.lnum, state.cnum)
+
+let backtrack state (o, l, c) =
+  assert (0 <= o && o <= state.offset) ;
+  state.offset <- o ;
+  state.lnum <- l ;
+  state.cnum <- c
 
 let eoi : unit t =
  fun state ~ok ~err ->
@@ -125,10 +132,30 @@ let not_ : 'a t -> unit t =
 let is_not : 'a t -> bool t =
  fun p state ~ok ~err:_ ->
   let ofs = state.offset in
+  let bt = pos state in
   p
     state
-    ~ok:(fun _ -> ok false)
-    ~err:(fun _ -> if ofs = state.offset then ok true else ok false)
+    ~ok:(fun _ ->
+      backtrack state bt ;
+      ok false)
+    ~err:(fun _ ->
+      if ofs = state.offset then ok true
+      else (
+        backtrack state bt ;
+        ok false ))
+
+let is : 'a t -> bool t =
+ fun p state ~ok ~err:_ ->
+  let ofs = state.offset in
+  let bt = pos state in
+  p
+    state
+    ~ok:(fun _ ->
+      if ofs = state.offset then ok false else backtrack state bt ;
+      ok true)
+    ~err:(fun _ ->
+      backtrack state bt ;
+      ok false)
 
 let lnum state ~ok ~err:_ = ok state.lnum
 let cnum state ~ok ~err:_ = ok state.cnum
@@ -169,14 +196,6 @@ let not_followed_by p q = p <* not_ q
 let optional : 'a t -> 'a option t =
  fun p state ~ok ~err:_ ->
   p state ~ok:(fun a -> ok (Some a)) ~err:(fun _ -> ok None)
-
-let pos state = (state.offset, state.lnum, state.cnum)
-
-let backtrack state (o, l, c) =
-  assert (0 <= o && o <= state.offset) ;
-  state.offset <- o ;
-  state.lnum <- l ;
-  state.cnum <- c
 
 let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
  fun ?(at_least = 0) ?up_to p state ~ok ~err ->

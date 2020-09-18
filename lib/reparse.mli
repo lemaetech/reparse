@@ -166,12 +166,24 @@ val not_ : 'a t -> unit t
 val is_not : 'a t -> bool t
 (** [is_not p] returns [true] if [p] fails to parse and [false] if [p] is a
     success. Corollary of [not_] combinator. This one however returns a bool
-    rather than erroring out itself.
+    rather than erroring out itself. {b Note} executing [p] doesn't consume any
+    input.
 
     {[
       open Reparse
 
       let r = parse "bbb" (is_not (char 'a')) in
+      r = true
+    ]} *)
+
+val is : 'a t -> bool t
+(** [is p] return [true] is [p] parses successfully. Otherwise it return
+    [false]. {b Note} executing [p] doesn't consume any input.
+
+    {[
+      open Reparse
+
+      let r = parse "bcb" (is (char 'b')) in
       r = true
     ]} *)
 
