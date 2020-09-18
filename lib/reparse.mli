@@ -132,6 +132,20 @@ val ( <?> ) : 'a t -> string -> 'a t
       r = true
     ]} *)
 
+val any : 'a t Lazy.t list -> 'a t
+(** [any l] succeeds if any one of the parsers in [l] succeeds and fails if all
+    parsers in [l] fails. It executes parsers in [l] from left to right and
+    returns the first sucessful parse result. The remaining parsers are not
+    executed. This is similar in functionality to [<|>] except here, the
+    alternative parsers are specified dynamically and are lazily executed.
+
+    {[
+      open Reparse
+      let p = any [lazy (char 'z'); lazy (char 'x'); lazy (char 'a')] in
+      let r = parse "abc" p in
+      r = 'a'
+    ]} *)
+
 val named : string -> 'a t -> 'a t
 (** [named name p] names parser [p] with [name]. The name is used on error
     message. This may be helpful when debugging parsers. *)

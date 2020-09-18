@@ -86,6 +86,23 @@ let ( <?> ) : 'a t -> string -> 'a t =
   p state ~ok ~err:(fun e ->
       if state.offset = ofs then error ~err err_msg state else err e)
 
+let any : 'a t Lazy.t list -> 'a t =
+ fun l state ~ok ~err ->
+  let item = ref None in
+
+  let rec loop = function
+    | []             -> error ~err "[any] all parsers failed" state
+    | (lazy p) :: tl ->
+        p
+          state
+          ~ok:(fun a -> item := Some a)
+          ~err:(fun _ -> (loop [@tailrec]) tl)
+  in
+  loop l ;
+  match !item with
+  | Some a -> ok a
+  | None   -> assert false
+
 let delay f state ~ok ~err = f () state ~ok ~err
 
 let named name p state ~ok ~err =
