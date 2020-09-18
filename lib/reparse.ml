@@ -127,12 +127,12 @@ let cnum state ~ok ~err:_ = ok state.cnum
 let offset state ~ok ~err:_ = ok state.offset
 let unit = return ()
 
-let char : char -> unit t =
+let char : char -> char t =
  fun c state ~ok ~err ->
   peek_char
     state
     ~ok:(fun c2 ->
-      if Char.equal c c2 then (advance 1) state ~ok ~err
+      if Char.equal c c2 then (c <$ advance 1) state ~ok ~err
       else error ~err (Format.sprintf "[char] expected '%c'" c) state)
     ~err
 
@@ -145,14 +145,14 @@ let satisfy : (char -> bool) -> char t =
       else error ~err "[satisfy]" state)
     ~err
 
-let string : string -> unit t =
+let string : string -> string t =
  fun s state ~ok ~err ->
   let len = String.length s in
   peek_string
     len
     state
     ~ok:(fun s2 ->
-      if String.equal s s2 then advance len state ~ok ~err
+      if String.equal s s2 then (s <$ advance len) state ~ok ~err
       else error ~err "[string]" state)
     ~err
 

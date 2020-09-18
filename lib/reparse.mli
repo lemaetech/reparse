@@ -203,7 +203,7 @@ val next : char t
       r = 'h'
     ]} *)
 
-val char : char -> unit t
+val char : char -> char t
 (** [char c] accepts character [c] from input exactly.
 
     {[
@@ -223,7 +223,7 @@ val satisfy : (char -> bool) -> char t
       r = 'a'
     ]} *)
 
-val string : string -> unit t
+val string : string -> string t
 (** [string s] accepts [s] exactly.
 
     {[
@@ -305,7 +305,7 @@ val ascii_char : char t
 val cr : char t
 (** [cr] parse CR '\r' character. *)
 
-val crlf : unit t
+val crlf : string t
 (** [crlf] parse CRLF - \r\n - string. *)
 
 val control : char t
