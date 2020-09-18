@@ -269,6 +269,8 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
       r = 5
     ]} *)
 
+val skip_while : _ t -> while_:bool t -> int t
+
 val take :
   ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t
 (** [take ~at_least ~up_to ~sep_by p] executes [p] zero or more times up to the
@@ -287,7 +289,7 @@ val take :
       r = (5, ['a'; 'a'; 'a'; 'a'; 'a'])
     ]} *)
 
-val take_while : 'a t -> while_:bool t -> on_take:('a -> unit) -> unit t
+val take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t
 
 val not_followed_by : 'a t -> 'b t -> 'a t
 (** [not_followed_by a b] Succeeds if parser [p] succeeds and parser [q] fails.

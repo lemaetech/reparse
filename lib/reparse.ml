@@ -209,6 +209,25 @@ let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
       (Format.sprintf "[skip] unable to parse at_least %d times" at_least)
       state
 
+let skip_while : _ t -> while_:bool t -> int t =
+ fun p ~while_ state ~ok ~err ->
+  let condition = ref true in
+  let skip_count = ref 0 in
+  let do_condition () =
+    let bt = pos state in
+    while_
+      state
+      ~ok:(fun condition' -> condition := condition')
+      ~err:(fun _ -> condition := false) ;
+    backtrack state bt
+  in
+  do_condition () ;
+  while !condition && not (is_done state) do
+    (p *> unit) state ~ok:(fun _ -> skip_count := !skip_count + 1) ~err ;
+    do_condition ()
+  done ;
+  ok !skip_count
+
 let take :
     ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t =
  fun ?(at_least = 0) ?up_to ?(sep_by = return ()) p state ~ok ~err ->
@@ -251,9 +270,10 @@ let take :
       (Format.sprintf "[take] unable to parse at least %d times" at_least)
       state
 
-let take_while : 'a t -> while_:bool t -> on_take:('a -> unit) -> unit t =
+let take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
  fun p ~while_ ~on_take state ~ok ~err ->
   let cond = ref true in
+  let take_count = ref 0 in
 
   let do_condition () =
     let bt = pos state in
@@ -262,10 +282,15 @@ let take_while : 'a t -> while_:bool t -> on_take:('a -> unit) -> unit t =
   in
   do_condition () ;
   while !cond && not (is_done state) do
-    p state ~ok:on_take ~err ;
+    p
+      state
+      ~ok:(fun a ->
+        take_count := !take_count + 1 ;
+        on_take a)
+      ~err ;
     do_condition ()
   done ;
-  ok ()
+  ok !take_count
 
 let char_parser name p state ~ok ~err =
   p state ~ok ~err:(fun exn ->
@@ -382,19 +407,17 @@ let line : (int * string) t =
  fun state ~ok ~err ->
   let is_crlf = is_not (crlf *> unit <|> lf *> unit) in
   let buf = Buffer.create 0 in
-  let cnt = ref 0 in
+  let line_len = ref 0 in
 
-  take_while
+  take_while_on
     next
     ~while_:is_crlf
-    ~on_take:(fun c ->
-      cnt := !cnt + 1 ;
-      Buffer.add_char buf c)
+    ~on_take:(fun c -> Buffer.add_char buf c)
     state
-    ~ok:Fun.id
+    ~ok:(fun line_len' -> line_len := line_len')
     ~err ;
 
-  ok (!cnt, Buffer.contents buf)
+  ok (!line_len, Buffer.contents buf)
 
 let lines : (int * string) list t =
  fun state ~ok ~err ->
