@@ -152,8 +152,16 @@ val eoi : unit t
 (* val fail : (unit -> string) -> 'a t *)
 (** [fail msg] fails the parser with [msg]. *)
 
-val failing : 'a t -> unit t
-(** [failing p] succeeds if and only if [p] fails to parse. *)
+val not_ : 'a t -> unit t
+(** [not_ p] succeeds if and only if [p] fails to parse.
+
+    {[
+      open Reparse
+
+      let p = not_ (char 'a') in
+      let r = parse "bbb" p in
+      r = ()
+    ]} *)
 
 val lnum : int t
 (** [lnum] return the current line number. The first line number is [1]. *)

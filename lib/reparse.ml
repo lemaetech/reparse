@@ -113,14 +113,14 @@ let eoi : unit t =
  fun state ~ok ~err ->
   if is_done state then ok () else error ~err "[eoi] expected EOI" state
 
-let failing : 'a t -> unit t =
+let not_ : 'a t -> unit t =
  fun p state ~ok ~err ->
   let ofs = state.offset in
   let error' () = error ~err "[failing] expected failure to succeed" state in
   p
     state
     ~ok:(fun _ -> error' ())
-    ~err:(fun _ -> if ofs = state.offset then error' () else ok ())
+    ~err:(fun _ -> if ofs = state.offset then ok () else error' ())
 
 let lnum state ~ok ~err:_ = ok state.lnum
 let cnum state ~ok ~err:_ = ok state.cnum
@@ -156,7 +156,7 @@ let string : string -> string t =
       else error ~err "[string]" state)
     ~err
 
-let not_followed_by p q = p <* failing q
+let not_followed_by p q = p <* not_ q
 
 let optional : 'a t -> 'a option t =
  fun p state ~ok ~err:_ ->
