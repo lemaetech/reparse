@@ -92,19 +92,22 @@ let ( <?> ) : 'a t -> string -> 'a t =
 let any : 'a t Lazy.t list -> 'a t =
  fun l state ~ok ~err ->
   let item = ref None in
+  let err' () = error ~err "[any] all parsers failed" state in
 
   let rec loop = function
-    | []             -> error ~err "[any] all parsers failed" state
+    | []             -> err' ()
     | (lazy p) :: tl ->
+        let ofs = state.offset in
         p
           state
-          ~ok:(fun a -> item := Some a)
+          ~ok:(fun a ->
+            if state.offset = ofs then (loop [@tailrec]) tl else item := Some a)
           ~err:(fun _ -> (loop [@tailrec]) tl)
   in
   loop l ;
   match !item with
   | Some a -> ok a
-  | None   -> assert false
+  | None   -> err' ()
 
 let all : 'a t list -> 'a list t =
  fun l state ~ok ~err ->
