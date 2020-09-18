@@ -287,7 +287,7 @@ val take :
       r = (5, ['a'; 'a'; 'a'; 'a'; 'a'])
     ]} *)
 
-val take_while : 'a t -> condition:bool t -> consume:('a -> unit) -> unit t
+val take_while : 'a t -> while_:bool t -> on_take:('a -> unit) -> unit t
 
 val not_followed_by : 'a t -> 'b t -> 'a t
 (** [not_followed_by a b] Succeeds if parser [p] succeeds and parser [q] fails.

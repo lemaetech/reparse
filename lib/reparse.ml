@@ -251,21 +251,18 @@ let take :
       (Format.sprintf "[take] unable to parse at least %d times" at_least)
       state
 
-let take_while : 'a t -> condition:bool t -> consume:('a -> unit) -> unit t =
- fun p ~condition ~consume state ~ok ~err ->
+let take_while : 'a t -> while_:bool t -> on_take:('a -> unit) -> unit t =
+ fun p ~while_ ~on_take state ~ok ~err ->
   let cond = ref true in
 
   let do_condition () =
     let bt = pos state in
-    condition
-      state
-      ~ok:(fun cond' -> cond := cond')
-      ~err:(fun _ -> cond := false) ;
+    while_ state ~ok:(fun cond' -> cond := cond') ~err:(fun _ -> cond := false) ;
     backtrack state bt
   in
   do_condition () ;
   while !cond && not (is_done state) do
-    p state ~ok:consume ~err ;
+    p state ~ok:on_take ~err ;
     do_condition ()
   done ;
   ok ()
@@ -389,8 +386,8 @@ let line : (int * string) t =
 
   take_while
     next
-    ~condition:is_crlf
-    ~consume:(fun c ->
+    ~while_:is_crlf
+    ~on_take:(fun c ->
       cnt := !cnt + 1 ;
       Buffer.add_char buf c)
     state
