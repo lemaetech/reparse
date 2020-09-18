@@ -290,7 +290,30 @@ val take :
     ]} *)
 
 val take_while : 'a t -> while_:bool t -> (int * 'a list) t
+(** [take_while p ~while_] parses [p] while [while_] is true. It returns the
+    count of items taken as well and the items itself.
+
+    {[
+      open Reparse
+      let p = take_while (char 'a') ~while_:(is_not (char 'b'));
+        let r =  parse "aab";
+        r = (3, ['a';'a';'a'])
+    ]} *)
+
 val take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t
+(** [take_while_on p ~while_ ~on_take] parses [p] while [while_] is true. It
+    calls [on_take] each time it consumes the input. Returns the count of items
+    consumed.
+
+    {[
+      open Reparse
+      let buf = Buffer.create 0 in
+      let on_take a = Buffer.add_char buf a in
+      let p = take_while_on (char 'a') ~while_:(is_not (char 'b')) ~on_take in
+      let r = parse "aaab" p in
+      let s = Buffer.contents buf in
+      r = 3 && s = "aaa"
+    ]} *)
 
 val not_followed_by : 'a t -> 'b t -> 'a t
 (** [not_followed_by a b] Succeeds if parser [p] succeeds and parser [q] fails.
