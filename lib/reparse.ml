@@ -103,6 +103,22 @@ let any : 'a t Lazy.t list -> 'a t =
   | Some a -> ok a
   | None   -> assert false
 
+let all : 'a t list -> 'a list t =
+ fun l state ~ok ~err ->
+  let items = ref [] in
+
+  let rec loop = function
+    | []      -> ok (List.rev !items)
+    | p :: tl ->
+        p
+          state
+          ~ok:(fun a ->
+            items := a :: !items ;
+            (loop [@tailrec]) tl)
+          ~err:(fun _ -> error ~err "[all] one of the parsers failed :" state)
+  in
+  loop l
+
 let delay f state ~ok ~err = f () state ~ok ~err
 
 let named name p state ~ok ~err =
