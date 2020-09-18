@@ -276,7 +276,6 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
     {[
       open Reparse
 
-      ;;
       let r = parse "     " (skip space) in
       r = 5
     ]} *)
@@ -296,7 +295,6 @@ val take :
     {[
       open Reparse
 
-      ;;
       let r = parse "aaaaa" (take (char 'a')) in
       r = (5, ['a'; 'a'; 'a'; 'a'; 'a'])
     ]} *)
@@ -307,9 +305,10 @@ val take_while : 'a t -> while_:bool t -> (int * 'a list) t
 
     {[
       open Reparse
-      let p = take_while (char 'a') ~while_:(is_not (char 'b'));
-        let r =  parse "aab";
-        r = (3, ['a';'a';'a'])
+
+      let p = take_while (char 'a') ~while_:(is_not (char 'b')) in
+      let r =  parse "aab";
+      r = (3, ['a';'a';'a'])
     ]} *)
 
 val take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t
