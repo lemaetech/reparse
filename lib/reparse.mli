@@ -163,6 +163,18 @@ val not_ : 'a t -> unit t
       r = ()
     ]} *)
 
+val is_not : 'a t -> bool t
+(** [is_not p] returns [true] if [p] fails to parse and [false] if [p] is a
+    success. Corollary of [not_] combinator. This one however returns a bool
+    rather than erroring out itself.
+
+    {[
+      open Reparse
+
+      let r = parse "bbb" (is_not (char 'a')) in
+      r = true
+    ]} *)
+
 val lnum : int t
 (** [lnum] return the current line number. The first line number is [1]. *)
 

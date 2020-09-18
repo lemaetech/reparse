@@ -122,6 +122,14 @@ let not_ : 'a t -> unit t =
     ~ok:(fun _ -> error' ())
     ~err:(fun _ -> if ofs = state.offset then ok () else error' ())
 
+let is_not : 'a t -> bool t =
+ fun p state ~ok ~err:_ ->
+  let ofs = state.offset in
+  p
+    state
+    ~ok:(fun _ -> ok false)
+    ~err:(fun _ -> if ofs = state.offset then ok true else ok false)
+
 let lnum state ~ok ~err:_ = ok state.lnum
 let cnum state ~ok ~err:_ = ok state.cnum
 let offset state ~ok ~err:_ = ok state.offset
