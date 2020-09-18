@@ -111,9 +111,9 @@ val ( <* ) : 'a t -> _ t -> 'a t
 (** [p <* q] discards result of parser [q] and returns [p] instead. *)
 
 val ( <|> ) : 'a t -> 'a t -> 'a t
-(** [p <|> q] tries both parsers. Takes the result of [p] if it succeeds.
-    Otherwise returns the result of the [q]. {b Note} If you want [q] to be lazy
-    evaluated then use it with [delay] combinator. *)
+(** [p <|> q] Alternate operator [p or q]. Tries both parsers. Takes the result
+    of [p] if it succeeds. Otherwise returns the result of the [q]. {b Note} If
+    you want [q] to be lazy evaluated then use it with [delay] combinator. *)
 
 val ( <?> ) : 'a t -> string -> 'a t
 (** [p <?> err_mg] parse [p]. If it fails then fail with error message
@@ -130,6 +130,31 @@ val ( <?> ) : 'a t -> string -> 'a t
           | _ -> false
       in
       r = true
+    ]} *)
+
+val any : 'a t Lazy.t list -> 'a t
+(** [any l] succeeds if any one of the parsers in [l] succeeds and fails if all
+    parsers in [l] fails. It executes parsers in [l] from left to right and
+    returns the first sucessful parse result. The remaining parsers are not
+    executed. This is similar in functionality to [<|>]. Except here, the
+    alternative parsers are specified dynamically and are lazily executed.
+
+    {[
+      open Reparse
+      let p = any [lazy (char 'z'); lazy (char 'x'); lazy (char 'a')] in
+      let r = parse "abc" p in
+      r = 'a'
+    ]} *)
+
+val all : 'a t list -> 'a list t
+(** [all l] succeeds if and only if all of the parsers in [l] succeed. Returns a
+    list of parsed result.
+
+    {[
+      open Reparse
+      let p = all [char 'a'; char 'b'; char 'c'] in
+      let r = parse "abcd" p in
+      r = ['a';'b';'c']
     ]} *)
 
 val named : string -> 'a t -> 'a t
@@ -152,8 +177,40 @@ val eoi : unit t
 (* val fail : (unit -> string) -> 'a t *)
 (** [fail msg] fails the parser with [msg]. *)
 
-val failing : 'a t -> unit t
-(** [failing p] succeeds if and only if [p] fails to parse. *)
+val not_ : 'a t -> unit t
+(** [not_ p] succeeds if and only if [p] fails to parse.
+
+    {[
+      open Reparse
+
+      let p = not_ (char 'a') in
+      let r = parse "bbb" p in
+      r = ()
+    ]} *)
+
+val is_not : 'a t -> bool t
+(** [is_not p] returns [true] if [p] fails to parse and [false] if [p] is a
+    success. Corollary of [not_] combinator. This one however returns a bool
+    rather than erroring out itself. {b Note} executing [p] doesn't consume any
+    input.
+
+    {[
+      open Reparse
+
+      let r = parse "bbb" (is_not (char 'a')) in
+      r = true
+    ]} *)
+
+val is : 'a t -> bool t
+(** [is p] return [true] is [p] parses successfully. Otherwise it return
+    [false]. {b Note} executing [p] doesn't consume any input.
+
+    {[
+      open Reparse
+
+      let r = parse "bcb" (is (char 'b')) in
+      r = true
+    ]} *)
 
 val lnum : int t
 (** [lnum] return the current line number. The first line number is [1]. *)
@@ -203,7 +260,7 @@ val next : char t
       r = 'h'
     ]} *)
 
-val char : char -> unit t
+val char : char -> char t
 (** [char c] accepts character [c] from input exactly.
 
     {[
@@ -223,7 +280,7 @@ val satisfy : (char -> bool) -> char t
       r = 'a'
     ]} *)
 
-val string : string -> unit t
+val string : string -> string t
 (** [string s] accepts [s] exactly.
 
     {[
@@ -244,10 +301,11 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
     {[
       open Reparse
 
-      ;;
       let r = parse "     " (skip space) in
       r = 5
     ]} *)
+
+val skip_while : _ t -> while_:bool t -> int t
 
 val take :
   ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t
@@ -262,12 +320,36 @@ val take :
     {[
       open Reparse
 
-      ;;
       let r = parse "aaaaa" (take (char 'a')) in
       r = (5, ['a'; 'a'; 'a'; 'a'; 'a'])
     ]} *)
 
-val take_while : bool t -> consume:(char -> unit) -> unit t
+val take_while : 'a t -> while_:bool t -> (int * 'a list) t
+(** [take_while p ~while_] parses [p] while [while_] is true. It returns the
+    count of items taken as well and the items itself.
+
+    {[
+      open Reparse
+
+      let p = take_while (char 'a') ~while_:(is_not (char 'b')) in
+      let r =  parse "aab";
+      r = (3, ['a';'a';'a'])
+    ]} *)
+
+val take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t
+(** [take_while_on p ~while_ ~on_take] parses [p] while [while_] is true. It
+    calls [on_take] each time it consumes the input. Returns the count of items
+    consumed.
+
+    {[
+      open Reparse
+      let buf = Buffer.create 0 in
+      let on_take a = Buffer.add_char buf a in
+      let p = take_while_on (char 'a') ~while_:(is_not (char 'b')) ~on_take in
+      let r = parse "aaab" p in
+      let s = Buffer.contents buf in
+      r = 3 && s = "aaa"
+    ]} *)
 
 val not_followed_by : 'a t -> 'b t -> 'a t
 (** [not_followed_by a b] Succeeds if parser [p] succeeds and parser [q] fails.
@@ -288,6 +370,8 @@ val line : (int * string) t
       l = (5, "line1")
     ]} *)
 
+val lines : (int * string) list t
+
 (** {2 Core parsers - RFC 5254, Appending B.1} *)
 
 val alpha : char t
@@ -305,7 +389,7 @@ val ascii_char : char t
 val cr : char t
 (** [cr] parse CR '\r' character. *)
 
-val crlf : unit t
+val crlf : string t
 (** [crlf] parse CRLF - \r\n - string. *)
 
 val control : char t

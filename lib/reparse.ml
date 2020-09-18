@@ -86,6 +86,39 @@ let ( <?> ) : 'a t -> string -> 'a t =
   p state ~ok ~err:(fun e ->
       if state.offset = ofs then error ~err err_msg state else err e)
 
+let any : 'a t Lazy.t list -> 'a t =
+ fun l state ~ok ~err ->
+  let item = ref None in
+
+  let rec loop = function
+    | []             -> error ~err "[any] all parsers failed" state
+    | (lazy p) :: tl ->
+        p
+          state
+          ~ok:(fun a -> item := Some a)
+          ~err:(fun _ -> (loop [@tailrec]) tl)
+  in
+  loop l ;
+  match !item with
+  | Some a -> ok a
+  | None   -> assert false
+
+let all : 'a t list -> 'a list t =
+ fun l state ~ok ~err ->
+  let items = ref [] in
+
+  let rec loop = function
+    | []      -> ok (List.rev !items)
+    | p :: tl ->
+        p
+          state
+          ~ok:(fun a ->
+            items := a :: !items ;
+            (loop [@tailrec]) tl)
+          ~err:(fun _ -> error ~err "[all] one of the parsers failed :" state)
+  in
+  loop l
+
 let delay f state ~ok ~err = f () state ~ok ~err
 
 let named name p state ~ok ~err =
@@ -108,31 +141,66 @@ let peek_string len state ~ok ~err:_ =
 let is_done state = state.offset = String.length state.src
 let next = peek_char <?> "[next]" <* advance 1
 let is_eoi state ~ok ~err:_ = ok (is_done state)
+let pos state = (state.offset, state.lnum, state.cnum)
+
+let backtrack state (o, l, c) =
+  assert (0 <= o && o <= state.offset) ;
+  state.offset <- o ;
+  state.lnum <- l ;
+  state.cnum <- c
 
 let eoi : unit t =
  fun state ~ok ~err ->
   if is_done state then ok () else error ~err "[eoi] expected EOI" state
 
-let failing : 'a t -> unit t =
+let not_ : 'a t -> unit t =
  fun p state ~ok ~err ->
   let ofs = state.offset in
   let error' () = error ~err "[failing] expected failure to succeed" state in
   p
     state
     ~ok:(fun _ -> error' ())
-    ~err:(fun _ -> if ofs = state.offset then error' () else ok ())
+    ~err:(fun _ -> if ofs = state.offset then ok () else error' ())
+
+let is_not : 'a t -> bool t =
+ fun p state ~ok ~err:_ ->
+  let ofs = state.offset in
+  let bt = pos state in
+  p
+    state
+    ~ok:(fun _ ->
+      backtrack state bt ;
+      ok false)
+    ~err:(fun _ ->
+      if ofs = state.offset then ok true
+      else (
+        backtrack state bt ;
+        ok false ))
+
+let is : 'a t -> bool t =
+ fun p state ~ok ~err:_ ->
+  let ofs = state.offset in
+  let bt = pos state in
+  p
+    state
+    ~ok:(fun _ ->
+      if ofs = state.offset then ok false else backtrack state bt ;
+      ok true)
+    ~err:(fun _ ->
+      backtrack state bt ;
+      ok false)
 
 let lnum state ~ok ~err:_ = ok state.lnum
 let cnum state ~ok ~err:_ = ok state.cnum
 let offset state ~ok ~err:_ = ok state.offset
 let unit = return ()
 
-let char : char -> unit t =
+let char : char -> char t =
  fun c state ~ok ~err ->
   peek_char
     state
     ~ok:(fun c2 ->
-      if Char.equal c c2 then (advance 1) state ~ok ~err
+      if Char.equal c c2 then (c <$ advance 1) state ~ok ~err
       else error ~err (Format.sprintf "[char] expected '%c'" c) state)
     ~err
 
@@ -145,30 +213,22 @@ let satisfy : (char -> bool) -> char t =
       else error ~err "[satisfy]" state)
     ~err
 
-let string : string -> unit t =
+let string : string -> string t =
  fun s state ~ok ~err ->
   let len = String.length s in
   peek_string
     len
     state
     ~ok:(fun s2 ->
-      if String.equal s s2 then advance len state ~ok ~err
+      if String.equal s s2 then (s <$ advance len) state ~ok ~err
       else error ~err "[string]" state)
     ~err
 
-let not_followed_by p q = p <* failing q
+let not_followed_by p q = p <* not_ q
 
 let optional : 'a t -> 'a option t =
  fun p state ~ok ~err:_ ->
   p state ~ok:(fun a -> ok (Some a)) ~err:(fun _ -> ok None)
-
-let pos state = (state.offset, state.lnum, state.cnum)
-
-let backtrack state (o, l, c) =
-  assert (0 <= o && o <= state.offset) ;
-  state.offset <- o ;
-  state.lnum <- l ;
-  state.cnum <- c
 
 let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
  fun ?(at_least = 0) ?up_to p state ~ok ~err ->
@@ -200,6 +260,25 @@ let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
       ~err
       (Format.sprintf "[skip] unable to parse at_least %d times" at_least)
       state
+
+let skip_while : _ t -> while_:bool t -> int t =
+ fun p ~while_ state ~ok ~err ->
+  let condition = ref true in
+  let skip_count = ref 0 in
+  let do_condition () =
+    let bt = pos state in
+    while_
+      state
+      ~ok:(fun condition' -> condition := condition')
+      ~err:(fun _ -> condition := false) ;
+    backtrack state bt
+  in
+  do_condition () ;
+  while !condition && not (is_done state) do
+    (p *> unit) state ~ok:(fun _ -> skip_count := !skip_count + 1) ~err ;
+    do_condition ()
+  done ;
+  ok !skip_count
 
 let take :
     ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t =
@@ -243,51 +322,42 @@ let take :
       (Format.sprintf "[take] unable to parse at least %d times" at_least)
       state
 
-let take_while : bool t -> consume:(char -> unit) -> unit t =
- fun condition ~consume state ~ok ~err ->
+let take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
+ fun p ~while_ ~on_take state ~ok ~err ->
   let cond = ref true in
+  let take_count = ref 0 in
 
   let do_condition () =
     let bt = pos state in
-    condition
-      state
-      ~ok:(fun cond' -> cond := cond')
-      ~err:(fun _ -> cond := false) ;
+    while_ state ~ok:(fun cond' -> cond := cond') ~err:(fun _ -> cond := false) ;
     backtrack state bt
   in
   do_condition () ;
   while !cond && not (is_done state) do
-    next state ~ok:consume ~err ;
+    p
+      state
+      ~ok:(fun a ->
+        take_count := !take_count + 1 ;
+        on_take a)
+      ~err ;
     do_condition ()
   done ;
-  ok ()
+  ok !take_count
 
-let line : (int * string) t =
- fun state ~ok ~err ->
-  let starts_with_newline s =
-    match s.[0] with
-    | c           -> Char.equal '\n' c
-    | exception _ -> false
-  in
-  let is_crlf =
-    peek_string 2
-    >|= function
-    | "\r\n" -> false
-    | s when starts_with_newline s -> false
-    | _ -> true
-  in
-  let buf = Buffer.create 0 in
-  let cnt = ref 0 in
-
-  take_while
-    is_crlf
-    ~consume:(fun c ->
-      cnt := !cnt + 1 ;
-      Buffer.add_char buf c)
+let take_while : 'a t -> while_:bool t -> (int * 'a list) t =
+ fun p ~while_ state ~ok ~err ->
+  let items = ref [] in
+  let count = ref 0 in
+  let on_take a = items := a :: !items in
+  take_while_on
+    p
+    ~while_
+    ~on_take
     state
-    ~ok:Fun.id
+    ~ok:(fun count' -> count := count')
     ~err ;
-  ok (!cnt, Buffer.contents buf)
+
+  ok (!count, !items)
 
 let char_parser name p state ~ok ~err =
   p state ~ok ~err:(fun exn ->
@@ -399,6 +469,31 @@ let whitespace =
         | '\x09' ->
             true
         | _ -> false))
+
+let line : (int * string) t =
+ fun state ~ok ~err ->
+  let is_crlf = is_not (crlf *> unit <|> lf *> unit) in
+  let buf = Buffer.create 0 in
+  let line_len = ref 0 in
+
+  take_while_on
+    next
+    ~while_:is_crlf
+    ~on_take:(fun c -> Buffer.add_char buf c)
+    state
+    ~ok:(fun line_len' -> line_len := line_len')
+    ~err ;
+
+  ok (!line_len, Buffer.contents buf)
+
+let lines : (int * string) list t =
+ fun state ~ok ~err ->
+  take
+    ~sep_by:(crlf *> unit <|> lf *> unit)
+    line
+    state
+    ~ok:(fun (_, l) -> ok l)
+    ~err
 
 module Infix = struct
   let ( >>= ) = ( >>= )
