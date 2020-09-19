@@ -476,30 +476,31 @@ let whitespace =
             true
         | _ -> false))
 
-let line : (int * string) t =
- fun state ~ok ~err ->
-  let is_crlf = is_not (crlf *> unit <|> lf *> unit) in
+let line : [`LF | `CRLF] -> string t =
+ fun line_delimiter state ~ok ~err ->
+  let delimit =
+    match line_delimiter with
+    | `LF   -> lf *> unit
+    | `CRLF -> crlf *> unit
+  in
   let buf = Buffer.create 0 in
-  let line_len = ref 0 in
 
   take_while_on
     next
-    ~while_:is_crlf
+    ~while_:(is_not delimit)
     ~on_take:(fun c -> Buffer.add_char buf c)
     state
-    ~ok:(fun line_len' -> line_len := line_len')
+    ~ok:(fun (_ : int) -> ())
     ~err ;
 
-  ok (!line_len, Buffer.contents buf)
-
-let lines : (int * string) list t =
- fun state ~ok ~err ->
-  take
-    ~sep_by:(crlf *> unit <|> lf *> unit)
-    line
+  ( is_eoi
+  >>= function
+  | true  -> unit
+  | false -> delimit )
     state
-    ~ok:(fun (_, l) -> ok l)
-    ~err
+    ~ok:(fun (_ : unit) -> ())
+    ~err ;
+  ok (Buffer.contents buf)
 
 module Infix = struct
   let ( >>= ) = ( >>= )

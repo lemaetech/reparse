@@ -360,7 +360,7 @@ val optional : 'a t -> 'a option t
 (** [optional p] parses [p] and retruns [SOME a] if successful. Otherwise
     returns [NONE]. *)
 
-val line : (int * string) t
+val line : [`LF | `CRLF] -> string t
 (** [line] consumes and returns a line of input along with line length. The line
     is delimited by either [\n] or [\r\n].
 
@@ -368,10 +368,8 @@ val line : (int * string) t
       open Reparse
 
       let l = parse "line1\r\nline2" line in
-      l = (5, "line1")
+      l = "line1"
     ]} *)
-
-val lines : (int * string) list t
 
 (** {2 Core parsers - RFC 5254, Appending B.1} *)
 
