@@ -387,7 +387,7 @@ val line : [`LF | `CRLF] -> string t
     {[
       open Reparse.Parse
 
-      let l = parse "line1\r\nline2" line in
+      let l = parse "line1\r\nline2" (line `CRLF) in
       l = "line1"
     ]} *)
 
