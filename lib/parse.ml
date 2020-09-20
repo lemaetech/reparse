@@ -334,8 +334,9 @@ let take :
       (Format.sprintf "[take] unable to parse at least %d times" at_least)
       state
 
-let take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
- fun p ~while_ ~on_take state ~ok ~err ->
+let take_while_on :
+    'a t -> ?sep_by:unit t -> while_:bool t -> on_take:('a -> unit) -> int t =
+ fun p ?(sep_by = unit) ~while_ ~on_take state ~ok ~err ->
   let cond = ref true in
   let take_count = ref 0 in
 
@@ -346,7 +347,7 @@ let take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
   in
   do_condition () ;
   while !cond && not (is_done state) do
-    p
+    (p <* sep_by)
       state
       ~ok:(fun a ->
         take_count := !take_count + 1 ;
@@ -356,13 +357,14 @@ let take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
   done ;
   ok !take_count
 
-let take_while : 'a t -> while_:bool t -> (int * 'a list) t =
- fun p ~while_ state ~ok ~err ->
+let take_while : 'a t -> ?sep_by:unit t -> while_:bool t -> (int * 'a list) t =
+ fun p ?(sep_by = unit) ~while_ state ~ok ~err ->
   let items = ref [] in
   let count = ref 0 in
   let on_take a = items := a :: !items in
   take_while_on
     p
+    ~sep_by
     ~while_
     ~on_take
     state
@@ -491,21 +493,22 @@ let line : [`LF | `CRLF] -> string t =
   in
   let buf = Buffer.create 0 in
 
+  let sep_by =
+    is_eoi
+    >>= function
+    | true  -> unit
+    | false -> delimit
+  in
+
   take_while_on
     next
+    ~sep_by
     ~while_:(is_not delimit)
     ~on_take:(fun c -> Buffer.add_char buf c)
     state
     ~ok:(fun (_ : int) -> ())
     ~err ;
 
-  ( is_eoi
-  >>= function
-  | true  -> unit
-  | false -> delimit )
-    state
-    ~ok:(fun (_ : unit) -> ())
-    ~err ;
   ok (Buffer.contents buf)
 
 module Infix = struct
