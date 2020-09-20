@@ -166,7 +166,7 @@ val all_unit : 'a t list -> unit t
 
     {[
       open Reparse.Parse
-      let p = all [char 'a'; char 'b'; char 'c'] in
+      let p = all_unit [char 'a'; char 'b'; char 'c'] in
       let r = parse "abc" p in
       r = ()
     ]} *)
