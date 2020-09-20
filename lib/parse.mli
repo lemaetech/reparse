@@ -148,14 +148,27 @@ val any : 'a t Lazy.t list -> 'a t
     ]} *)
 
 val all : 'a t list -> 'a list t
-(** [all l] succeeds if and only if all of the parsers in [l] succeed. Returns a
-    list of parsed result.
+(** [all l] succeeds if and only if all of the parsers in [l] succeed as
+    specified sequentially, from left to right. Returns a list of parsed result.
 
     {[
       open Reparse.Parse
       let p = all [char 'a'; char 'b'; char 'c'] in
       let r = parse "abcd" p in
       r = ['a';'b';'c']
+    ]} *)
+
+val all_unit : 'a t list -> unit t
+(** [all_unit l] succeeds if and only if all of the parsers in [l] succeed as
+    specified sequentially, from left to right. This is similar to [all] but
+    specialized to [unit] value. {b Note} all of the [p] in [l] are piped to
+    [*>] operator.
+
+    {[
+      open Reparse.Parse
+      let p = all [char 'a'; char 'b'; char 'c'] in
+      let r = parse "abc" p in
+      r = ()
     ]} *)
 
 val named : string -> 'a t -> 'a t

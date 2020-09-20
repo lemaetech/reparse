@@ -89,6 +89,8 @@ let ( <?> ) : 'a t -> string -> 'a t =
   p state ~ok ~err:(fun e ->
       if state.offset = ofs then error ~err err_msg state else err e)
 
+let unit = return ()
+
 let any : 'a t Lazy.t list -> 'a t =
  fun l state ~ok ~err ->
   let item = ref None in
@@ -124,6 +126,11 @@ let all : 'a t list -> 'a list t =
           ~err:(fun _ -> error ~err "[all] one of the parsers failed :" state)
   in
   loop l
+
+let all_unit : 'a t list -> unit t =
+ fun l state ~ok ~err ->
+  let l' = List.map (fun p -> p *> unit) l in
+  (all l' *> unit) state ~ok ~err
 
 let delay p state ~ok ~err = Lazy.force p state ~ok ~err
 
@@ -199,7 +206,6 @@ let is : 'a t -> bool t =
 let lnum state ~ok ~err:_ = ok state.lnum
 let cnum state ~ok ~err:_ = ok state.cnum
 let offset state ~ok ~err:_ = ok state.offset
-let unit = return ()
 
 let char : char -> char t =
  fun c state ~ok ~err ->
