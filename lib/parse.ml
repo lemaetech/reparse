@@ -493,22 +493,21 @@ let line : [`LF | `CRLF] -> string t =
   in
   let buf = Buffer.create 0 in
 
-  let sep_by =
-    is_eoi
-    >>= function
-    | true  -> unit
-    | false -> delimit
-  in
-
   take_while_on
     next
-    ~sep_by
     ~while_:(is_not delimit)
     ~on_take:(fun c -> Buffer.add_char buf c)
     state
     ~ok:(fun (_ : int) -> ())
     ~err ;
 
+  ( is_eoi
+  >>= function
+  | true  -> unit
+  | false -> delimit )
+    state
+    ~ok:(fun (_ : unit) -> ())
+    ~err ;
   ok (Buffer.contents buf)
 
 module Infix = struct
