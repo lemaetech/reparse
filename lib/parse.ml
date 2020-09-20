@@ -89,6 +89,8 @@ let ( <?> ) : 'a t -> string -> 'a t =
   p state ~ok ~err:(fun e ->
       if state.offset = ofs then error ~err err_msg state else err e)
 
+let unit = return ()
+
 let any : 'a t Lazy.t list -> 'a t =
  fun l state ~ok ~err ->
   let item = ref None in
@@ -125,7 +127,12 @@ let all : 'a t list -> 'a list t =
   in
   loop l
 
-let delay f state ~ok ~err = f () state ~ok ~err
+let all_unit : 'a t list -> unit t =
+ fun l state ~ok ~err ->
+  let l' = List.map (fun p -> p *> unit) l in
+  (all l' *> unit) state ~ok ~err
+
+let delay p state ~ok ~err = Lazy.force p state ~ok ~err
 
 let named name p state ~ok ~err =
   p state ~ok ~err:(fun e ->
@@ -199,7 +206,6 @@ let is : 'a t -> bool t =
 let lnum state ~ok ~err:_ = ok state.lnum
 let cnum state ~ok ~err:_ = ok state.cnum
 let offset state ~ok ~err:_ = ok state.offset
-let unit = return ()
 
 let char : char -> char t =
  fun c state ~ok ~err ->
@@ -328,8 +334,9 @@ let take :
       (Format.sprintf "[take] unable to parse at least %d times" at_least)
       state
 
-let take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
- fun p ~while_ ~on_take state ~ok ~err ->
+let take_while_on :
+    'a t -> ?sep_by:unit t -> while_:bool t -> on_take:('a -> unit) -> int t =
+ fun p ?(sep_by = unit) ~while_ ~on_take state ~ok ~err ->
   let cond = ref true in
   let take_count = ref 0 in
 
@@ -340,7 +347,7 @@ let take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
   in
   do_condition () ;
   while !cond && not (is_done state) do
-    p
+    (p <* sep_by)
       state
       ~ok:(fun a ->
         take_count := !take_count + 1 ;
@@ -350,13 +357,14 @@ let take_while_on : 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
   done ;
   ok !take_count
 
-let take_while : 'a t -> while_:bool t -> (int * 'a list) t =
- fun p ~while_ state ~ok ~err ->
+let take_while : 'a t -> ?sep_by:unit t -> while_:bool t -> (int * 'a list) t =
+ fun p ?(sep_by = unit) ~while_ state ~ok ~err ->
   let items = ref [] in
   let count = ref 0 in
   let on_take a = items := a :: !items in
   take_while_on
     p
+    ~sep_by
     ~while_
     ~on_take
     state
