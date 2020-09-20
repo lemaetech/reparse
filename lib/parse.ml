@@ -125,7 +125,7 @@ let all : 'a t list -> 'a list t =
   in
   loop l
 
-let delay f state ~ok ~err = f () state ~ok ~err
+let delay p state ~ok ~err = Lazy.force p state ~ok ~err
 
 let named name p state ~ok ~err =
   p state ~ok ~err:(fun e ->

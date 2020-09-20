@@ -162,7 +162,7 @@ val named : string -> 'a t -> 'a t
 (** [named name p] names parser [p] with [name]. The name is used on error
     message. This may be helpful when debugging parsers. *)
 
-val delay : (unit -> 'a t) -> 'a t
+val delay : 'a t Lazy.t -> 'a t
 (** [delay f] delays the computation of [p] until it is required. [p] is
     [p = f ()]. Use it together with [<|>]. *)
 
