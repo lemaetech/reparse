@@ -46,21 +46,17 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
   let fail : string -> 'a t =
    fun err_msg state ~ok:_ ~err -> error ~err err_msg state
 
-  let advance : int -> unit t =
-   fun n state ~ok ~err ->
-    if not (Io.eof (state.offset + n) state.src) then (
-      let offset = state.offset + n in
+  let next state ~ok ~err =
+    if not (Io.eof state.offset state.src) then (
+      let c = Io.nth state.offset state.src in
+      state.offset <- state.offset + 1 ;
       if state.track_lnum then
-        for i = state.offset to offset - 1 do
-          let c = Io.nth i state.src in
-          if Char.equal c '\n' then (
-            state.lnum <- state.lnum + 1 ;
-            state.cnum <- 1 )
-          else state.cnum <- state.cnum + 1
-        done ;
-      state.offset <- offset ;
-      ok () )
-    else error ~err "[advance] eof" state
+        if Char.equal c '\n' then (
+          state.lnum <- state.lnum + 1 ;
+          state.cnum <- 1 )
+        else state.cnum <- state.cnum + 1 ;
+      ok c )
+    else error ~err "[next]" state
 
   let return : 'a -> 'a t = fun v _state ~ok ~err:_ -> ok v
 
@@ -150,11 +146,10 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
 
   let peek_string len state ~ok ~err =
     match Io.sub ~offset:state.offset ~len state.src with
-    | s           -> ok s
-    | exception e -> err e
+    | s            -> ok s
+    | exception _e -> error ~err "[peek_string]" state
 
   let is_done state = Io.eof state.offset state.src
-  let next = peek_char <?> "[next]" <* advance 1
   let is_eoi state ~ok ~err:_ = ok (is_done state)
   let pos state = (state.offset, state.lnum, state.cnum)
 
@@ -214,7 +209,7 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
     peek_char
       state
       ~ok:(fun c2 ->
-        if Char.equal c c2 then (c <$ advance 1) state ~ok ~err
+        if Char.equal c c2 then (c <$ next) state ~ok ~err
         else error ~err (Format.sprintf "[char] expected '%c'" c) state)
       ~err
 
@@ -223,19 +218,8 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
     peek_char
       state
       ~ok:(fun c2 ->
-        if f c2 then (c2 <$ advance 1) state ~ok ~err
+        if f c2 then (c2 <$ next) state ~ok ~err
         else error ~err "[satisfy]" state)
-      ~err
-
-  let string : string -> string t =
-   fun s state ~ok ~err ->
-    let len = String.length s in
-    peek_string
-      len
-      state
-      ~ok:(fun s2 ->
-        if String.equal s s2 then (s <$ advance len) state ~ok ~err
-        else error ~err "[string]" state)
       ~err
 
   let not_followed_by p q = p <* not_ q
@@ -275,6 +259,17 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
         ~err
         (Format.sprintf "[skip] unable to parse at_least %d times" at_least)
         state
+
+  let string : string -> string t =
+   fun s state ~ok ~err ->
+    let len = String.length s in
+    peek_string
+      len
+      state
+      ~ok:(fun s2 ->
+        if String.equal s s2 then (s <$ skip ~up_to:len next) state ~ok ~err
+        else error ~err "[string]" state)
+      ~err
 
   let skip_while : _ t -> while_:bool t -> int t =
    fun p ~while_ state ~ok ~err ->

@@ -26,16 +26,11 @@ end = struct
 
   external create : string -> t = "%identity"
 
-  let eof i s = String.length s = i
-
-  let sub ~offset ~len s =
-    let len' =
-      if offset + len <= String.length s then len else String.length s - offset
-    in
-    String.sub s offset len'
+  let eof i s = i >= String.length s
+  let sub ~offset ~len s = String.sub s offset len
 
   let nth i s =
-    match String.unsafe_get s i with
+    match s.[i] with
     | c -> c
     | exception Invalid_argument _ -> raise End_of_file
 end
@@ -52,9 +47,16 @@ end = struct
 
   let eof ofs fd = Unix.read fd (Bytes.create 1) ofs 1 = 0
 
+  let rec really_read fd buffer start length =
+    if length <= 0 then ()
+    else
+      match Unix.read fd buffer start length with
+      | 0 -> raise End_of_file
+      | r -> really_read fd buffer (start + r) (length - r)
+
   let sub ~offset ~len fd =
     let buf = Bytes.create len in
-    let _ = Unix.read fd buf offset len in
+    really_read fd buf offset len ;
     Bytes.to_string buf
 
   let nth offset fd =

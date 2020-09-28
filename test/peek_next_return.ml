@@ -1,75 +1,77 @@
-open Reparse.Infix
-module R = Reparse
+module P = Reparse.Parse.String_parser
+open P.Infix
+
+let src = Reparse.IO.String.create
 
 let peek_char_h () =
-  let p = R.peek_char in
-  let r = R.parse "hello" p in
+  let p = P.peek_char in
+  let r = P.parse (src "hello") p in
   Alcotest.(check char "'h'" 'h' r)
 
 let peek_char_offset () =
-  let p = R.peek_char *> R.offset in
-  let r = R.parse "hello" p in
+  let p = P.peek_char *> P.offset in
+  let r = P.parse (src "hello") p in
   Alcotest.(check int "0" 0 r)
 
 let peek_char_many () =
-  let p = R.peek_char *> R.peek_char *> R.offset in
-  let r = R.parse "hello" p in
+  let p = P.peek_char *> P.peek_char *> P.offset in
+  let r = P.parse (src "hello") p in
   Alcotest.(check int "0" 0 r)
 
 let peek_string_5 () =
-  let r = R.parse "hello" (R.peek_string 5) in
+  let r = P.parse (src "hello") (P.peek_string 5) in
   Alcotest.(check string "hello" "hello" r)
 
 let peek_char_exn () =
-  let p () = ignore (R.parse "" R.peek_char) in
+  let p () = ignore (P.parse (src "") P.peek_char) in
   Alcotest.(
     check_raises
       "peek_char"
-      (R.Parse_error
+      (P.Parse_error
          {offset = 0; line_number = 0; column_number = 0; msg = "[peek_char]"})
       p)
 
 let peek_string_exn () =
-  let p () = ignore (R.parse "hello" (R.peek_string 6)) in
+  let p () = ignore (P.parse (src "hello") (P.peek_string 6)) in
   Alcotest.(
     check_raises
       "peek_string 6"
-      (R.Parse_error
+      (P.Parse_error
          {offset = 0; line_number = 0; column_number = 0; msg = "[peek_string]"})
       p)
 
 let next () =
-  let p = R.map2 (fun c o -> (c, o)) R.next R.offset in
-  let r = R.parse "hello" p in
+  let p = P.map2 (fun c o -> (c, o)) P.next P.offset in
+  let r = P.parse (src "hello") p in
   Alcotest.(check (pair char int) "'h',1" ('h', 1) r)
 
 let next_exn () =
-  let p1 = R.next *> R.next *> R.next in
-  let p () = ignore (R.parse "hh" p1) in
+  let p1 = P.next *> P.next *> P.next in
+  let p () = ignore (P.parse (src "hh") p1) in
   Alcotest.(
     check_raises
       "next exn"
-      (R.Parse_error
+      (P.Parse_error
          {offset = 2; line_number = 0; column_number = 0; msg = "[next]"})
       p)
 
 let return_int () =
-  let r = R.parse "" (R.return 5) in
+  let r = P.parse (src "") (P.return 5) in
   Alcotest.(check int "5" 5 r)
 
 let return_string () =
-  let r = R.parse "" (R.return "hello") in
+  let r = P.parse (src "") (P.return "hello") in
   Alcotest.(check string "hello" "hello" r)
 
 let optional () =
-  let p = R.optional (R.char 'h') in
-  let r = R.parse "hello" p in
-  Alcotest.(check (option unit) "'h'" (Some ()) r)
+  let p = P.optional (P.char 'h') in
+  let r = P.parse (src "hello") p in
+  Alcotest.(check (option char) "'h'" (Some 'h') r)
 
 let optional_none () =
-  let p = R.optional (R.char 'h') in
-  let r = R.parse "world" p in
-  Alcotest.(check (option unit) "'h'" None r)
+  let p = P.optional (P.char 'h') in
+  let r = P.parse (src "world") p in
+  Alcotest.(check (option char) "'h'" None r)
 
 let suite =
   [ ("char : 'h'", `Quick, peek_char_h)
