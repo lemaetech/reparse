@@ -24,4 +24,5 @@
   (ocaml
    (>= 4.10.0))
   dune
+  base-unix
   (alcotest :with-test)))
