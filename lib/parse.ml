@@ -7,7 +7,7 @@
  *
  *-------------------------------------------------------------------------*)
 
-module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
+module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
   type io = Io.t
 
   type state =
@@ -528,5 +528,5 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
   end
 end
 
-module String_parser = Make (IO.String)
-module File_parser = Make (IO.Unix_fd)
+module String_parser = Make (Io.String)
+module File_parser = Make (Io.File)

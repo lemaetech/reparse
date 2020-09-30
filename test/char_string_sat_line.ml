@@ -1,6 +1,6 @@
 module P = Reparse.Parse.String_parser
 
-let src = Reparse.IO.String.create
+let src = Reparse.Io.String.create
 
 let char_h () =
   let p = P.map2 (fun c o -> (c, o)) (P.char 'h') P.offset in

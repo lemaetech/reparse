@@ -36,7 +36,7 @@ end = struct
 end
 
 (** Unix.file_descr input. Unbuffered. *)
-module Unix_fd : sig
+module File : sig
   include S
 
   val create : Unix.file_descr -> t

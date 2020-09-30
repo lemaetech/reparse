@@ -1,7 +1,7 @@
 module P = Reparse.Parse.String_parser
 open P.Infix
 
-let src = Reparse.IO.String.create
+let src = Reparse.Io.String.create
 
 let test_lnum_cnum_1 () =
   let p =
@@ -37,16 +37,8 @@ let test_lnum_cnum_4 () =
   let r = P.parse ~track_lnum:false (src "hello world\nsecond line\naaaaa") p in
   Alcotest.(check (pair int int) "0/0" (0, 0) r)
 
-(* let advance () = *)
-(*   let p = *)
-(*     P.a advance 6 *> P.map3 (fun o l c -> [o; l; c]) P.offset P.lnum P.cnum *)
-(*   in *)
-(*   let r = P.parse ~track_lnum:true "hello\nworld" p in *)
-(*   Alcotest.(check (list int) "[6; 1;0] " [6; 2; 1] r) *)
-
 let suite =
   [ ("lnum/cnum : 1/12", `Quick, test_lnum_cnum_1)
   ; ("lnum/cnum : 3/1", `Quick, test_lnum_cnum_2)
   ; ("lnum/cnum : 3/5", `Quick, test_lnum_cnum_3)
-  ; ("lnum/cnum : 0/0", `Quick, test_lnum_cnum_4)
-    (* ; ("advance: offset:6 lnum:2 cnum:1", `Quick, advance) ] *) ]
+  ; ("lnum/cnum : 0/0", `Quick, test_lnum_cnum_4) ]
