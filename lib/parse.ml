@@ -47,16 +47,16 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
    fun err_msg state ~ok:_ ~err -> error ~err err_msg state
 
   let next state ~ok ~err =
-    if not (Io.eof state.offset state.src) then (
-      let c = Io.nth state.offset state.src in
-      state.offset <- state.offset + 1 ;
-      if state.track_lnum then
-        if Char.equal c '\n' then (
-          state.lnum <- state.lnum + 1 ;
-          state.cnum <- 1 )
-        else state.cnum <- state.cnum + 1 ;
-      ok c )
-    else error ~err "[next]" state
+    match Io.nth state.offset state.src with
+    | c           ->
+        state.offset <- state.offset + 1 ;
+        if state.track_lnum then
+          if Char.equal c '\n' then (
+            state.lnum <- state.lnum + 1 ;
+            state.cnum <- 1 )
+          else state.cnum <- state.cnum + 1 ;
+        ok c
+    | exception _ -> error ~err "[next]" state
 
   let return : 'a -> 'a t = fun v _state ~ok ~err:_ -> ok v
 
@@ -235,12 +235,11 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       invalid_arg "up_to"
     else () ;
 
-    let up_to = Option.value up_to ~default:(-1) in
+    let up_to = ref (Option.value up_to ~default:(-1)) in
     let res = ref 0 in
 
     let rec loop offset count =
-      if (up_to = -1 || count < up_to) && not (is_done state) then
-        let bt = pos state in
+      if !up_to = -1 || count < !up_to then
         p
           state
           ~ok:(fun _ ->
@@ -248,7 +247,7 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
               (loop [@tailcall]) state.offset (count + 1)
             else res := count)
           ~err:(fun _ ->
-            backtrack state bt ;
+            up_to := count ;
             res := count)
       else res := count
     in
