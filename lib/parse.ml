@@ -47,16 +47,16 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
    fun err_msg state ~ok:_ ~err -> error ~err err_msg state
 
   let next state ~ok ~err =
-    if not (Io.eof state.offset state.src) then (
-      let c = Io.nth state.offset state.src in
-      state.offset <- state.offset + 1 ;
-      if state.track_lnum then
-        if Char.equal c '\n' then (
-          state.lnum <- state.lnum + 1 ;
-          state.cnum <- 1 )
-        else state.cnum <- state.cnum + 1 ;
-      ok c )
-    else error ~err "[next]" state
+    match Io.nth state.offset state.src with
+    | c           ->
+        state.offset <- state.offset + 1 ;
+        if state.track_lnum then
+          if Char.equal c '\n' then (
+            state.lnum <- state.lnum + 1 ;
+            state.cnum <- 1 )
+          else state.cnum <- state.cnum + 1 ;
+        ok c
+    | exception _ -> error ~err "[next]" state
 
   let return : 'a -> 'a t = fun v _state ~ok ~err:_ -> ok v
 
@@ -94,7 +94,6 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
    fun l state ~ok ~err ->
     let item = ref None in
     let err' () = error ~err "[any] all parsers failed" state in
-
     let rec loop = function
       | []             -> err' ()
       | (lazy p) :: tl ->
@@ -114,7 +113,6 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
   let all : 'a t list -> 'a list t =
    fun l state ~ok ~err ->
     let items = ref [] in
-
     let rec loop = function
       | []      -> ok (List.rev !items)
       | p :: tl ->
@@ -234,22 +232,17 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
     else if Option.is_some up_to && Option.get up_to < 0 then
       invalid_arg "up_to"
     else () ;
-
-    let up_to = Option.value up_to ~default:(-1) in
+    let up_to = ref (Option.value up_to ~default:(-1)) in
     let res = ref 0 in
-
     let rec loop offset count =
-      if (up_to = -1 || count < up_to) && not (is_done state) then
-        let bt = pos state in
+      if !up_to = -1 || count < !up_to then
         p
           state
           ~ok:(fun _ ->
             if offset <> state.offset then
               (loop [@tailcall]) state.offset (count + 1)
             else res := count)
-          ~err:(fun _ ->
-            backtrack state bt ;
-            res := count)
+          ~err:(fun _ -> res := count)
       else res := count
     in
     loop state.offset 0 ;
@@ -272,7 +265,7 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       ~err
 
   let skip_while : _ t -> while_:bool t -> int t =
-   fun p ~while_ state ~ok ~err ->
+   fun p ~while_ state ~ok ~err:_ ->
     let condition = ref true in
     let skip_count = ref 0 in
     let do_condition () =
@@ -284,9 +277,13 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       backtrack state bt
     in
     do_condition () ;
-    while !condition && not (is_done state) do
-      (p *> unit) state ~ok:(fun _ -> skip_count := !skip_count + 1) ~err ;
-      do_condition ()
+    while !condition do
+      (p *> unit)
+        state
+        ~ok:(fun _ ->
+          skip_count := !skip_count + 1 ;
+          do_condition ())
+        ~err:(fun _ -> condition := false)
     done ;
     ok !skip_count
 
@@ -298,7 +295,6 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
     else if Option.is_some up_to && Option.get up_to < 0 then
       invalid_arg "up_to"
     else () ;
-
     let upto = Option.value up_to ~default:(-1) in
     let count = ref 0 in
     let items = ref [] in
@@ -307,7 +303,7 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       items := items'
     in
     let rec loop count offset acc =
-      if (upto = -1 || count < upto) && not (is_done state) then
+      if upto = -1 || count < upto then
         let bt = pos state in
         ( p
         >>= fun a ->
@@ -335,11 +331,10 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
         state
 
   let take_while_on :
-      'a t -> ?sep_by:unit t -> while_:bool t -> on_take:('a -> unit) -> int t =
-   fun p ?(sep_by = unit) ~while_ ~on_take state ~ok ~err ->
+      ?sep_by:unit t -> 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
+   fun ?(sep_by = unit) p ~while_ ~on_take state ~ok ~err:_ ->
     let cond = ref true in
     let take_count = ref 0 in
-
     let do_condition () =
       let bt = pos state in
       while_
@@ -349,23 +344,28 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       backtrack state bt
     in
     do_condition () ;
-    while !cond && not (is_done state) do
+    while !cond do
       (p <* sep_by)
         state
         ~ok:(fun a ->
           take_count := !take_count + 1 ;
           on_take a)
-        ~err ;
+        ~err:(fun _ -> cond := false) ;
       do_condition ()
     done ;
     ok !take_count
 
-  let take_while : 'a t -> ?sep_by:unit t -> while_:bool t -> (int * 'a list) t
+  let take_while : ?sep_by:unit t -> 'a t -> while_:bool t -> (int * 'a list) t
       =
-   fun p ?(sep_by = unit) ~while_ state ~ok ~err ->
+   fun ?sep_by p ~while_ state ~ok ~err ->
     let items = ref [] in
     let count = ref 0 in
     let on_take a = items := a :: !items in
+    let sep_by =
+      match sep_by with
+      | None   -> unit
+      | Some p -> p
+    in
     take_while_on
       p
       ~sep_by
@@ -374,8 +374,7 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       state
       ~ok:(fun count' -> count := count')
       ~err ;
-
-    ok (!count, !items)
+    ok (!count, List.rev !items)
 
   let char_parser name p state ~ok ~err =
     p state ~ok ~err:(fun exn ->
@@ -499,7 +498,6 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       | `CRLF -> crlf *> unit
     in
     let buf = Buffer.create 0 in
-
     take_while_on
       next
       ~while_:(is_not delimit)

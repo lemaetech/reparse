@@ -45,23 +45,33 @@ end = struct
 
   external create : Unix.file_descr -> t = "%identity"
 
-  let eof ofs fd = Unix.read fd (Bytes.create 1) ofs 1 = 0
-
-  let rec really_read fd buffer start length =
-    if length <= 0 then ()
-    else
-      match Unix.read fd buffer start length with
-      | 0 -> raise End_of_file
-      | r -> really_read fd buffer (start + r) (length - r)
-
-  let sub ~offset ~len fd =
-    let buf = Bytes.create len in
-    really_read fd buf offset len ;
-    Bytes.to_string buf
+  external unsafe_pread : Unix.file_descr -> bytes -> int -> int -> int -> int
+    = "caml_pread"
+  (** [unsafe_pread fd buf count fd_offset buf_offset] Reads randome bytes from
+      [fd] at offset [fd_offset] into [buf] from offset [buf_offset] of length
+      [count]. *)
 
   let nth offset fd =
     let buf = Bytes.create 1 in
-    match Unix.read fd buf offset 1 with
+    match unsafe_pread fd buf 1 offset 0 with
     | 0 -> raise End_of_file
-    | _ -> Bytes.get buf 0
+    | 1 -> Bytes.get buf 0
+    | _ -> failwith "IO.Unix_fd.nth"
+
+  let eof ofs fd =
+    match nth ofs fd with
+    | (_ : char)  -> false
+    | exception _ -> true
+
+  let rec really_read fd buf len fd_offset buf_offset =
+    if len <= 0 then ()
+    else
+      match unsafe_pread fd buf len fd_offset buf_offset with
+      | 0 -> raise End_of_file
+      | r -> really_read fd buf (len - r) (fd_offset + r) (buf_offset + r)
+
+  let sub ~offset ~len fd =
+    let buf = Bytes.create len in
+    really_read fd buf len offset 0 ;
+    Bytes.to_string buf
 end
