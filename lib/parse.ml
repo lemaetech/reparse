@@ -271,7 +271,7 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       ~err
 
   let skip_while : _ t -> while_:bool t -> int t =
-   fun p ~while_ state ~ok ~err ->
+   fun p ~while_ state ~ok ~err:_ ->
     let condition = ref true in
     let skip_count = ref 0 in
     let do_condition () =
@@ -283,9 +283,13 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       backtrack state bt
     in
     do_condition () ;
-    while !condition && not (is_done state) do
-      (p *> unit) state ~ok:(fun _ -> skip_count := !skip_count + 1) ~err ;
-      do_condition ()
+    while !condition do
+      (p *> unit)
+        state
+        ~ok:(fun _ ->
+          skip_count := !skip_count + 1 ;
+          do_condition ())
+        ~err:(fun _ -> condition := false)
     done ;
     ok !skip_count
 
