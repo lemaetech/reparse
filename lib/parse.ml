@@ -246,9 +246,7 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
             if offset <> state.offset then
               (loop [@tailcall]) state.offset (count + 1)
             else res := count)
-          ~err:(fun _ ->
-            up_to := count ;
-            res := count)
+          ~err:(fun _ -> res := count)
       else res := count
     in
     loop state.offset 0 ;
@@ -310,7 +308,7 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       items := items'
     in
     let rec loop count offset acc =
-      if (upto = -1 || count < upto) && not (is_done state) then
+      if upto = -1 || count < upto then
         let bt = pos state in
         ( p
         >>= fun a ->
@@ -338,8 +336,8 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
         state
 
   let take_while_on :
-      'a t -> ?sep_by:unit t -> while_:bool t -> on_take:('a -> unit) -> int t =
-   fun p ?(sep_by = unit) ~while_ ~on_take state ~ok ~err ->
+      ?sep_by:unit t -> 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
+   fun ?(sep_by = unit) p ~while_ ~on_take state ~ok ~err:_ ->
     let cond = ref true in
     let take_count = ref 0 in
 
@@ -352,23 +350,29 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       backtrack state bt
     in
     do_condition () ;
-    while !cond && not (is_done state) do
+    while !cond do
       (p <* sep_by)
         state
         ~ok:(fun a ->
           take_count := !take_count + 1 ;
           on_take a)
-        ~err ;
+        ~err:(fun _ -> cond := false) ;
       do_condition ()
     done ;
     ok !take_count
 
-  let take_while : 'a t -> ?sep_by:unit t -> while_:bool t -> (int * 'a list) t
+  let take_while : ?sep_by:unit t -> 'a t -> while_:bool t -> (int * 'a list) t
       =
-   fun p ?(sep_by = unit) ~while_ state ~ok ~err ->
+   fun ?sep_by p ~while_ state ~ok ~err ->
     let items = ref [] in
     let count = ref 0 in
     let on_take a = items := a :: !items in
+
+    let sep_by =
+      match sep_by with
+      | None   -> unit
+      | Some p -> p
+    in
     take_while_on
       p
       ~sep_by
@@ -378,7 +382,7 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       ~ok:(fun count' -> count := count')
       ~err ;
 
-    ok (!count, !items)
+    ok (!count, List.rev !items)
 
   let char_parser name p state ~ok ~err =
     p state ~ok ~err:(fun exn ->
