@@ -94,7 +94,6 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
    fun l state ~ok ~err ->
     let item = ref None in
     let err' () = error ~err "[any] all parsers failed" state in
-
     let rec loop = function
       | []             -> err' ()
       | (lazy p) :: tl ->
@@ -114,7 +113,6 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
   let all : 'a t list -> 'a list t =
    fun l state ~ok ~err ->
     let items = ref [] in
-
     let rec loop = function
       | []      -> ok (List.rev !items)
       | p :: tl ->
@@ -234,10 +232,8 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
     else if Option.is_some up_to && Option.get up_to < 0 then
       invalid_arg "up_to"
     else () ;
-
     let up_to = ref (Option.value up_to ~default:(-1)) in
     let res = ref 0 in
-
     let rec loop offset count =
       if !up_to = -1 || count < !up_to then
         p
@@ -367,7 +363,6 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
     let items = ref [] in
     let count = ref 0 in
     let on_take a = items := a :: !items in
-
     let sep_by =
       match sep_by with
       | None   -> unit
@@ -381,7 +376,6 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       state
       ~ok:(fun count' -> count := count')
       ~err ;
-
     ok (!count, List.rev !items)
 
   let char_parser name p state ~ok ~err =
@@ -506,7 +500,6 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
       | `CRLF -> crlf *> unit
     in
     let buf = Buffer.create 0 in
-
     take_while_on
       next
       ~while_:(is_not delimit)
