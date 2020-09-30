@@ -295,7 +295,6 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
     else if Option.is_some up_to && Option.get up_to < 0 then
       invalid_arg "up_to"
     else () ;
-
     let upto = Option.value up_to ~default:(-1) in
     let count = ref 0 in
     let items = ref [] in
@@ -336,7 +335,6 @@ module Make (Io : IO.S) : Parse_sig.S with type io = Io.t = struct
    fun ?(sep_by = unit) p ~while_ ~on_take state ~ok ~err:_ ->
     let cond = ref true in
     let take_count = ref 0 in
-
     let do_condition () =
       let bt = pos state in
       while_
