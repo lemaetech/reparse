@@ -236,13 +236,16 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
     let res = ref 0 in
     let rec loop offset count =
       if !up_to = -1 || count < !up_to then
+        let bt = pos state in
         p
           state
           ~ok:(fun _ ->
             if offset <> state.offset then
               (loop [@tailcall]) state.offset (count + 1)
             else res := count)
-          ~err:(fun _ -> res := count)
+          ~err:(fun _ ->
+            backtrack state bt ;
+            res := count)
       else res := count
     in
     loop state.offset 0 ;
@@ -349,9 +352,9 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
         state
         ~ok:(fun a ->
           take_count := !take_count + 1 ;
-          on_take a)
-        ~err:(fun _ -> cond := false) ;
-      do_condition ()
+          on_take a ;
+          do_condition ())
+        ~err:(fun _ -> cond := false)
     done ;
     ok !take_count
 
