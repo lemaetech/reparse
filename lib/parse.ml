@@ -356,8 +356,8 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
         state )
 
   let take_while_on :
-      ?sep_by:unit t -> 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
-   fun ?(sep_by = unit) p ~while_ ~on_take state ~ok ~err:_ ->
+      ?sep_by:_ t -> 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
+   fun ?sep_by p ~while_ ~on_take state ~ok ~err:_ ->
     let cond = ref true in
     let take_count = ref 0 in
     let do_condition () =
@@ -367,6 +367,11 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
         ~ok:(fun cond' -> cond := cond')
         ~err:(fun _ -> cond := false) ;
       backtrack state bt
+    in
+    let sep_by =
+      match sep_by with
+      | None   -> unit
+      | Some p -> p *> unit
     in
     do_condition () ;
     while !cond do
@@ -383,8 +388,7 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
     done ;
     ok !take_count
 
-  let take_while : ?sep_by:unit t -> 'a t -> while_:bool t -> (int * 'a list) t
-      =
+  let take_while : ?sep_by:_ t -> 'a t -> while_:bool t -> (int * 'a list) t =
    fun ?sep_by p ~while_ state ~ok ~err ->
     let items = ref [] in
     let count = ref 0 in
@@ -392,7 +396,7 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
     let sep_by =
       match sep_by with
       | None   -> unit
-      | Some p -> p
+      | Some p -> p *> unit
     in
     take_while_on
       p

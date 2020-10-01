@@ -344,7 +344,7 @@ module type S = sig
         r = (5, ['a'; 'a'; 'a'; 'a'; 'a'])
       ]} *)
 
-  val take_while : ?sep_by:unit t -> 'a t -> while_:bool t -> (int * 'a list) t
+  val take_while : ?sep_by:_ t -> 'a t -> while_:bool t -> (int * 'a list) t
   (** [take_while p ~while_] parses [p] while [while_] is true. It returns the
       count of items taken as well and the items itself.
 
@@ -357,7 +357,7 @@ module type S = sig
       ]} *)
 
   val take_while_on :
-    ?sep_by:unit t -> 'a t -> while_:bool t -> on_take:('a -> unit) -> int t
+    ?sep_by:_ t -> 'a t -> while_:bool t -> on_take:('a -> unit) -> int t
   (** [take_while_on p ~while_ ~on_take] parses [p] while [while_] is true. It
       calls [on_take] each time it consumes the input. Returns the count of
       items consumed.
