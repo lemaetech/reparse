@@ -281,12 +281,15 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
     in
     do_condition () ;
     while !condition do
+      let bt = pos state in
       (p *> unit)
         state
         ~ok:(fun _ ->
           skip_count := !skip_count + 1 ;
           do_condition ())
-        ~err:(fun _ -> condition := false)
+        ~err:(fun _ ->
+          backtrack state bt ;
+          condition := false)
     done ;
     ok !skip_count
 
@@ -348,13 +351,16 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
     in
     do_condition () ;
     while !cond do
+      let bt = pos state in
       (p <* sep_by)
         state
         ~ok:(fun a ->
           take_count := !take_count + 1 ;
           on_take a ;
           do_condition ())
-        ~err:(fun _ -> cond := false)
+        ~err:(fun _ ->
+          backtrack state bt ;
+          cond := false)
     done ;
     ok !take_count
 
