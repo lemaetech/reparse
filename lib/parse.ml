@@ -234,6 +234,8 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
     else () ;
     let up_to = ref (Option.value up_to ~default:(-1)) in
     let res = ref 0 in
+    (* if at_least fails then backtrack to this value. *)
+    let at_least_bt = pos state in
     let rec loop offset count =
       if !up_to = -1 || count < !up_to then
         let bt = pos state in
@@ -250,11 +252,12 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
     in
     loop state.offset 0 ;
     if !res >= at_least then ok !res
-    else
+    else (
+      backtrack state at_least_bt ;
       error
         ~err
         (Format.sprintf "[skip] unable to parse at_least %d times" at_least)
-        state
+        state )
 
   let string : string -> string t =
    fun s state ~ok ~err ->
