@@ -89,6 +89,13 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
         if state.offset = ofs then error ~err err_msg state else err e)
 
   let unit = return ()
+  let pos state = (state.offset, state.lnum, state.cnum)
+
+  let backtrack state (o, l, c) =
+    assert (0 <= o && o <= state.offset) ;
+    state.offset <- o ;
+    state.lnum <- l ;
+    state.cnum <- c
 
   let any : 'a t Lazy.t list -> 'a t =
    fun l state ~ok ~err ->
@@ -113,6 +120,7 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
   let all : 'a t list -> 'a list t =
    fun l state ~ok ~err ->
     let items = ref [] in
+    let bt = pos state in
     let rec loop = function
       | []      -> ok (List.rev !items)
       | p :: tl ->
@@ -121,14 +129,16 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
             ~ok:(fun a ->
               items := a :: !items ;
               (loop [@tailrec]) tl)
-            ~err:(fun _ -> error ~err "[all] one of the parsers failed :" state)
+            ~err:(fun _ ->
+              backtrack state bt ;
+              error ~err "[all] one of the parsers failed" state)
     in
     loop l
 
   let all_unit : 'a t list -> unit t =
    fun l state ~ok ~err ->
     let l' = List.map (fun p -> p *> unit) l in
-    (all l' *> unit) state ~ok ~err
+    ((all l' <?> "[all_unit] one of the parsers failed") *> unit) state ~ok ~err
 
   let delay p state ~ok ~err = Lazy.force p state ~ok ~err
 
@@ -149,13 +159,6 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
 
   let is_done state = Io.eof state.offset state.src
   let is_eoi state ~ok ~err:_ = ok (is_done state)
-  let pos state = (state.offset, state.lnum, state.cnum)
-
-  let backtrack state (o, l, c) =
-    assert (0 <= o && o <= state.offset) ;
-    state.offset <- o ;
-    state.lnum <- l ;
-    state.cnum <- c
 
   let eoi : unit t =
    fun state ~ok ~err ->
