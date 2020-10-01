@@ -129,6 +129,45 @@ let take_while_sep (type s) (module P : M.S with type io = s) src () =
   Alcotest.(
     check (pair (pair int (list char)) int) "" ((4, ['a'; 'a'; 'a'; 'a']), 8) r)
 
+let take_while_cb (type s) (module P : M.S with type io = s) src () =
+  let buf = Buffer.create 5 in
+  let p =
+    P.map2
+      make_pair
+      (P.take_while_cb
+         (P.char 'a')
+         ~while_:(P.is_not (P.char 'z'))
+         ~on_take_cb:(fun c -> Buffer.add_char buf c))
+      P.offset
+  in
+  let r = P.parse src p in
+  Alcotest.(
+    check
+      (pair (pair int int) string)
+      ""
+      ((4, 4), "aaaa")
+      (r, Buffer.contents buf))
+
+let take_while_cb_sep_by (type s) (module P : M.S with type io = s) src () =
+  let buf = Buffer.create 5 in
+  let p =
+    P.map2
+      make_pair
+      (P.take_while_cb
+         (P.char 'a')
+         ~while_:(P.is_not (P.char 'z'))
+         ~sep_by:P.space
+         ~on_take_cb:(fun c -> Buffer.add_char buf c))
+      P.offset
+  in
+  let r = P.parse src p in
+  Alcotest.(
+    check
+      (pair (pair int int) string)
+      ""
+      ((4, 8), "aaaa")
+      (r, Buffer.contents buf))
+
 let suite =
   [ M.make_string_test "skip" skip "    a"
   ; M.make_string_test "skip ~at_least:3" skip_at_least "    a"
@@ -148,6 +187,8 @@ let suite =
       "a a a acz"
   ; M.make_string_test "take_while" take_while "aaaacz"
   ; M.make_string_test "take_while sep_by" take_while_sep "a a a a cz"
+  ; M.make_string_test "take_while_cb" take_while_cb "aaaacz"
+  ; M.make_string_test "take_while_cb sepby" take_while_cb_sep_by "a a a a cz"
   ; M.make_file_test "skip" skip "    a"
   ; M.make_file_test "skip ~at_least:3" skip_at_least "    a"
   ; M.make_file_test "skip ~at_least:5 fails" skip_at_least_fail "    a"
