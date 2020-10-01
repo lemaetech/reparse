@@ -8,6 +8,8 @@
  * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
 
-module Make : functor (Io : Io.S) -> Parse_sig.S with type io = Io.t
-module String_parser : Parse_sig.S with type io = Io.String.t
-module File_parser : Parse_sig.S with type io = Io.File.t
+module Make : functor (Source : Source.S) ->
+  Parse_sig.S with type src = Source.t
+
+module String_parser : Parse_sig.S with type src = Source.String.t
+module File_parser : Parse_sig.S with type src = Source.File.t

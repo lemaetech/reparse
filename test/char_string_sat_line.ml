@@ -1,11 +1,11 @@
 module M = Make_test
 
-let char_h (type s) (module P : M.S with type io = s) src () =
+let char_h (type s) (module P : M.S with type src = s) src () =
   let p = P.map2 (fun c o -> (c, o)) (P.char 'h') P.offset in
   let r = P.parse src p in
   Alcotest.(check (pair char int) "'h', 1" ('h', 1) r)
 
-let char_exn (type s) (module P : M.S with type io = s) src () =
+let char_exn (type s) (module P : M.S with type src = s) src () =
   let p = P.char 'h' in
   let r () = ignore (P.parse src p) in
   Alcotest.(
@@ -18,12 +18,12 @@ let char_exn (type s) (module P : M.S with type io = s) src () =
          ; msg = "[char] expected 'h'" })
       r)
 
-let string (type s) (module P : M.S with type io = s) src () =
+let string (type s) (module P : M.S with type src = s) src () =
   let p = P.map2 (fun s o -> (s, o)) (P.string "hello") P.offset in
   let r = P.parse src p in
   Alcotest.(check (pair string int) "\"hello\", 4" ("hello", 5) r)
 
-let string_exn (type s) (module P : M.S with type io = s) src () =
+let string_exn (type s) (module P : M.S with type src = s) src () =
   let p = P.string "hello" in
   let r () = ignore (P.parse src p) in
   Alcotest.(
@@ -40,12 +40,12 @@ let is_char = function
       true
   | _ -> false
 
-let satisfy (type s) (module P : M.S with type io = s) src () =
+let satisfy (type s) (module P : M.S with type src = s) src () =
   let p = P.satisfy is_char in
   let r = P.parse src p in
   Alcotest.(check char "a" 'a' r)
 
-let satisfy_exn (type s) (module P : M.S with type io = s) src () =
+let satisfy_exn (type s) (module P : M.S with type src = s) src () =
   let p = P.satisfy is_char in
   let r () = ignore (P.parse src p) in
   Alcotest.(
@@ -55,13 +55,13 @@ let satisfy_exn (type s) (module P : M.S with type io = s) src () =
          {offset = 0; line_number = 0; column_number = 0; msg = "[satisfy]"})
       r)
 
-let line_lf (type s) (module P : M.S with type io = s) src () =
+let line_lf (type s) (module P : M.S with type src = s) src () =
   let p = P.take (P.line `LF) in
   let r = P.parse src p in
   Alcotest.(
     check (pair int (list string)) "3, lines" (3, ["abc"; "def"; "ghi"]) r)
 
-let line_crlf (type s) (module P : M.S with type io = s) src () =
+let line_crlf (type s) (module P : M.S with type src = s) src () =
   let p = P.take (P.line `CRLF) in
   let r = P.parse src p in
   Alcotest.(

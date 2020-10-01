@@ -1,11 +1,11 @@
 module M = Make_test
 
-let any (type s) (module P : M.S with type io = s) src () =
+let any (type s) (module P : M.S with type src = s) src () =
   let p = P.any [lazy (P.char 'a'); lazy (P.char 'b'); lazy (P.char 'c')] in
   let r = P.parse src p in
   Alcotest.(check char "c" 'c' r)
 
-let any_fail (type s) (module P : M.S with type io = s) src () =
+let any_fail (type s) (module P : M.S with type src = s) src () =
   let p = P.any [lazy (P.char 'a'); lazy (P.char 'b'); lazy (P.char 'c')] in
   let r () = ignore (P.parse src p) in
   Alcotest.(
@@ -18,12 +18,12 @@ let any_fail (type s) (module P : M.S with type io = s) src () =
          ; msg = "[any] all parsers failed" })
       r)
 
-let all (type s) (module P : M.S with type io = s) src () =
+let all (type s) (module P : M.S with type src = s) src () =
   let p = P.all [P.char 'a'; P.char 'b'; P.char 'c'] in
   let r = P.parse src p in
   Alcotest.(check (list char) "list" ['a'; 'b'; 'c'] r)
 
-let all_fail (type s) (module P : M.S with type io = s) src () =
+let all_fail (type s) (module P : M.S with type src = s) src () =
   let p = P.all [P.char 'a'; P.char 'b'; P.char 'c'] in
   let r () = ignore (P.parse src p) in
   Alcotest.(
@@ -36,12 +36,12 @@ let all_fail (type s) (module P : M.S with type io = s) src () =
          ; msg = "[all] one of the parsers failed" })
       r)
 
-let all_unit (type s) (module P : M.S with type io = s) src () =
+let all_unit (type s) (module P : M.S with type src = s) src () =
   let p = P.all_unit [P.char 'a'; P.char 'b'; P.char 'c'] in
   let r = P.parse src p in
   Alcotest.(check unit "()" () r)
 
-let all_unit_fail (type s) (module P : M.S with type io = s) src () =
+let all_unit_fail (type s) (module P : M.S with type src = s) src () =
   let p = P.all_unit [P.char 'a'; P.char 'b'; P.char 'c'] in
   let r () = ignore (P.parse src p) in
   Alcotest.(

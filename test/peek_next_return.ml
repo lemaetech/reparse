@@ -1,27 +1,27 @@
 module M = Make_test
 
-let peek_char_h (type s) (module P : M.S with type io = s) src () =
+let peek_char_h (type s) (module P : M.S with type src = s) src () =
   let p = P.peek_char in
   let r = P.parse src p in
   Alcotest.(check char "'h'" 'h' r)
 
-let peek_char_offset (type s) (module P : M.S with type io = s) src () =
+let peek_char_offset (type s) (module P : M.S with type src = s) src () =
   let open P.Infix in
   let p = P.peek_char *> P.offset in
   let r = P.parse src p in
   Alcotest.(check int "0" 0 r)
 
-let peek_char_many (type s) (module P : M.S with type io = s) src () =
+let peek_char_many (type s) (module P : M.S with type src = s) src () =
   let open P.Infix in
   let p = P.peek_char *> P.peek_char *> P.offset in
   let r = P.parse src p in
   Alcotest.(check int "0" 0 r)
 
-let peek_string_5 (type s) (module P : M.S with type io = s) src () =
+let peek_string_5 (type s) (module P : M.S with type src = s) src () =
   let r = P.parse src (P.peek_string 5) in
   Alcotest.(check string "hello" "hello" r)
 
-let peek_char_exn (type s) (module P : M.S with type io = s) src () =
+let peek_char_exn (type s) (module P : M.S with type src = s) src () =
   let p () = ignore (P.parse src P.peek_char) in
   Alcotest.(
     check_raises
@@ -30,7 +30,7 @@ let peek_char_exn (type s) (module P : M.S with type io = s) src () =
          {offset = 0; line_number = 0; column_number = 0; msg = "[peek_char]"})
       p)
 
-let peek_string_exn (type s) (module P : M.S with type io = s) src () =
+let peek_string_exn (type s) (module P : M.S with type src = s) src () =
   let p () = ignore (P.parse src (P.peek_string 6)) in
   Alcotest.(
     check_raises
@@ -39,12 +39,12 @@ let peek_string_exn (type s) (module P : M.S with type io = s) src () =
          {offset = 0; line_number = 0; column_number = 0; msg = "[peek_string]"})
       p)
 
-let next (type s) (module P : M.S with type io = s) src () =
+let next (type s) (module P : M.S with type src = s) src () =
   let p = P.map2 (fun c o -> (c, o)) P.next P.offset in
   let r = P.parse src p in
   Alcotest.(check (pair char int) "'h',1" ('h', 1) r)
 
-let next_exn (type s) (module P : M.S with type io = s) src () =
+let next_exn (type s) (module P : M.S with type src = s) src () =
   let open P.Infix in
   let p1 = P.next *> P.next *> P.next in
   let p () = ignore (P.parse src p1) in
@@ -55,20 +55,20 @@ let next_exn (type s) (module P : M.S with type io = s) src () =
          {offset = 2; line_number = 0; column_number = 0; msg = "[next]"})
       p)
 
-let return_int (type s) (module P : M.S with type io = s) src () =
+let return_int (type s) (module P : M.S with type src = s) src () =
   let r = P.parse src (P.return 5) in
   Alcotest.(check int "5" 5 r)
 
-let return_string (type s) (module P : M.S with type io = s) src () =
+let return_string (type s) (module P : M.S with type src = s) src () =
   let r = P.parse src (P.return "hello") in
   Alcotest.(check string "hello" "hello" r)
 
-let optional (type s) (module P : M.S with type io = s) src () =
+let optional (type s) (module P : M.S with type src = s) src () =
   let p = P.optional (P.char 'h') in
   let r = P.parse src p in
   Alcotest.(check (option char) "'h'" (Some 'h') r)
 
-let optional_none (type s) (module P : M.S with type io = s) src () =
+let optional_none (type s) (module P : M.S with type src = s) src () =
   let p = P.optional (P.char 'h') in
   let r = P.parse src p in
   Alcotest.(check (option char) "'h'" None r)

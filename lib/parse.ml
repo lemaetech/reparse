@@ -7,11 +7,11 @@
  *
  *-------------------------------------------------------------------------*)
 
-module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
-  type io = Io.t
+module Make (S : Source.S) : Parse_sig.S with type src = S.t = struct
+  type src = S.t
 
   type state =
-    { src : io
+    { src : src
     ; track_lnum : bool (* Track line numbers. *)
     ; mutable offset : int (* Input offset. *)
     ; mutable lnum : int (* Line count. *)
@@ -47,7 +47,7 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
    fun err_msg state ~ok:_ ~err -> error ~err err_msg state
 
   let next state ~ok ~err =
-    match Io.nth state.offset state.src with
+    match S.nth state.offset state.src with
     | c           ->
         state.offset <- state.offset + 1 ;
         if state.track_lnum then
@@ -148,16 +148,16 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
 
   let peek_char : char t =
    fun state ~ok ~err ->
-    match Io.nth state.offset state.src with
+    match S.nth state.offset state.src with
     | c           -> ok c
     | exception _ -> error ~err "[peek_char]" state
 
   let peek_string len state ~ok ~err =
-    match Io.sub ~offset:state.offset ~len state.src with
+    match S.sub ~offset:state.offset ~len state.src with
     | s            -> ok s
     | exception _e -> error ~err "[peek_string]" state
 
-  let is_done state = Io.eof state.offset state.src
+  let is_done state = S.eof state.offset state.src
   let is_eoi state ~ok ~err:_ = ok (is_done state)
 
   let eoi : unit t =
@@ -557,5 +557,5 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
   end
 end
 
-module String_parser = Make (Io.String)
-module File_parser = Make (Io.File)
+module String_parser = Make (Source.String)
+module File_parser = Make (Source.File)

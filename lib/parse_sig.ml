@@ -6,7 +6,7 @@ module type S = sig
   type +'a t = state -> ok:('a -> unit) -> err:(exn -> unit) -> unit
   (** Represents a parser which can parse value ['a]. *)
 
-  type io
+  type src
 
   exception
     Parse_error of
@@ -19,7 +19,7 @@ module type S = sig
       failure. [msg] contains a descriptive error message. {b Note} [lnum],
       [cnum] is both [0] if line tracking is disabled. *)
 
-  val parse : ?track_lnum:bool -> io -> 'a t -> 'a
+  val parse : ?track_lnum:bool -> src -> 'a t -> 'a
   (** [parse ~count_lines input p] executes parser [p] with [input]. If
       [track_lnum] is true then the parser tracks both line and column numbers.
       It is set to [false] by default.

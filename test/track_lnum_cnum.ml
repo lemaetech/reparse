@@ -1,7 +1,7 @@
 module P = Reparse.Parse.String_parser
 open P.Infix
 
-let src = Reparse.Io.String.create
+let src = Reparse.Source.String.create
 
 let test_lnum_cnum_1 () =
   let p =
