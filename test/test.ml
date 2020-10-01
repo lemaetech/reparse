@@ -6,4 +6,4 @@ let () =
     ; ("peek_next_return.ml", Peek_next_return.suite)
     ; ("infix.ml", Infix.suite)
     ; ("char_string_sat_line.ml", Char_string_sat_line.suite)
-    ; ("skip_skip_while.ml", Skip_skip_while.suite) ]
+    ; ("skip_take.ml", Skip_take.suite) ]
