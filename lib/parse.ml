@@ -232,10 +232,12 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
     else if Option.is_some up_to && Option.get up_to < 0 then
       invalid_arg "up_to"
     else () ;
-    let up_to = ref (Option.value up_to ~default:(-1)) in
-    let res = ref 0 in
+
     (* if at_least fails then backtrack to this value. *)
     let at_least_bt = pos state in
+
+    let up_to = ref (Option.value up_to ~default:(-1)) in
+    let res = ref 0 in
     let rec loop offset count =
       if !up_to = -1 || count < !up_to then
         let bt = pos state in
@@ -251,6 +253,7 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
       else res := count
     in
     loop state.offset 0 ;
+
     if !res >= at_least then ok !res
     else (
       backtrack state at_least_bt ;

@@ -25,7 +25,13 @@ let skip_at_least_fail (type s) (module P : M.S with type io = s) src () =
          ; msg = "[skip] unable to parse at_least 5 times" })
       r)
 
+let skip_upto (type s) (module P : M.S with type io = s) src () =
+  let p = P.map2 make_tuple (P.skip ~up_to:3 P.space) P.offset in
+  let r = P.parse src p in
+  Alcotest.(check (pair int int) "3, 3" (3, 3) r)
+
 let suite =
   [ M.make_string_test "skip" skip "    a"
   ; M.make_string_test "skip ~at_least:3" skip_at_least "    a"
-  ; M.make_string_test "skip ~at_least:5 fails" skip_at_least_fail "    a" ]
+  ; M.make_string_test "skip ~at_least:5 fails" skip_at_least_fail "    a"
+  ; M.make_string_test "skip ~up_to:3" skip_upto "     a" ]
