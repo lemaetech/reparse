@@ -356,8 +356,8 @@ module type S = sig
         r = (3, ['a';'a';'a'])
       ]} *)
 
-  val take_while_on :
-    ?sep_by:_ t -> 'a t -> while_:bool t -> on_take:('a -> unit) -> int t
+  val take_while_cb :
+    ?sep_by:_ t -> 'a t -> while_:bool t -> on_take_cb:('a -> unit) -> int t
   (** [take_while_on p ~while_ ~on_take] parses [p] while [while_] is true. It
       calls [on_take] each time it consumes the input. Returns the count of
       items consumed.

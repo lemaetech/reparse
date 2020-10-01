@@ -355,9 +355,9 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
         (Format.sprintf "[take] unable to parse at least %d times" at_least)
         state )
 
-  let take_while_on :
-      ?sep_by:_ t -> 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
-   fun ?sep_by p ~while_ ~on_take state ~ok ~err:_ ->
+  let take_while_cb :
+      ?sep_by:_ t -> 'a t -> while_:bool t -> on_take_cb:('a -> unit) -> int t =
+   fun ?sep_by p ~while_ ~on_take_cb state ~ok ~err:_ ->
     let cond = ref true in
     let take_count = ref 0 in
     let do_condition () =
@@ -380,7 +380,7 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
         state
         ~ok:(fun a ->
           take_count := !take_count + 1 ;
-          on_take a ;
+          on_take_cb a ;
           do_condition ())
         ~err:(fun _ ->
           backtrack state bt ;
@@ -392,17 +392,17 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
    fun ?sep_by p ~while_ state ~ok ~err ->
     let items = ref [] in
     let count = ref 0 in
-    let on_take a = items := a :: !items in
+    let on_take_cb a = items := a :: !items in
     let sep_by =
       match sep_by with
       | None   -> unit
       | Some p -> p *> unit
     in
-    take_while_on
+    take_while_cb
       p
       ~sep_by
       ~while_
-      ~on_take
+      ~on_take_cb
       state
       ~ok:(fun count' -> count := count')
       ~err ;
@@ -530,10 +530,10 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
       | `CRLF -> crlf *> unit
     in
     let buf = Buffer.create 0 in
-    take_while_on
+    take_while_cb
       next
       ~while_:(is_not delimit)
-      ~on_take:(fun c -> Buffer.add_char buf c)
+      ~on_take_cb:(fun c -> Buffer.add_char buf c)
       state
       ~ok:(fun (_ : int) -> ())
       ~err ;
