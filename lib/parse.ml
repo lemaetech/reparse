@@ -327,16 +327,10 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
     let rec loop count offset acc =
       if upto = -1 || count < upto then
         let bt = pos state in
-        ( p
-        >>= fun a ->
-        optional sep_by
-        >|= function
-        | Some _ -> (a, true)
-        | None   -> (a, false) )
+        (p <* sep_by)
           state
-          ~ok:(fun (a, sep_by_parsed) ->
-            if not sep_by_parsed then ok2 (count + 1, a :: acc)
-            else if offset <> state.offset then
+          ~ok:(fun a ->
+            if offset <> state.offset then
               (loop [@tailcall]) (count + 1) state.offset (a :: acc)
             else ok2 (count, acc))
           ~err:(fun _ ->
