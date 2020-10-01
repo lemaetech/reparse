@@ -104,6 +104,31 @@ let take_at_least_up_to_sep_by (type s) (module P : M.S with type io = s) src ()
   Alcotest.(
     check (pair (pair int (list char)) int) "" ((3, ['a'; 'a'; 'a']), 6) r)
 
+let take_while (type s) (module P : M.S with type io = s) src () =
+  let p =
+    P.map2
+      make_pair
+      (P.take_while (P.char 'a') ~while_:(P.is_not (P.char 'z')))
+      P.offset
+  in
+  let r = P.parse src p in
+  Alcotest.(
+    check (pair (pair int (list char)) int) "" ((4, ['a'; 'a'; 'a'; 'a']), 4) r)
+
+let take_while_sep (type s) (module P : M.S with type io = s) src () =
+  let p =
+    P.map2
+      make_pair
+      (P.take_while
+         ~sep_by:P.space
+         (P.char 'a')
+         ~while_:(P.is_not (P.char 'z')))
+      P.offset
+  in
+  let r = P.parse src p in
+  Alcotest.(
+    check (pair (pair int (list char)) int) "" ((4, ['a'; 'a'; 'a'; 'a']), 8) r)
+
 let suite =
   [ M.make_string_test "skip" skip "    a"
   ; M.make_string_test "skip ~at_least:3" skip_at_least "    a"
@@ -121,6 +146,8 @@ let suite =
       "take at_least up_to sep_by"
       take_at_least_up_to_sep_by
       "a a a acz"
+  ; M.make_string_test "take_while" take_while "aaaacz"
+  ; M.make_string_test "take_while sep_by" take_while_sep "a a a a cz"
   ; M.make_file_test "skip" skip "    a"
   ; M.make_file_test "skip ~at_least:3" skip_at_least "    a"
   ; M.make_file_test "skip ~at_least:5 fails" skip_at_least_fail "    a"
@@ -136,4 +163,6 @@ let suite =
   ; M.make_file_test
       "take at_least up_to sep_by"
       take_at_least_up_to_sep_by
-      "a a a acz" ]
+      "a a a acz"
+  ; M.make_file_test "take_while" take_while "aaaacz"
+  ; M.make_file_test "take_while sep_by" take_while_sep "a a a a cz" ]
