@@ -314,6 +314,10 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
       count := count' ;
       items := items'
     in
+
+    (* if at_least fails then backtrack to this value. *)
+    let at_least_bt = pos state in
+
     let rec loop count offset acc =
       if upto = -1 || count < upto then
         let bt = pos state in
@@ -334,13 +338,16 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
             ok2 (count, acc))
       else ok2 (count, acc)
     in
+
     loop 0 state.offset [] ;
+
     if !count >= at_least then ok (!count, List.rev !items)
-    else
+    else (
+      backtrack state at_least_bt ;
       error
         ~err
         (Format.sprintf "[take] unable to parse at least %d times" at_least)
-        state
+        state )
 
   let take_while_on :
       ?sep_by:unit t -> 'a t -> while_:bool t -> on_take:('a -> unit) -> int t =
