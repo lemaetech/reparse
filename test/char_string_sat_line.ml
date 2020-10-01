@@ -55,8 +55,14 @@ let satisfy_exn (type s) (module P : M.S with type io = s) src () =
          {offset = 0; line_number = 0; column_number = 0; msg = "[satisfy]"})
       r)
 
-let line (type s) (module P : M.S with type io = s) src () =
+let line_lf (type s) (module P : M.S with type io = s) src () =
   let p = P.take (P.line `LF) in
+  let r = P.parse src p in
+  Alcotest.(
+    check (pair int (list string)) "3, lines" (3, ["abc"; "def"; "ghi"]) r)
+
+let line_crlf (type s) (module P : M.S with type io = s) src () =
+  let p = P.take (P.line `CRLF) in
   let r = P.parse src p in
   Alcotest.(
     check (pair int (list string)) "3, lines" (3, ["abc"; "def"; "ghi"]) r)
@@ -68,11 +74,13 @@ let suite =
   ; M.make_string_test "string exn" string_exn "world"
   ; M.make_string_test "satisfy" satisfy "a"
   ; M.make_string_test "satisfy exn" satisfy_exn "d"
-  ; M.make_string_test "line" line "abc\ndef\nghi"
+  ; M.make_string_test "line lf" line_lf "abc\ndef\nghi"
+  ; M.make_string_test "line crlf" line_crlf "abc\r\ndef\r\nghi"
   ; M.make_file_test "char " char_h "hello"
   ; M.make_file_test "char exn" char_exn "aaaa"
   ; M.make_file_test "string" string "hello"
   ; M.make_file_test "string exn" string_exn "world"
   ; M.make_file_test "satisfy" satisfy "a"
   ; M.make_file_test "satisfy exn" satisfy_exn "d"
-  ; M.make_file_test "line" line "abc\ndef\nghi" ]
+  ; M.make_file_test "line lf" line_lf "abc\ndef\nghi"
+  ; M.make_file_test "line crlf" line_crlf "abc\r\ndef\r\nghi" ]
