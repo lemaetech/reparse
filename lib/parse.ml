@@ -300,13 +300,19 @@ module Make (Io : Io.S) : Parse_sig.S with type io = Io.t = struct
     ok !skip_count
 
   let take :
-      ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t
-      =
-   fun ?(at_least = 0) ?up_to ?(sep_by = return ()) p state ~ok ~err ->
+      ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> (int * 'a list) t =
+   fun ?(at_least = 0) ?up_to ?sep_by p state ~ok ~err ->
     if at_least < 0 then invalid_arg "at_least"
     else if Option.is_some up_to && Option.get up_to < 0 then
       invalid_arg "up_to"
     else () ;
+
+    let sep_by =
+      match sep_by with
+      | None   -> unit
+      | Some p -> p *> unit
+    in
+
     let upto = Option.value up_to ~default:(-1) in
     let count = ref 0 in
     let items = ref [] in

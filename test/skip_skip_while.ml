@@ -80,6 +80,30 @@ let take_at_least_fail (type s) (module P : M.S with type io = s) src () =
          ; msg = "[take] unable to parse at least 5 times" })
       r)
 
+let take_up_to (type s) (module P : M.S with type io = s) src () =
+  let p = P.map2 make_pair (P.take ~up_to:3 (P.char 'a')) P.offset in
+  let r = P.parse src p in
+  Alcotest.(
+    check (pair (pair int (list char)) int) "" ((3, ['a'; 'a'; 'a']), 3) r)
+
+let take_sep_by (type s) (module P : M.S with type io = s) src () =
+  let p = P.map2 make_pair (P.take ~sep_by:P.space (P.char 'a')) P.offset in
+  let r = P.parse src p in
+  Alcotest.(
+    check (pair (pair int (list char)) int) "" ((4, ['a'; 'a'; 'a'; 'a']), 7) r)
+
+let take_at_least_up_to_sep_by (type s) (module P : M.S with type io = s) src ()
+    =
+  let p =
+    P.map2
+      make_pair
+      (P.take ~at_least:3 ~up_to:3 ~sep_by:P.space (P.char 'a'))
+      P.offset
+  in
+  let r = P.parse src p in
+  Alcotest.(
+    check (pair (pair int (list char)) int) "" ((3, ['a'; 'a'; 'a']), 6) r)
+
 let suite =
   [ M.make_string_test "skip" skip "    a"
   ; M.make_string_test "skip ~at_least:3" skip_at_least "    a"
@@ -91,6 +115,12 @@ let suite =
   ; M.make_string_test "take" take "aaaacz"
   ; M.make_string_test "take at least" take_at_least "aaaacz"
   ; M.make_string_test "take at least fail" take_at_least_fail "aaaacz"
+  ; M.make_string_test "take up_to" take_up_to "aaaacz"
+  ; M.make_string_test "take sep_by" take_sep_by "a a a acz"
+  ; M.make_string_test
+      "take at_least up_to sep_by"
+      take_at_least_up_to_sep_by
+      "a a a acz"
   ; M.make_file_test "skip" skip "    a"
   ; M.make_file_test "skip ~at_least:3" skip_at_least "    a"
   ; M.make_file_test "skip ~at_least:5 fails" skip_at_least_fail "    a"
@@ -100,4 +130,10 @@ let suite =
   ; M.make_file_test "skip while" skip_while2 "aaaacz"
   ; M.make_file_test "take" take "aaaacz"
   ; M.make_file_test "take at least" take_at_least "aaaacz"
-  ; M.make_file_test "take at least fail" take_at_least_fail "aaaacz" ]
+  ; M.make_file_test "take at least fail" take_at_least_fail "aaaacz"
+  ; M.make_file_test "take up_to" take_up_to "aaaacz"
+  ; M.make_file_test "take sep_by" take_sep_by "a a a acz"
+  ; M.make_file_test
+      "take at_least up_to sep_by"
+      take_at_least_up_to_sep_by
+      "a a a acz" ]

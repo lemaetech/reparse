@@ -328,7 +328,7 @@ module type S = sig
   val skip_while : _ t -> while_:bool t -> int t
 
   val take :
-    ?at_least:int -> ?up_to:int -> ?sep_by:unit t -> 'a t -> (int * 'a list) t
+    ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> (int * 'a list) t
   (** [take ~at_least ~up_to ~sep_by p] executes [p] zero or more times up to
       the given upper bound [up_to]. If [at_least] is given, [p] is expected to
       succeed the lower bound of [at_least] times. Default of [at_least] is [0].
