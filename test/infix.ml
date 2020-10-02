@@ -1,4 +1,4 @@
-module P = Reparse.Parse.String_parser
+module P = Reparse.Parser.String_parser
 open P.Infix
 
 let src = Reparse.Source.String.create
