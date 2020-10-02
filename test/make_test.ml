@@ -1,7 +1,7 @@
-module type S = Reparse.Parse_sig.S
+module type S = Reparse.Parser_sig.S
 
 type 's test =
-  (module Reparse.Parse_sig.S with type src = 's) -> 's -> unit -> unit
+  (module Reparse.Parser_sig.S with type src = 's) -> 's -> unit -> unit
 
 let () = Random.self_init ()
 

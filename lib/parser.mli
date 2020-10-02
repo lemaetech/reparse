@@ -9,7 +9,7 @@
  *-------------------------------------------------------------------------*)
 
 module Make : functor (Source : Source.S) ->
-  Parse_sig.S with type src = Source.t
+  Parser_sig.S with type src = Source.t
 
-module String_parser : Parse_sig.S with type src = Source.String.t
-module File_parser : Parse_sig.S with type src = Source.File.t
+module String_parser : Parser_sig.S with type src = Source.String.t
+module File_parser : Parser_sig.S with type src = Source.File.t

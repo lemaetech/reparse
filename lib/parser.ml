@@ -7,7 +7,7 @@
  *
  *-------------------------------------------------------------------------*)
 
-module Make (S : Source.S) : Parse_sig.S with type src = S.t = struct
+module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
   type src = S.t
 
   type state =
