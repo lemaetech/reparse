@@ -132,7 +132,7 @@ module type S = sig
         r = true
       ]} *)
 
-  val any : 'a t Lazy.t list -> 'a t
+  val any : 'a t list -> 'a t
   (** [any l] succeeds if any one of the parsers in [l] succeeds and fails if
       all parsers in [l] fails. It executes parsers in [l] from left to right
       and returns the first sucessful parse result. The remaining parsers are

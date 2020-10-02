@@ -97,13 +97,13 @@ module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
     state.lnum <- l ;
     state.cnum <- c
 
-  let any : 'a t Lazy.t list -> 'a t =
+  let any : 'a t list -> 'a t =
    fun l state ~ok ~err ->
     let item = ref None in
     let err' () = error ~err "[any] all parsers failed" state in
     let rec loop = function
-      | []             -> err' ()
-      | (lazy p) :: tl ->
+      | []      -> err' ()
+      | p :: tl ->
           let ofs = state.offset in
           p
             state
