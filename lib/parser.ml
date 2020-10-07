@@ -554,6 +554,8 @@ module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
     let ( <* ) = ( <* )
     let ( <|> ) = ( <|> )
     let ( <?> ) = ( <?> )
+    let ( let* ) = ( >>= )
+    let ( let+ ) = ( >|= )
   end
 end
 

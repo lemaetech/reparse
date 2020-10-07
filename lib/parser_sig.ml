@@ -457,5 +457,7 @@ module type S = sig
     val ( <* ) : 'a t -> _ t -> 'a t
     val ( <|> ) : 'a t -> 'a t -> 'a t
     val ( <?> ) : 'a t -> string -> 'a t
+    val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+    val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
   end
 end
