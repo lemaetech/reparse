@@ -302,8 +302,7 @@ module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
     done ;
     ok !skip_count
 
-  let take :
-      ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> (int * 'a list) t =
+  let take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t =
    fun ?(at_least = 0) ?up_to ?sep_by p state ~ok ~err ->
     if at_least < 0 then invalid_arg "at_least"
     else if Option.is_some up_to && Option.get up_to < 0 then
@@ -344,7 +343,7 @@ module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
 
     loop 0 state.offset [] ;
 
-    if !count >= at_least then ok (!count, List.rev !items)
+    if !count >= at_least then ok (List.rev !items)
     else (
       backtrack state at_least_bt ;
       error
@@ -385,7 +384,7 @@ module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
     done ;
     ok !take_count
 
-  let take_while : ?sep_by:_ t -> 'a t -> while_:bool t -> (int * 'a list) t =
+  let take_while : ?sep_by:_ t -> 'a t -> while_:bool t -> 'a list t =
    fun ?sep_by p ~while_ state ~ok ~err ->
     let items = ref [] in
     let count = ref 0 in
@@ -403,7 +402,7 @@ module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
       state
       ~ok:(fun count' -> count := count')
       ~err ;
-    ok (!count, List.rev !items)
+    ok (List.rev !items)
 
   let char_parser name p state ~ok ~err =
     p state ~ok ~err:(fun exn ->
@@ -501,7 +500,7 @@ module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
           | '\x20' -> true
           | _      -> false))
 
-  let spaces = snd <$> take space
+  let spaces = take space
 
   let vchar =
     char_parser
