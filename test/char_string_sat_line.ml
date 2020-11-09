@@ -58,14 +58,12 @@ let satisfy_exn (type s) (module P : M.S with type src = s) src () =
 let line_lf (type s) (module P : M.S with type src = s) src () =
   let p = P.take (P.line `LF) in
   let r = P.parse src p in
-  Alcotest.(
-    check (pair int (list string)) "3, lines" (3, ["abc"; "def"; "ghi"]) r)
+  Alcotest.(check (list string) "3, lines" ["abc"; "def"; "ghi"] r)
 
 let line_crlf (type s) (module P : M.S with type src = s) src () =
   let p = P.take (P.line `CRLF) in
   let r = P.parse src p in
-  Alcotest.(
-    check (pair int (list string)) "3, lines" (3, ["abc"; "def"; "ghi"]) r)
+  Alcotest.(check (list string) "3, lines" ["abc"; "def"; "ghi"] r)
 
 let suite =
   [ M.make_string_test "char " char_h "hello"

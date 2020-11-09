@@ -1,12 +1,12 @@
 module M = Make_test
 
 let any (type s) (module P : M.S with type src = s) src () =
-  let p = P.any [lazy (P.char 'a'); lazy (P.char 'b'); lazy (P.char 'c')] in
+  let p = P.any [P.char 'a'; P.char 'b'; P.char 'c'] in
   let r = P.parse src p in
   Alcotest.(check char "c" 'c' r)
 
 let any_fail (type s) (module P : M.S with type src = s) src () =
-  let p = P.any [lazy (P.char 'a'); lazy (P.char 'b'); lazy (P.char 'c')] in
+  let p = P.any [P.char 'a'; P.char 'b'; P.char 'c'] in
   let r () = ignore (P.parse src p) in
   Alcotest.(
     check_raises
