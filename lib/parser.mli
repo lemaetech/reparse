@@ -8,8 +8,5 @@
  * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
 
-module Make : functor (Source : Source.S) ->
-  Parser_sig.S with type src = Source.t
-
-module String_parser : Parser_sig.S with type src = Source.String.t
-module File_parser : Parser_sig.S with type src = Source.File.t
+module Make : functor (Input : Input.S) ->
+  Parser_sig.S with type input = Input.t

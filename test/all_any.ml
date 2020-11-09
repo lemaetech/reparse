@@ -1,13 +1,13 @@
 module M = Make_test
 
-let any (type s) (module P : M.S with type src = s) src () =
+let any (type s) (module P : M.S with type input = s) input () =
   let p = P.any [P.char 'a'; P.char 'b'; P.char 'c'] in
-  let r = P.parse src p in
+  let r = P.parse input p in
   Alcotest.(check char "c" 'c' r)
 
-let any_fail (type s) (module P : M.S with type src = s) src () =
+let any_fail (type s) (module P : M.S with type input = s) input () =
   let p = P.any [P.char 'a'; P.char 'b'; P.char 'c'] in
-  let r () = ignore (P.parse src p) in
+  let r () = ignore (P.parse input p) in
   Alcotest.(
     check_raises
       "any"
@@ -18,14 +18,14 @@ let any_fail (type s) (module P : M.S with type src = s) src () =
          ; msg = "[any] all parsers failed" })
       r)
 
-let all (type s) (module P : M.S with type src = s) src () =
+let all (type s) (module P : M.S with type input = s) input () =
   let p = P.all [P.char 'a'; P.char 'b'; P.char 'c'] in
-  let r = P.parse src p in
+  let r = P.parse input p in
   Alcotest.(check (list char) "list" ['a'; 'b'; 'c'] r)
 
-let all_fail (type s) (module P : M.S with type src = s) src () =
+let all_fail (type s) (module P : M.S with type input = s) input () =
   let p = P.all [P.char 'a'; P.char 'b'; P.char 'c'] in
-  let r () = ignore (P.parse src p) in
+  let r () = ignore (P.parse input p) in
   Alcotest.(
     check_raises
       "all fail"
@@ -36,14 +36,14 @@ let all_fail (type s) (module P : M.S with type src = s) src () =
          ; msg = "[all] one of the parsers failed" })
       r)
 
-let all_unit (type s) (module P : M.S with type src = s) src () =
+let all_unit (type s) (module P : M.S with type input = s) input () =
   let p = P.all_unit [P.char 'a'; P.char 'b'; P.char 'c'] in
-  let r = P.parse src p in
+  let r = P.parse input p in
   Alcotest.(check unit "()" () r)
 
-let all_unit_fail (type s) (module P : M.S with type src = s) src () =
+let all_unit_fail (type s) (module P : M.S with type input = s) input () =
   let p = P.all_unit [P.char 'a'; P.char 'b'; P.char 'c'] in
-  let r () = ignore (P.parse src p) in
+  let r () = ignore (P.parse input p) in
   Alcotest.(
     check_raises
       "all fail"

@@ -7,11 +7,11 @@
  *
  *-------------------------------------------------------------------------*)
 
-module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
-  type src = S.t
+module Make (I : Input.S) : Parser_sig.S with type input = I.t = struct
+  type input = I.t
 
   type state =
-    { src : src
+    { input : input
     ; track_lnum : bool (* Track line numbers. *)
     ; mutable offset : int (* Input offset. *)
     ; mutable lnum : int (* Line count. *)
@@ -34,9 +34,9 @@ module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
          ; column_number = state.cnum
          ; msg })
 
-  let parse ?(track_lnum = false) src p =
+  let parse ?(track_lnum = false) input p =
     let lnum, cnum = if track_lnum then (1, 1) else (0, 0) in
-    let state = {src; offset = 0; track_lnum; lnum; cnum} in
+    let state = {input; offset = 0; track_lnum; lnum; cnum} in
     let res = ref None in
     p state ~ok:(fun a -> res := Some a) ~err:(fun e -> raise e) ;
     match !res with
@@ -47,7 +47,7 @@ module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
    fun err_msg state ~ok:_ ~err -> error ~err err_msg state
 
   let next state ~ok ~err =
-    match S.nth state.offset state.src with
+    match I.nth state.offset state.input with
     | c           ->
         state.offset <- state.offset + 1 ;
         if state.track_lnum then
@@ -148,16 +148,16 @@ module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
 
   let peek_char : char t =
    fun state ~ok ~err ->
-    match S.nth state.offset state.src with
+    match I.nth state.offset state.input with
     | c           -> ok c
     | exception _ -> error ~err "[peek_char]" state
 
   let peek_string len state ~ok ~err =
-    match S.sub ~offset:state.offset ~len state.src with
+    match I.sub ~offset:state.offset ~len state.input with
     | s            -> ok s
     | exception _e -> error ~err "[peek_string]" state
 
-  let is_done state = S.eof state.offset state.src
+  let is_done state = I.eof state.offset state.input
   let is_eoi state ~ok ~err:_ = ok (is_done state)
 
   let eoi : unit t =
@@ -557,6 +557,3 @@ module Make (S : Source.S) : Parser_sig.S with type src = S.t = struct
     let ( let+ ) = ( >|= )
   end
 end
-
-module String_parser = Make (Source.String)
-module File_parser = Make (Source.File)
