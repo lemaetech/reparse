@@ -7,7 +7,7 @@
  *
  *-------------------------------------------------------------------------*)
 
-module Make (I : Input.S) : Parser_sig.S with type input = I.t = struct
+module Make (I : Input.S) = struct
   type input = I.t
 
   type state =
