@@ -20,24 +20,25 @@ module type S = sig
       [cnum] is both [0] if line tracking is disabled. *)
 
   val parse : ?track_lnum:bool -> input -> 'a t -> 'a
-  (** [parse ~count_lines input p] executes parser [p] with [input]. If
+  (** [parse ~tract_lnum input p] executes parser [p] with [input]. If
       [track_lnum] is true then the parser tracks both line and column numbers.
       It is set to [false] by default.
 
       @raise Parse_error
       {[
-        open Reparse.Parse.String_parser
+        module P = Reparse.String_parser
+        open P.Infix
 
-        let p = many next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum in
-        let s = Reparse.IO.String.create "hello world"
+        let p = P.(take next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum)
+        let s = Reparse.String_input.create "hello world"
 
         (* Track line, column number. *)
-        let r = parse ~track_lnum:true s p in
-        r = (1, 11)
+        let r = P.parse ~track_lnum:true s p in
+        r = (1, 12);;
 
         (* Don't track line, column number. *)
-        let r = parse s p in
-        r = (0, 0)
+        let r = P.parse s p in
+        r = (0, 0);;
       ]} *)
 
   val return : 'a -> 'a t

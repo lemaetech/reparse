@@ -1,7 +1,7 @@
 module P = Reparse.String_parser
 open P.Infix
 
-let src = Reparse.Input.String.create
+let src = Reparse.String_input.create
 
 let test_map () =
   let p = P.peek_char >|= fun c -> Char.code c in

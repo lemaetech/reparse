@@ -1,5 +1,8 @@
-module Parser = Parser
-module Parser_sig = Parser_sig
-module Input = Input
-module String_parser = Parser.Make (Input.String)
-module File_parser = Parser.Make (Input.File)
+module type PARSER = Parser_sig.S
+module type INPUT = Input.S
+
+module Make = Parser.Make
+module String_input = Input.String
+module File_input = Input.File
+module String_parser = Make (String_input)
+module File_parser = Make (File_input)
