@@ -634,8 +634,8 @@ module type S = sig
 
   val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
   (** [skip ~at_least ~up_to p] returns a parser which skips/discards parsed
-      values returned by evaluating parser [p]. The number of times [p] is
-      evaluated is specified by params [at_least] and [up_to]. [at_least]
+      values returned by evaluating parser [p] repeatedly. The number of times
+      [p] is evaluated is specified by params [at_least] and [up_to]. [at_least]
       represents a lower bound while [up_to] represents the higher bound.
       Default value of [at_least] is 0. The default value of [up_to] is
       unspecified, i.e. it will keep evaluating [p] until it fails. The parser
@@ -652,6 +652,23 @@ module type S = sig
       ]} *)
 
   val skip_while : _ t -> while_:bool t -> int t
+  (** [skip_while p ~while_] returns a parser which discards parsed values
+      returned by evaluating parser [p] repeatedly. [p] is only evaluated when
+      parser [while_] evaluates to [true]. If evaluation of [p] results in
+      failure or [while_] returns [false], then the repetition is stopped.
+      {b Note} [while_] does not consume input. The parser encapsulates the
+      count of times [p] was evaluted successfully.
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "     " in
+        let p = P.(skip_while next ~while_:(is space)) in
+        let r = P.(parse input p) in
+        r = 5
+      ]} *)
 
   val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
   (** [take ~at_least ~up_to ~sep_by p] executes [p] zero or more times up to
