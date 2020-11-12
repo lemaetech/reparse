@@ -438,30 +438,32 @@ module type S = sig
         r = true
       ]} *)
 
-  (* val fail : (unit -> string) -> 'a t *)
-  (** [fail msg] fails the parser with [msg]. *)
-
   val not_ : 'a t -> unit t
   (** [not_ p] succeeds if and only if [p] fails to parse.
 
       {[
-        open Reparse.Parse
+        module P = Reparse.String_parser
+        open P.Infix
 
-        let p = not_ (char 'a') in
-        let r = parse "bbb" p in
+        ;;
+        let input = Reparse.String_input.create "bbb" in
+        let p = P.(not_ (char 'a')) in
+        let r = P.parse input p in
         r = ()
       ]} *)
 
   val is_not : 'a t -> bool t
-  (** [is_not p] returns [true] if [p] fails to parse and [false] if [p] is a
-      success. Corollary of [not_] combinator. This one however returns a bool
-      rather than erroring out itself. {b Note} executing [p] doesn't consume
-      any input.
+  (** [is_not p] returns a parser encapsulating value [true] if [p] fails to
+      parse and [false] if [p] is a success. {b Note} evaluating [p] doesn't
+      consume any input.
 
       {[
-        open Reparse.Parse
+        module P = Reparse.String_parser
+        open P.Infix
 
-        let r = parse "bbb" (is_not (char 'a')) in
+        ;;
+        let input = Reparse.String_input.create "bbb" in
+        let r = P.(parse input (is_not (char 'a'))) in
         r = true
       ]} *)
 
