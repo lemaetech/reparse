@@ -113,12 +113,39 @@ module type S = sig
       ]} *)
 
   val ( <$ ) : 'b -> 'a t -> 'b t
-  (** [v <$ p] replaces the result of [p] with [v]. *)
+  (** [v <$ p] replaces the result of [p] with [v].
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let c = P.("hello" <$ char 'h') in
+        let input = Reparse.String_input.create "hello" in
+        let r = P.parse input c in
+        r = "hello"
+      ]} *)
 
   (** Mappers over pairs of parsers. Joins their parsing results together. *)
 
   val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
+  (** [f <$> p] Applies [f a] and returns parser [q] which encodes the result of
+      the application. [a] is value parsed by [p].
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let c = P.((fun a -> a ^ " world") <$> string "hello") in
+        let input = Reparse.String_input.create "hello" in
+        let r = P.parse input c in
+        r = "hello world"
+      ]} *)
+
   val map : ('a -> 'b) -> 'a t -> 'b t
+  (** [map f p] is [f <$> p] *)
+
   val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
   val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
 
