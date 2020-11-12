@@ -82,8 +82,8 @@ module type S = sig
       ]} *)
 
   val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
-  (** [p >|= f] Mapper parser. Returns a parser which encodes value [b] as a
-      result of applying [f a] where [a] is the parsed value of [p].
+  (** [p >|= f] Mapper parser. Returns a parser which encapsulates value [b] as
+      a result of applying [f a] where [a] is the parsed value of [p].
 
       {[
         module P = Reparse.String_parser
@@ -97,18 +97,18 @@ module type S = sig
       ]} *)
 
   val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
-  (** [pf <*> q] Applicative parser. Returns a parser encoding value [b] as a
-      result of applying [f a], where [f] is the function value parsed by parser
-      [pf] and [a] is the value parsed by [q].
+  (** [pf <*> q] Applicative parser. Returns a parser encapsulating value [b] as
+      a result of applying [f a], where [f] is the function value parsed by
+      parser [pf] and [a] is the value parsed by [q].
 
       {[
         module P = Reparse.String_parser
         open P.Infix
 
         ;;
-        let c = P.(return (fun a -> a + 2) <*> return 2) in
+        let p = P.(return (fun a -> a + 2) <*> return 2) in
         let input = Reparse.String_input.create "hello" in
-        let r = P.parse input c in
+        let r = P.parse input p in
         r = 4
       ]} *)
 
@@ -120,16 +120,16 @@ module type S = sig
         open P.Infix
 
         ;;
-        let c = P.("hello" <$ char 'h') in
+        let p = P.("hello" <$ char 'h') in
         let input = Reparse.String_input.create "hello" in
-        let r = P.parse input c in
+        let r = P.parse input p in
         r = "hello"
       ]} *)
 
   (** Mappers over pairs of parsers. Joins their parsing results together. *)
 
   val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
-  (** [f <$> p] returns a parser encoding value [b] as a result of applying
+  (** [f <$> p] returns a parser encapsulating value [b] as a result of applying
       [f a]. [a] is value parsed by [p].
 
       {[
@@ -137,9 +137,9 @@ module type S = sig
         open P.Infix
 
         ;;
-        let c = P.((fun a -> a ^ " world") <$> string "hello") in
+        let p = P.((fun a -> a ^ " world") <$> string "hello") in
         let input = Reparse.String_input.create "hello" in
-        let r = P.parse input c in
+        let r = P.parse input p in
         r = "hello world"
       ]} *)
 
@@ -147,23 +147,8 @@ module type S = sig
   (** [map f p] is [f <$> p] *)
 
   val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
-  (** [map2 f p q] returns a parser which encodes value [c] a result of applying
-      [f a b]. [a, b] are the parsed value of parsers [p] and [q] respectively.
-
-      {[
-        module P = Reparse.String_parser
-        open P.Infix
-
-        ;;
-        let c = P.(map2 (fun a b -> a + b) (return 1) (return 2)) in
-        let input = Reparse.String_input.create "" in
-        let r = P.parse input c in
-        r = 3
-      ]} *)
-
-  val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
-  (** [map3 f p q r] returns a parser encoding value [d] as a result of applying
-      [f a b c]. [a, b, c] are the parsed value of parsers [p], [q] and [r]
+  (** [map2 f p q] returns a parser which encapsulates value [c] a result of
+      applying [f a b]. [a, b] are the parsed value of parsers [p] and [q]
       respectively.
 
       {[
@@ -171,17 +156,33 @@ module type S = sig
         open P.Infix
 
         ;;
-        let c =
+        let p = P.(map2 (fun a b -> a + b) (return 1) (return 2)) in
+        let input = Reparse.String_input.create "" in
+        let r = P.parse input p in
+        r = 3
+      ]} *)
+
+  val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
+  (** [map3 f p q r] returns a parser encapsulating value [d] as a result of
+      applying [f a b c]. [a, b, c] are the parsed value of parsers [p], [q] and
+      [r] respectively.
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let p =
           P.(map3 (fun a b c -> a + b + c) (return 1) (return 2) (return 3))
         in
         let input = Reparse.String_input.create "" in
-        let r = P.parse input c in
+        let r = P.parse input p in
         r = 6
       ]} *)
 
   val map4 :
     ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
-  (** [map4 f p q r s] returns a parser encoding value [e] as a result of
+  (** [map4 f p q r s] returns a parser encapsulating value [e] as a result of
       applying [f a b c d]. [a, b, c, d] are the parsed value of parsers [p],
       [q], [r] and [s] respectively.
 
@@ -190,7 +191,7 @@ module type S = sig
         open P.Infix
 
         ;;
-        let c =
+        let p =
           P.(
             map4
               (fun a b c d -> a + b + c + d)
@@ -200,7 +201,7 @@ module type S = sig
               (return 4))
         in
         let input = Reparse.String_input.create "" in
-        let r = P.parse input c in
+        let r = P.parse input p in
         r = 10
       ]} *)
 
@@ -214,20 +215,55 @@ module type S = sig
         open P.Infix
 
         ;;
-        let c = P.(string "world" *> P.return "hello") in
+        let p = P.(string "world" *> P.return "hello") in
         let input = Reparse.String_input.create "world" in
-        let r = P.parse input c in
+        let r = P.parse input p in
         r = "hello"
       ]} *)
 
   val ( <* ) : 'a t -> _ t -> 'a t
-  (** [p <* q] discards result of parser [q] and returns [p] instead. *)
+  (** [p <* q] similar to [*>]. However, the result of [q] is discarded instead.
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let p = P.(string "world" <* P.return "hello") in
+        let input = Reparse.String_input.create "world" in
+        let r = P.parse input p in
+        r = "world"
+      ]} *)
 
   val ( <|> ) : 'a t -> 'a t -> 'a t
-  (** [p <|> q] Alternate operator [p or q]. Tries both parsers. Takes the
-      result of [p] if it succeeds. Otherwise returns the result of the [q].
-      {b Note} If you want [q] to be lazy evaluated then use it with [delay]
-      combinator. *)
+  (** [p <|> q] Alternate parser. Returns a parser which evaluates both [p] and
+      [q] returning [a] and [b] respectively. If [p] succeeds then it returns a
+      parser encapsulating [a]. If [p] fails and [q] is a success, then it
+      returns a parser encapsulating [b]. If both - [p] and [q] - fails, then
+      the parser fails with [Parser_error]
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let p = P.(char 'h' <|> char 'w') in
+        let input = Reparse.String_input.create "world" in
+        let r = P.parse input p in
+        r = 'w'
+
+        ;;
+        let p = P.(char 'h' <|> char 'w') in
+        let input = Reparse.String_input.create "hello" in
+        let r = P.parse input p in
+        r = 'h'
+
+        ;;
+        let p = P.(char 'h' <|> char 'w') in
+        let input = Reparse.String_input.create "" in
+        let r = P.parse input p (* raises exn *) in
+        r
+      ]} *)
 
   val ( <?> ) : 'a t -> string -> 'a t
   (** [p <?> err_mg] parse [p]. If it fails then fail with error message
