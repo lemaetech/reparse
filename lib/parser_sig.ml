@@ -574,8 +574,12 @@ module type S = sig
   (** [next] consumes and returns the next char of input.
 
       {[
-        open Reparse.Parse
-        let r = parse "hello" next in
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "hello" in
+        let r = P.(parse input next) in
         r = 'h'
       ]} *)
 
@@ -583,10 +587,14 @@ module type S = sig
   (** [char c] accepts character [c] from input exactly.
 
       {[
-        open Reparse.Parse
-        let p = char 'h' in
-        let r = parse "hello" p in
-        r = ()
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "hello" in
+        let p = P.char 'h' in
+        let r = P.parse input p in
+        r = 'h'
       ]} *)
 
   val satisfy : (char -> bool) -> char t
