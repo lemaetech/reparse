@@ -635,13 +635,19 @@ module type S = sig
       ]} *)
 
   val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
-  (** [skip ~at_least ~up_to p] returns a parser which skips/discards parsed
-      values returned by evaluating parser [p] repeatedly. The number of times
-      [p] is evaluated is specified by params [at_least] and [up_to]. [at_least]
-      represents a lower bound while [up_to] represents the higher bound.
-      Default value of [at_least] is 0. The default value of [up_to] is
-      unspecified, i.e. it will keep evaluating [p] until it fails. The parser
-      encapsulates the count of times [p] was evaluated successfully.
+  (** [skip ~at_least ~up_to p] returns a parser which discards values returned
+      by evaluating parser [p] repeatedly.
+
+      The lower and upper bound of repetition is specified by arguments
+      [at_least] and [up_to] respectively. The default value of [at_least] is 0.
+      The default value of [up_to] is unspecified, i.e. there is no upper limit.
+
+      The repetition ends when one of the following occurs:
+
+      - [p] evaluates to failure
+      - the upper bound [up_to] is reached
+
+      The parser encapsulates the count of times [p] was evaluated successfully.
 
       {[
         module P = Reparse.String_parser
@@ -655,11 +661,18 @@ module type S = sig
 
   val skip_while : _ t -> while_:bool t -> int t
   (** [skip_while p ~while_] returns a parser which discards parsed values
-      returned by evaluating parser [p] repeatedly. [p] is only evaluated when
-      parser [while_] evaluates to [true]. If evaluation of [p] results in
-      failure or [while_] returns [false], then the repetition is stopped.
-      {b Note} [while_] does not consume input. The parser encapsulates the
-      count of times [p] was evaluted successfully.
+      returned by evaluating parser [p] repeatedly.
+
+      [p] is only evaluated when [while_] evaluates to [true].
+
+      The repetition ends when one of the following occurs:
+
+      - [p] evaluates to failure
+      - [while_] returns [false]
+
+      {b Note} [while_] does not consume input.
+
+      The parser encapsulates the count of times [p] was evaluted successfully.
 
       {[
         module P = Reparse.String_parser
@@ -674,19 +687,22 @@ module type S = sig
 
   val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
   (** [take ~at_least ~up_to ~sep_by p] returns a parser which encapsulates a
-      list of values returned by evaluating parser [p] repeatedly. The lower and
-      upper bound of repetition is specified by arguments [at_least] and [up_to]
-      respectivly.
+      list of values returned by evaluating parser [p] repeatedly.
+
+      The lower and upper bound of repetition is specified by arguments
+      [at_least] and [up_to] respectively. The default value of [at_least] is
+      [0]. The default value of [up_to] is unspecified, i.e. there is no upper
+      limit.
 
       If [sep_by] is specified then the evaluation of [p] must be followed by a
       successful evaluation of [sep_by]. The parsed value of [sep_by] is
       discarded.
 
-      The default value of [at_least] is [0]. The default value of [up_to] is
-      unspecified, i.e. there is no upper limit.
+      The repetition ends when one of the following occurs:
 
-      The repetition ends when either parsers [p] or [sep_by] fails or the upper
-      bound - [up_to] - value is reached.
+      - [p] evaluates to failure
+      - [sep_by] evaluates to failure
+      - [up_to] upper boudn value is reached
 
       The parser fails if the count of repetition of [p] does not match the
       value specified by [at_least].
