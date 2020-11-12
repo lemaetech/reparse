@@ -26,4 +26,4 @@ https://github.com/lemaetech/http-mutlipart-formdata/blob/master/lib/multipart.m
 
 ## Attribution
 
-Reparse is based on [CCParse](https://c-cube.github.io/ocaml-containers/3.0/containers/CCParse/index.html).
+Some of the ideas in Reparse is based on [CCParse](https://c-cube.github.io/ocaml-containers/3.0/containers/CCParse/index.html).
