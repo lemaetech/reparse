@@ -261,23 +261,37 @@ module type S = sig
         ;;
         let p = P.(char 'h' <|> char 'w') in
         let input = Reparse.String_input.create "" in
-        let r = P.parse input p (* raises exn *) in
-        r
+        let r =
+          try
+            let _ = P.parse input p in
+            false
+          with _ -> true
+        in
+        r = true
       ]} *)
 
   val ( <?> ) : 'a t -> string -> 'a t
-  (** [p <?> err_mg] parse [p]. If it fails then fail with error message
-      [err_msg]. Used as a last choice in [<|>], e.g.
+  (** [p <?> err_mg] If parser [p] is unable to parse successfully then fails
+      with error message [err_msg]. Used as a last choice in [<|>], e.g.
       [a <|> b <|> c <?> "expected a b c"].
 
       {[
-        open Reparse.Parse
-        let p = next <?> "[error]" in
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "" in
+        let p = P.next <?> "[error]" in
         let r =
-          try let _ = parse "" p in false
+          try
+            let _ = P.parse input p in
+            false
           with
-            | Parse_error {offset=0;line_number=0;colmn_number=0;msg="[error]"} -> true
-            | _ -> false
+          | P.Parse_error
+              {offset = 0; line_number = 0; column_number = 0; msg = "[error]"}
+            ->
+              true
+          | _ -> false
         in
         r = true
       ]} *)
