@@ -33,23 +33,33 @@ module type S = sig
         let s = Reparse.String_input.create "hello world"
 
         (* Track line, column number. *)
+
+        ;;
         let r = P.parse ~track_lnum:true s p in
-        r = (1, 12);;
+        r = (1, 12)
 
         (* Don't track line, column number. *)
+
+        ;;
         let r = P.parse s p in
-        r = (0, 0);;
+        r = (0, 0)
       ]} *)
 
   val return : 'a -> 'a t
   (** [return v] creates a new parser that always returns [v].
 
       {[
-        open Reparse.Parse
-        let r = parse "" (return 5) in
+        module P = Reparse.String_parser
+        open P.Infix
+
+        let input = Reparse.String_input.create ""
+
+        ;;
+        let r = P.(parse input (P.return 5)) in
         r = 5
 
-        let r = parse "" (return "hello") in
+        ;;
+        let r = P.parse input (P.return "hello") in
         r = "hello"
       ]} *)
 
