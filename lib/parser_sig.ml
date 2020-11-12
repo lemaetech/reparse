@@ -46,7 +46,7 @@ module type S = sig
       ]} *)
 
   val return : 'a -> 'a t
-  (** [return v] creates a new parser that always returns [v].
+  (** [return v] returns a parser that always parses value [v].
 
       {[
         module P = Reparse.String_parser
@@ -67,8 +67,8 @@ module type S = sig
   (** [fail err_msg] creates a parser that always fails with [err_msg]. *)
 
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-  (** [p >>= f] Bind. Executes parser [p] which returns value [a]. If it
-      succeeds then it executes [f a] which returns a new parse [q].
+  (** [p >>= f] Binder. Returns a parser as a result of applying [f a] where [a]
+      is the parsed value of [p].
 
       {[
         module P = Reparse.String_parser
@@ -82,9 +82,8 @@ module type S = sig
       ]} *)
 
   val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
-  (** [p >|= f] Map. Executes parser [p] which returns value [a]. It then
-      executes [f a] which returns value [c]. This is same as
-      [p >>= (fun a -> return a)].
+  (** [p >|= f] Mapper parser. Returns a parser which encodes value [b] as a
+      result of applying [f a] where [a] is the parsed value of [p].
 
       {[
         module P = Reparse.String_parser
@@ -98,8 +97,9 @@ module type S = sig
       ]} *)
 
   val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
-  (** [p <*> q] Applicative. Executes parsers [p] and [q] which returns function
-      [f] and [a] respectively. It then applies [f a].
+  (** [pf <*> q] Applicative parser. Returns a parser encoding value [b] as a
+      result of applying [f a], where [f] is the function value parsed by parser
+      [pf] and [a] is the value parsed by [q].
 
       {[
         module P = Reparse.String_parser
@@ -129,8 +129,8 @@ module type S = sig
   (** Mappers over pairs of parsers. Joins their parsing results together. *)
 
   val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
-  (** [f <$> p] Applies [f a] and returns parser [q] which encodes the result of
-      the application. [a] is value parsed by [p].
+  (** [f <$> p] returns a parser encoding value [b] as a result of applying
+      [f a]. [a] is value parsed by [p].
 
       {[
         module P = Reparse.String_parser
@@ -147,14 +147,78 @@ module type S = sig
   (** [map f p] is [f <$> p] *)
 
   val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
+  (** [map2 f p q] returns a parser which encodes value [c] a result of applying
+      [f a b]. [a, b] are the parsed value of parsers [p] and [q] respectively.
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let c = P.(map2 (fun a b -> a + b) (return 1) (return 2)) in
+        let input = Reparse.String_input.create "" in
+        let r = P.parse input c in
+        r = 3
+      ]} *)
+
   val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
+  (** [map3 f p q r] returns a parser encoding value [d] as a result of applying
+      [f a b c]. [a, b, c] are the parsed value of parsers [p], [q] and [r]
+      respectively.
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let c =
+          P.(map3 (fun a b c -> a + b + c) (return 1) (return 2) (return 3))
+        in
+        let input = Reparse.String_input.create "" in
+        let r = P.parse input c in
+        r = 6
+      ]} *)
 
   val map4 :
     ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
+  (** [map4 f p q r s] returns a parser encoding value [e] as a result of
+      applying [f a b c d]. [a, b, c, d] are the parsed value of parsers [p],
+      [q], [r] and [s] respectively.
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let c =
+          P.(
+            map4
+              (fun a b c d -> a + b + c + d)
+              (return 1)
+              (return 2)
+              (return 3)
+              (return 4))
+        in
+        let input = Reparse.String_input.create "" in
+        let r = P.parse input c in
+        r = 10
+      ]} *)
 
   val ( *> ) : _ t -> 'a t -> 'a t
-  (** [p *> q] executes parser [p] and [q]. However, the result of [p] is
-      discarded. The parse value of [q] is returned instead. *)
+  (** [p *> q] returns a parser which executes parsers [p] and then [q] and
+      encapsulates value [a]. [a] is the parsed value of [q]. The parsed value
+      of [p] is discarded.
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let c = P.(string "world" *> P.return "hello") in
+        let input = Reparse.String_input.create "world" in
+        let r = P.parse input c in
+        r = "hello"
+      ]} *)
 
   val ( <* ) : 'a t -> _ t -> 'a t
   (** [p <* q] discards result of parser [q] and returns [p] instead. *)
