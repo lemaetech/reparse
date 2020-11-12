@@ -645,7 +645,7 @@ module type S = sig
       The repetition ends when one of the following occurs:
 
       - [p] evaluates to failure
-      - the upper bound [up_to] is reached
+      - [up_to] upper bound value is reached
 
       The parser encapsulates the count of times [p] was evaluated successfully.
 
