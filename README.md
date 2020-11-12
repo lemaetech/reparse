@@ -23,3 +23,7 @@ $ odig doc reparse
 ## Examples
 
 https://github.com/lemaetech/http-mutlipart-formdata/blob/master/lib/multipart.ml
+
+## Attribution
+
+Reparse is based on [CCParse](https://c-cube.github.io/ocaml-containers/3.0/containers/CCParse/index.html).
