@@ -1,9 +1,7 @@
 module type S = sig
   (** {2 Types} *)
 
-  type state
-
-  type +'a t = state -> ok:('a -> unit) -> err:(exn -> unit) -> unit
+  type +'a t
   (** Represents a parser which can parse value ['a]. *)
 
   type input
