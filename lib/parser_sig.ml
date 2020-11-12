@@ -87,9 +87,13 @@ module type S = sig
       [p >>= (fun a -> return a)].
 
       {[
-        open Reparse.Parse
-        let p = char 'h' >|= fun c -> Char.code c in
-        let r = parse "hello" p in
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let p = P.(char 'h' >|= fun c -> Char.code c) in
+        let input = Reparse.String_input.create "hello" in
+        let r = P.parse input p in
         r = 104
       ]} *)
 
@@ -98,9 +102,13 @@ module type S = sig
       [f] and [a] respectively. It then applies [f a].
 
       {[
-        open Reparse.Parse
-        let c = return (fun a -> a + 2) <*> return 2 in
-        let r = parse "" c in
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let c = P.(return (fun a -> a + 2) <*> return 2) in
+        let input = Reparse.String_input.create "hello" in
+        let r = P.parse input c in
         r = 4
       ]} *)
 
