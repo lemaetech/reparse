@@ -439,7 +439,8 @@ module type S = sig
       ]} *)
 
   val not_ : 'a t -> unit t
-  (** [not_ p] succeeds if and only if [p] fails to parse.
+  (** [not_ p] returns a parser which succeeds if and only if [p] fails to
+      parse.
 
       {[
         module P = Reparse.String_parser
@@ -454,8 +455,8 @@ module type S = sig
 
   val is_not : 'a t -> bool t
   (** [is_not p] returns a parser encapsulating value [true] if [p] fails to
-      parse and [false] if [p] is a success. {b Note} evaluating [p] doesn't
-      consume any input.
+      parse and [false] otherwise. {b Note} evaluating [p] doesn't consume any
+      input.
 
       {[
         module P = Reparse.String_parser
@@ -468,8 +469,9 @@ module type S = sig
       ]} *)
 
   val is : 'a t -> bool t
-  (** [is p] returns [true] is [p] parses successfully. Otherwise it return
-      [false]. {b Note} executing [p] doesn't consume any input.
+  (** [is p] returns a parser which encapsulates [true] is [p] parses
+      successfully, [false] otherwise. {b Note} evaluation of [p] doesn't
+      consume any input.
 
       {[
         module P = Reparse.String_parser
@@ -666,24 +668,71 @@ module type S = sig
         ;;
         let input = Reparse.String_input.create "     " in
         let p = P.(skip_while next ~while_:(is space)) in
-        let r = P.(parse input p) in
+        let r = P.parse input p in
         r = 5
       ]} *)
 
   val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
-  (** [take ~at_least ~up_to ~sep_by p] executes [p] zero or more times up to
-      the given upper bound [up_to]. If [at_least] is given, [p] is expected to
-      succeed the lower bound of [at_least] times. Default of [at_least] is [0].
-      Thre is no upper bound on execution of [p] is [up_to] is not given. If
-      [sep_by] is given execution of [p] must be followed by successful
-      execution of [sep_by]. Returns the count of times [p] was executed along
-      with the list of successfully parsed values.
+  (** [take ~at_least ~up_to ~sep_by p] returns a parser which encapsulates a
+      list of values returned by evaluating parser [p] repeatedly. The lower and
+      upper bound of repetition is specified by arguments [at_least] and [up_to]
+      respectivly.
+
+      If [sep_by] is specified then the evaluation of [p] must be followed by a
+      successful evaluation of [sep_by]. The parsed value of [sep_by] is
+      discarded.
+
+      The default value of [at_least] is [0]. The default value of [up_to] is
+      unspecified, i.e. there is no upper limit.
+
+      The repetition ends when either parsers [p] or [sep_by] fails or the upper
+      bound - [up_to] - value is reached.
+
+      The parser fails if the count of repetition of [p] does not match the
+      value specified by [at_least].
 
       {[
-        open Reparse.Parse
+        module P = Reparse.String_parser
+        open P.Infix
 
-        let r = parse "aaaaa" (take (char 'a')) in
-        r = (5, ['a'; 'a'; 'a'; 'a'; 'a'])
+        let input = Reparse.String_input.create "aaaaa" in
+        let p = P.(take (char 'a')) in
+        let r = P.parse input p in
+        r = ['a'; 'a'; 'a'; 'a';'a']
+        ;;
+
+
+        let input = Reparse.String_input.create "a,a,a,a,a" in
+        (* specify sep_by restriction. *)
+        let p = P.(take ~sep_by:(char ',') (char 'a')) in
+        let r = P.parse input p in
+        r = ['a'; 'a'; 'a'; 'a']
+        ;;
+
+        let input = Reparse.String_input.create "a,a,a,a,a" in
+        (* lower bound restriction met *)
+        let p = P.(take ~at_least:3 ~sep_by:(char ',') (char 'a')) in
+        let r = P.parse input p in
+        r = ['a'; 'a'; 'a'; 'a']
+
+        ;;
+        let input = Reparse.String_input.create "a,a,a,a,a" in
+        let p = P.(take ~at_least:5 ~sep_by:(char ',') (char 'a')) in
+        let r =
+          try
+            let _ = P.parse input p in
+            false
+          with _ -> true
+          (* lower bound not met *)
+        in
+        r = true
+
+        ;;
+        let input = Reparse.String_input.create "a,a,a,a,a" in
+        (* upper bound restriction *)
+        let p = P.(take ~up_to:3 ~sep_by:(char ',') (char 'a')) in
+        let r = P.parse input p in
+        r = ['a'; 'a'; 'a']
       ]} *)
 
   val take_while : ?sep_by:_ t -> 'a t -> while_:bool t -> 'a list t
