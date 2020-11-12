@@ -619,13 +619,17 @@ module type S = sig
       ]} *)
 
   val string : string -> string t
-  (** [string s] accepts [s] exactly.
+  (** [string s] returns a parser which accepts [s] exactly and encapsulates it.
 
       {[
-        open Reparse.Parse
-        let p = string "hello" in
-        let r = parse "hello" p in
-        r = ()
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "hello world" in
+        let p = P.string "hello" in
+        let r = P.parse input p in
+        r = "hello"
       ]} *)
 
   val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
