@@ -301,12 +301,17 @@ module type S = sig
       all parsers in [l] fails. It executes parsers in [l] from left to right
       and returns the first sucessful parse result. The remaining parsers are
       not executed. This is similar in functionality to [<|>]. Except here, the
-      alternative parsers are specified dynamically and are lazily executed.
+      alternative parsers can be specified dynamically and are only evaluated if
+      required.
 
       {[
-        open Reparse.Parse
-        let p = any [lazy (char 'z'); lazy (char 'x'); lazy (char 'a')] in
-        let r = parse "abc" p in
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "abc" in
+        let p = P.(any [char 'z'; char 'x'; char 'a']) in
+        let r = P.parse input p in
         r = 'a'
       ]} *)
 
