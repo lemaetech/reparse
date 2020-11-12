@@ -30,18 +30,18 @@ module type S = sig
         open P.Infix
 
         let p = P.(take next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum)
-        let s = Reparse.String_input.create "hello world"
+        let input = Reparse.String_input.create "hello world"
 
         (* Track line, column number. *)
 
         ;;
-        let r = P.parse ~track_lnum:true s p in
+        let r = P.parse ~track_lnum:true input p in
         r = (1, 12)
 
         (* Don't track line, column number. *)
 
         ;;
-        let r = P.parse s p in
+        let r = P.parse input p in
         r = (0, 0)
       ]} *)
 
@@ -71,9 +71,13 @@ module type S = sig
       succeeds then it executes [f a] which returns a new parse [q].
 
       {[
-        open Reparse.Parse
-        let p = char 'h' >>= fun c -> return (Char.code c) in
-        let r = parse "hello" p in
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let p = P.(char 'h' >>= fun c -> return (Char.code c)) in
+        let input = Reparse.String_input.create "hello" in
+        let r = P.parse input p in
         r = 104
       ]} *)
 
