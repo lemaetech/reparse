@@ -511,7 +511,8 @@ module type S = sig
       ]} *)
 
   val offset : int t
-  (** [offset] returns the current input offset. The first offset is [0].
+  (** [offset] returns a parser encapsulating the current input offset. The
+      first offset is [0].
 
       {[
         module P = Reparse.String_parser
@@ -530,17 +531,23 @@ module type S = sig
   (** {2 Parsers} *)
 
   val peek_char : char t
-  (** [peek_char t] returns a character from input without consuming it.
+  (** [peek_char t] returns a parser encapsulating a character from input
+      without consuming it.
 
       {[
-        open Reparse.Parse
-        let p = peek_char in
-        let r = parse "hello" p in
+        module P = Reparse.String_parser
+        open P.Infix
+        ;;
+
+        let input = Reparse.String_input.create "hello" in
+        let p = P.peek_char in
+        let r = P.parse input p in
         r = 'h'
 
         (* Input offset value remains the same. *)
-        let p = peek_char *> offset in
-        let r = parse "hello" p in
+        let input = Reparse.String_input.create "hello" in
+        let p = P.(peek_char *> offset) in
+        let r = P.parse input p in
         r = 0
       ]} *)
 
