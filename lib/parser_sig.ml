@@ -297,47 +297,85 @@ module type S = sig
       ]} *)
 
   val any : 'a t list -> 'a t
-  (** [any l] succeeds if any one of the parsers in [l] succeeds and fails if
-      all parsers in [l] fails. It executes parsers in [l] from left to right
-      and returns the first sucessful parse result. The remaining parsers are
-      not executed. This is similar in functionality to [<|>]. Except here, the
-      alternative parsers can be specified dynamically and are only evaluated if
-      required.
+  (** [any l] returns a parser encapsulating value [a]. [a] is the parser value
+      of the first successfully evaluated parser specified in list [l].
+      Specified parsers in [l] are evaluated sequentially from left to right.
+      The parser fails if none of the parsers in [l] are evaluated successfully.
 
       {[
         module P = Reparse.String_parser
         open P.Infix
 
         ;;
-        let input = Reparse.String_input.create "abc" in
         let p = P.(any [char 'z'; char 'x'; char 'a']) in
+        let input = Reparse.String_input.create "abc" in
         let r = P.parse input p in
         r = 'a'
+
+        ;;
+        let p = P.(any [char 'z'; char 'x'; char 'a']) in
+        let input = Reparse.String_input.create "yyy" in
+        let r =
+          try
+            let _ = P.parse input p in
+            false
+          with _ -> true
+        in
+        r = true
       ]} *)
 
   val all : 'a t list -> 'a list t
-  (** [all l] succeeds if and only if all of the parsers in [l] succeed as
-      specified sequentially, from left to right. Returns a list of parsed
-      result.
+  (** [all l] returns a parser encapsulating a list of of parser values
+      accumulated by evaluating parsers specified in [l] sequentially - from
+      left to right. It only succeeds if and only if all of the parsers in [l]
+      succeed.
 
       {[
-        open Reparse.Parse
-        let p = all [char 'a'; char 'b'; char 'c'] in
-        let r = parse "abcd" p in
-        r = ['a';'b';'c']
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let p = P.(all [char 'a'; char 'b'; char 'c']) in
+        let input = Reparse.String_input.create "abc" in
+        let r = P.parse input p in
+        r = ['a'; 'b'; 'c']
+
+        ;;
+        let p = P.(all [char 'a'; char 'b'; char 'c']) in
+        let input = Reparse.String_input.create "abd" in
+        let r =
+          try
+            let _ = P.parse input p in
+            false
+          with _ -> true
+        in
+        r = true
       ]} *)
 
   val all_unit : 'a t list -> unit t
-  (** [all_unit l] succeeds if and only if all of the parsers in [l] succeed as
-      specified sequentially, from left to right. This is similar to [all] but
-      specialized to [unit] value. {b Note} all of the [p] in [l] are piped to
-      [*>] operator.
+  (** [all_unit l] returns a parser which behaves similar to {!val:all} - except
+      all of the parser values are discarded.
 
       {[
-        open Reparse.Parse
-        let p = all_unit [char 'a'; char 'b'; char 'c'] in
-        let r = parse "abc" p in
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
+        let input = Reparse.String_input.create "abc" in
+        let r = P.parse input p in
         r = ()
+
+        ;;
+        let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
+        let input = Reparse.String_input.create "abd" in
+        let r =
+          try
+            let _ = P.parse input p in
+            false
+          with _ -> true
+        in
+        r = true
       ]} *)
 
   val named : string -> 'a t -> 'a t
