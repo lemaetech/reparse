@@ -389,16 +389,54 @@ module type S = sig
         module P = Reparse.String_parser
         open P.Infix
 
+        ;;
+        let p = P.(delay (lazy (char 'z')) <|> delay (lazy (char 'a'))) in
         let input = Reparse.String_input.create "abc" in
-        let r =  P.(parse input (delay (lazy (char 'z')) <|> delay (lazy (char 'a')))) in
+        let r = P.parse input p in
         r = 'a'
       ]} *)
 
   val is_eoi : bool t
-  (** [is_eoi] returns [true] if parser has reached end of input. *)
+  (** [is_eoi] returns [true] if parser has reached end of input.
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "" in
+        let r = P.(parse input is_eoi) in
+        r = true
+
+        ;;
+        let input = Reparse.String_input.create "a" in
+        let r = P.(parse input is_eoi) in
+        r = false
+      ]} *)
 
   val eoi : unit t
-  (** [eoi] Parse the end of input to be successful. *)
+  (** [eoi] returns a parser which parses end of input. Fails if parser is not
+      at end of input.
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "" in
+        let r = P.(parse input eoi) in
+        r = ()
+
+        ;;
+        let input = Reparse.String_input.create "a" in
+        let r =
+          try
+            let _ = P.(parse input eoi) in
+            false
+          with _ -> true
+        in
+        r = true
+      ]} *)
 
   (* val fail : (unit -> string) -> 'a t *)
   (** [fail msg] fails the parser with [msg]. *)
