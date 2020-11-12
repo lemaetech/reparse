@@ -511,7 +511,18 @@ module type S = sig
       ]} *)
 
   val offset : int t
-  (** [offset] returns the current input offset. The first offset is [0]. *)
+  (** [offset] returns the current input offset. The first offset is [0].
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "bcb" in
+        let p = P.(next *> offset) in
+        let r = P.parse ~track_lnum:true input p in
+        r = 1
+      ]} *)
 
   val unit : unit t
   (** [unit] is [return ()]. *)
