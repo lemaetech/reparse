@@ -383,17 +383,16 @@ module type S = sig
       message. This may be helpful when debugging parsers. *)
 
   val delay : 'a t Lazy.t -> 'a t
-  (** [delay f] delays the computation of [p] until it is required. Use it
-      together with [<|>].
+  (** [delay p] returns a parser which lazyily evaluates parser [p].
 
       {[
-        open Reparse.Parse.Parse
-        let r =  parse "a" (delay (lazy (char 'z')) <|> delay (lazy (char 'a'))) in
+        module P = Reparse.String_parser
+        open P.Infix
+
+        let input = Reparse.String_input.create "abc" in
+        let r =  P.(parse input (delay (lazy (char 'z')) <|> delay (lazy (char 'a')))) in
         r = 'a'
       ]} *)
-
-  (* val advance : int -> unit t *)
-  (** [advance n] advances parser by the given [n] number of characters. *)
 
   val is_eoi : bool t
   (** [is_eoi] returns [true] if parser has reached end of input. *)
