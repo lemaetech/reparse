@@ -468,21 +468,47 @@ module type S = sig
       ]} *)
 
   val is : 'a t -> bool t
-  (** [is p] return [true] is [p] parses successfully. Otherwise it return
+  (** [is p] returns [true] is [p] parses successfully. Otherwise it return
       [false]. {b Note} executing [p] doesn't consume any input.
 
       {[
-        open Reparse.Parse
+        module P = Reparse.String_parser
+        open P.Infix
 
-        let r = parse "bcb" (is (char 'b')) in
+        ;;
+        let input = Reparse.String_input.create "bcb" in
+        let r = P.(parse input (is (char 'b'))) in
         r = true
       ]} *)
 
   val lnum : int t
-  (** [lnum] return the current line number. The first line number is [1]. *)
+  (** [lnum] returns a parser encapsulating the current line number. The first
+      line number is [1].
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "bcb" in
+        let p = P.(next *> lnum) in
+        let r = P.parse ~track_lnum:true input p in
+        r = 1
+      ]} *)
 
   val cnum : int t
-  (** [cnum] returns the current column number. The first column number is [1]. *)
+  (** [cnum] returns the current column number. The first column number is [1].
+
+      {[
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "bcb" in
+        let p = P.(next *> cnum) in
+        let r = P.parse ~track_lnum:true input p in
+        r = 2
+      ]} *)
 
   val offset : int t
   (** [offset] returns the current input offset. The first offset is [0]. *)
