@@ -571,7 +571,8 @@ module type S = sig
       ]} *)
 
   val next : char t
-  (** [next] consumes and returns the next char of input.
+  (** [next] Returns a parser which consumes and encapsulates the next character
+      of input.
 
       {[
         module P = Reparse.String_parser
@@ -584,7 +585,8 @@ module type S = sig
       ]} *)
 
   val char : char -> char t
-  (** [char c] accepts character [c] from input exactly.
+  (** [char c] returns a parser which accepts a character [c] from input
+      exactly.
 
       {[
         module P = Reparse.String_parser
@@ -598,12 +600,21 @@ module type S = sig
       ]} *)
 
   val satisfy : (char -> bool) -> char t
-  (** [satisfy f] accepts a char [c] from input if [f c] is true and returns it.
+  (** [satisfy f] returns a parser which accepts a character [c] from input if
+      [f c] is true and encapsulates it.
 
       {[
-        open Reparse.Parse
-        let p = satisfy (function 'a' -> true | _ -> false) in
-        let r = parse "abc" p in
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "abc" in
+        let p =
+          P.satisfy (function
+              | 'a' -> true
+              | _   -> false)
+        in
+        let r = P.parse input p in
         r = 'a'
       ]} *)
 
