@@ -672,7 +672,7 @@ module type S = sig
 
       {b Note} [while_] does not consume input.
 
-      The parser encapsulates the count of times [p] was evaluted successfully.
+      The parser encapsulates the count of times [p] was evaluated successfully.
 
       {[
         module P = Reparse.String_parser
