@@ -633,17 +633,21 @@ module type S = sig
       ]} *)
 
   val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
-  (** [skip ~at_least ~up_to p] parses [p] zero or more times while discarding
-      the result. If [at_least] is given, then [p] must execute successfully
-      [at_least] times to be considered successful. Default of [at_least] is 0.
-      If [up_to] is given then [p] is executed maximum [up_to] times. By default
-      [up_to] doesn't have an upper bound value. Returns the count of times [p]
-      was skipped successfully.
+  (** [skip ~at_least ~up_to p] returns a parser which skips/discards parsed
+      values returned by evaluating parser [p]. The number of times [p] is
+      evaluated is specified by params [at_least] and [up_to]. [at_least]
+      represents a lower bound while [up_to] represents the higher bound.
+      Default value of [at_least] is 0. The default value of [up_to] is
+      unspecified, i.e. it will keep evaluating [p] until it fails. The parser
+      encapsulates the count of times [p] was evaluated successfully.
 
       {[
-        open Reparse.Parse
+        module P = Reparse.String_parser
+        open P.Infix
 
-        let r = parse "     " (skip space) in
+        ;;
+        let input = Reparse.String_input.create "     " in
+        let r = P.(parse input (skip space)) in
         r = 5
       ]} *)
 
