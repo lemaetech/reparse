@@ -546,8 +546,8 @@ module type S = sig
         let r = P.parse input p in
         r = 'h'
 
-        (* Input offset value remains the same. *)
         let input = Reparse.String_input.create "hello" in
+        (* Input offset value remains the same. *)
         let p = P.(peek_char *> offset) in
         let r = P.parse input p in
         r = 0
