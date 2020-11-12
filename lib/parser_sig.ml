@@ -552,13 +552,22 @@ module type S = sig
       ]} *)
 
   val peek_string : int -> string t
-  (** [peek_string n] attempts to retrieve string of length [n] from input
-      exactly and return it. No input is consumed.
+  (** [peek_string n] returns a parser encapsulating a string of length [n] from
+      input. No input is consumed.
 
       {[
-        open Reparse.Parse
-        let r = parse "hello" (peek_string 5) in
+        module P = Reparse.String_parser
+        open P.Infix
+
+        ;;
+        let input = Reparse.String_input.create "hello" in
+        let r = P.(parse input (peek_string 5)) in
         r = "hello"
+
+        ;;
+        let input = Reparse.String_input.create "hello" in
+        let r = P.(parse input (peek_string 5 *> offset)) in
+        r = 0
       ]} *)
 
   val next : char t
