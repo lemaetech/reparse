@@ -116,7 +116,9 @@ exception
 
 (** {2 Parsers} *)
 
-(** {3 Pure} *)
+(** {3 Pure}
+
+    Create parsers from values. *)
 
 val pure : 'a -> 'a t
 (** [pure v] returns a parser that always parses value [v].
@@ -133,6 +135,9 @@ val pure : 'a -> 'a t
 
 val return : 'a -> 'a t
 (** [return v] is [pure v]. *)
+
+val unit : unit t
+(** [unit] is [return ()]. *)
 
 (** {3 Errors}
 
@@ -487,6 +492,8 @@ val offset : int t
       r = 1
     ]} *)
 
+(** {3 negation, un-negation}*)
+
 val not_ : 'a t -> unit t
 (** [not_ p] returns a parser which succeeds if and only if [p] fails to parse.
 
@@ -529,9 +536,6 @@ val is : 'a t -> bool t
       let r = P.(parse input (is (char 'b'))) in
       r = true
     ]} *)
-
-val unit : unit t
-(** [unit] is [return ()]. *)
 
 val peek_char : char t
 (** [peek_char t] returns a parser encapsulating a character from input without
