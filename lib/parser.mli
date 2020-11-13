@@ -763,16 +763,41 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       r = ['a'; 'a'; 'a']
     ]} *)
 
-val take_while : ?sep_by:_ t -> 'a t -> while_:bool t -> 'a list t
-(** [take_while p ~while_] parses [p] while [while_] is true. It returns the
-    count of items taken as well and the items itself.
+val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
+(** [take_while ~sep_by p ~while_ p] returns a parser which encapsulates a list
+    of values returned by evaluating parser [p] repeatedly.
+
+    [p] is only evaluated when [while_] evaluates to [true].
+
+    If [sep_by] is specified then the evaluation of [p] must be followed by a
+    successful evaluation of [sep_by]. The parsed value of [sep_by] is
+    discarded.
+
+    The repetition ends when one of the following occurs:
+
+    - [p] evaluates to failure
+    - [while_] returns [false]
+    - [sep_by] evaluates to failure
+
+    {b Note} [while_] does not consume input.
 
     {[
-      open Reparse.Parse
+      module P = Reparse.Parser
+      open P.Infix
 
-      let p = take_while (char 'a') ~while_:(is_not (char 'b')) in
-      let r =  parse "aab";
-      r = (3, ['a';'a';'a'])
+      ;;
+      let input = new P.string_input "aab" in
+      let p = P.(take_while ~while_:(is_not (char 'b')) (char 'a')) in
+      let r = P.parse input p in
+      r = ['a'; 'a']
+
+      ;;
+      let input = new P.string_input "a,a,ab" in
+      let p =
+        P.(take_while ~sep_by:(char ',') ~while_:(is_not (char 'b')) (char 'a'))
+      in
+      let r = P.parse input p in
+      r = ['a'; 'a']
     ]} *)
 
 val take_while_cb :

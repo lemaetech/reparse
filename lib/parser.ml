@@ -425,8 +425,8 @@ let take_while_cb :
   done ;
   ok !take_count
 
-let take_while : ?sep_by:_ t -> 'a t -> while_:bool t -> 'a list t =
- fun ?sep_by p ~while_ state ~ok ~err ->
+let take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t =
+ fun ?sep_by ~while_ p state ~ok ~err ->
   let items = ref [] in
   let count = ref 0 in
   let on_take_cb a = items := a :: !items in
