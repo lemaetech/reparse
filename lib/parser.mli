@@ -263,6 +263,8 @@ val any : 'a t list -> 'a t
 
     The parser fails if none of the parsers in [l] are evaluated successfully.
 
+    Also see {!val:Infix.(<|>)}
+
     {e example - first successful parser result is returned}
 
     {[
@@ -288,7 +290,7 @@ val any : 'a t list -> 'a t
       r = 'a'
     ]}
 
-    {e example - parser fails when one of the parsers in [l] are successful}
+    {e example - parser fails when none of the parsers in [l] are successful}
 
     {[
       let p = P.(any [char 'z'; char 'x'; char 'a']) in
@@ -377,6 +379,10 @@ val all_unit : 'a t list -> unit t
       r = true
     ]} *)
 
+(** {3 Delay}
+
+    Delays evaluation of parser. *)
+
 val delay : 'a t Lazy.t -> 'a t
 (** [delay p] returns a parser which lazyily evaluates parser [p].
 
@@ -390,6 +396,10 @@ val delay : 'a t Lazy.t -> 'a t
       let r = P.parse input p in
       r = 'a'
     ]} *)
+
+(** {3 Input state}
+
+    Returns parser input details. *)
 
 val is_eoi : bool t
 (** [is_eoi] returns [true] if parser has reached end of input.
@@ -430,49 +440,6 @@ val eoi : unit t
           false
         with _ -> true
       in
-      r = true
-    ]} *)
-
-val not_ : 'a t -> unit t
-(** [not_ p] returns a parser which succeeds if and only if [p] fails to parse.
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let input = new P.string_input "bbb" in
-      let p = P.(not_ (char 'a')) in
-      let r = P.parse input p in
-      r = ()
-    ]} *)
-
-val is_not : 'a t -> bool t
-(** [is_not p] returns a parser encapsulating value [true] if [p] fails to parse
-    and [false] otherwise. {b Note} evaluating [p] doesn't consume any input.
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let input = new P.string_input "bbb" in
-      let r = P.(parse input (is_not (char 'a'))) in
-      r = true
-    ]} *)
-
-val is : 'a t -> bool t
-(** [is p] returns a parser which encapsulates [true] is [p] parses
-    successfully, [false] otherwise. {b Note} evaluation of [p] doesn't consume
-    any input.
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let input = new P.string_input "bcb" in
-      let r = P.(parse input (is (char 'b'))) in
       r = true
     ]} *)
 
@@ -518,6 +485,49 @@ val offset : int t
       let p = P.(next *> offset) in
       let r = P.parse ~track_lnum:true input p in
       r = 1
+    ]} *)
+
+val not_ : 'a t -> unit t
+(** [not_ p] returns a parser which succeeds if and only if [p] fails to parse.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "bbb" in
+      let p = P.(not_ (char 'a')) in
+      let r = P.parse input p in
+      r = ()
+    ]} *)
+
+val is_not : 'a t -> bool t
+(** [is_not p] returns a parser encapsulating value [true] if [p] fails to parse
+    and [false] otherwise. {b Note} evaluating [p] doesn't consume any input.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "bbb" in
+      let r = P.(parse input (is_not (char 'a'))) in
+      r = true
+    ]} *)
+
+val is : 'a t -> bool t
+(** [is p] returns a parser which encapsulates [true] is [p] parses
+    successfully, [false] otherwise. {b Note} evaluation of [p] doesn't consume
+    any input.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "bcb" in
+      let r = P.(parse input (is (char 'b'))) in
+      r = true
     ]} *)
 
 val unit : unit t
