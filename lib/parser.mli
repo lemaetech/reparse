@@ -102,7 +102,7 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
       r2 = (0, 0)
     ]} *)
 
-(** {2 Parser_error} *)
+(** {2 Exception} *)
 
 exception
   Parser of
