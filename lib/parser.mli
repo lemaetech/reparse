@@ -660,8 +660,8 @@ val string : string -> string t
     ]} *)
 
 val line : [`LF | `CRLF] -> string t
-(** [line c] returns a parser which consumes a line text from input. The line is
-    specified by [c].
+(** [line c] returns a parser which consumes a line of text from input. The line
+    is specified by [c].
 
     Line delimiter [c] can be either [`LF] or [`CRLF]. This corresponds to [\n]
     or [\r\n] character respectively.
