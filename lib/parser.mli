@@ -70,10 +70,10 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
     if [track_num] is [true] then the parser tracks both the line and the column
     numbers. It is set to [false] by default.
 
-    Line number and column number both start count from [1] if enabled [0]
-    otherwise.
+    Line number and column number both start count from [1] if enabled. They are
+    both set to [0] otherwise.
 
-    Also see, {!val:lnum} and {!val:cnum}
+    {i Also see} {!val:lnum} and {!val:cnum}.
 
     @raise Parse_error
     {e example - track line and column number}
