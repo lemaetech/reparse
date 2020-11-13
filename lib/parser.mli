@@ -134,9 +134,9 @@ val pure : 'a -> 'a t
 val return : 'a -> 'a t
 (** [return v] is [pure v]. *)
 
-(** {3 Fail}
+(** {3 Errors}
 
-    Also see {!val:Infix.(<?>)} and {!val:named} *)
+    Parser to handle, generate exceptions and failures. *)
 
 val fail : string -> 'a t
 (** [fail err_msg] creates a parser that always fails with [err_msg].
@@ -153,6 +153,37 @@ val fail : string -> 'a t
         with _ -> true
       in
       r = true
+    ]} *)
+
+val named : string -> 'a t -> 'a t
+(** [named name p] names parser [p] with [name]. The name is used on error
+    message. This may be helpful when debugging parsers.
+
+    Also see {!val:Infix.(<?>)}
+
+    {e example}
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let p = P.(char 'a' |> named "parse_c") in
+      let input = new P.string_input "zzd" in
+      let r =
+        try
+          let _ = P.parse input p in
+          assert false
+        with e -> e
+      in
+      r
+      = P.Parse_error
+          { offset = 0
+          ; line_number = 0
+          ; column_number = 0
+          ; msg =
+              "[parse_c] Reparse.Parser.Parse_error(0, 0, 0, \"[char] expected \
+               'a'\")" }
     ]} *)
 
 (** {3 Transforms}*)
@@ -342,35 +373,6 @@ val all_unit : 'a t list -> unit t
         with _ -> true
       in
       r = true
-    ]} *)
-
-val named : string -> 'a t -> 'a t
-(** [named name p] names parser [p] with [name]. The name is used on error
-    message. This may be helpful when debugging parsers.
-
-    {e example}
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let p = P.(char 'a' |> named "parse_c") in
-      let input = new P.string_input "zzd" in
-      let r =
-        try
-          let _ = P.parse input p in
-          assert false
-        with e -> e
-      in
-      r
-      = P.Parse_error
-          { offset = 0
-          ; line_number = 0
-          ; column_number = 0
-          ; msg =
-              "[parse_c] Reparse.Parser.Parse_error(0, 0, 0, \"[char] expected \
-               'a'\")" }
     ]} *)
 
 val delay : 'a t Lazy.t -> 'a t
