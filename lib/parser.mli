@@ -13,7 +13,9 @@
 type 'a t
 (** Represents a parser which can parse value ['a]. *)
 
-(** Represents parser input type. *)
+(** {3 Parser input types} *)
+
+(** Represents parser input type interface. *)
 class type input =
   object
     method eof : int -> bool
@@ -35,27 +37,16 @@ class string_input : string -> input
 (** Represents string input parser type. *)
 
 class file_input : Unix.file_descr -> input
-(** Represents a unix file_descriptor parser input type. *)
+(** Represents a unix file parser input type. *)
 
-(** {2 Parser_error} *)
-
-exception
-  Parse_error of
-    { offset : int
-    ; line_number : int
-    ; column_number : int
-    ; msg : string }
-(** [Parser_error (lnum, cnum, msg)] Raised by failed parsers. [lnum], [cnum] is
-    line number and column number respectively at the time of parser failure.
-    [msg] contains a descriptive error message. {b Note} [lnum], [cnum] is both
-    [0] if line tracking is disabled. *)
-
-(** {2 Start parser} *)
+(** {2 Parser execution} *)
 
 val parse : ?track_lnum:bool -> input -> 'a t -> 'a
-(** [parse ~track_lnum input p] executes parser [p] with [input]. If
-    [track_lnum] is true then the parser tracks both line and column numbers. It
-    is set to [false] by default.
+(** [parse ~track_lnum input p] returns value [v] as a result of evaluating
+    parser [p] with [input].
+
+    if [track_num] is [true] then the parser tracks both the line and the column
+    numbers. It is set to [false] by default.
 
     Line number and column number both start count from [1].
 
@@ -88,6 +79,20 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
       r2 = (0, 0)
     ]} *)
 
+(** {2 Parser_error} *)
+
+exception
+  Parse_error of
+    { offset : int
+    ; line_number : int
+    ; column_number : int
+    ; msg : string }
+(** [Parser_error (lnum, cnum, msg)] Raised by failed parsers. [lnum], [cnum] is
+    line number and column number respectively at the time of parser failure.
+    [msg] contains a descriptive error message.
+
+    Both [lnum], [cnum] are [0] if line tracking is disabled. *)
+
 (** {2 Pure parser} *)
 
 val pure : 'a -> 'a t
@@ -106,7 +111,7 @@ val pure : 'a -> 'a t
 val return : 'a -> 'a t
 (** [return v] is [pure v]. *)
 
-(** {2 Error related parsers}
+(** {2 Fail parser}
 
     Also see {!val:Infix.(<?>)} *)
 
