@@ -921,7 +921,7 @@ val optional : 'a t -> 'a option t
 
 (** {2 RFC 5234 parsers}
 
-    Parsers as defined in RFC 5234 Appending B.1.
+    Parsers as defined in RFC 5234, Appendix B.1.
 
     {i https://tools.ietf.org/html/rfc5234} *)
 
