@@ -24,9 +24,9 @@ class type input =
         [len]. *)
 
     method nth : int -> char
-    (** [nth i t] returns the [i]th char from input [t].
+    (** [i#nth n] returns the [n]th char from input [i].
 
-        @raise End_of_file if [i] is the eof. *)
+        @raise End_of_file if [n] is at eof. *)
   end
 
 class string_input : string -> input
