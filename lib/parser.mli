@@ -936,10 +936,6 @@ val htab : char t
 val lf : char t
 (** [lf] parse a linefeed ('\n') character. *)
 
-(* val lwsp : string t *)
-(** [lwsp] parse linear whitespaces - *(WSP / CRLF WSP). {b Note} Use of LWSP is
-    discouraged. See https://tools.ietf.org/html/rfc5234#appendix-B.1 *)
-
 val octect : char t
 (** [octect] parse a byte of character, [%x00-FF] 8 bytes of data. *)
 
