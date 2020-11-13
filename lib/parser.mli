@@ -10,12 +10,16 @@
 
 (** {2 Types} *)
 
+(** {3 Parser type} *)
+
 type 'a t
-(** Represents a parser which can parse value ['a]. *)
+(** Represents a parser which can parse value ['a].
+
+    Use {!val:parse} to execute a parser. *)
 
 (** {3 Parser input types} *)
 
-(** Represents parser input type interface. *)
+(** Represents parser input interface. *)
 class type input =
   object
     method eof : int -> bool
@@ -34,10 +38,28 @@ class type input =
   end
 
 class string_input : string -> input
-(** Represents string input parser type. *)
+(** Represents a parser input which is a [string].
+
+    {e example}
+
+    {[
+      module P = Reparse.Parser
+
+      let str_input = new P.string_input "hello world"
+    ]} *)
 
 class file_input : Unix.file_descr -> input
-(** Represents a unix file parser input type. *)
+(** Represents a parser input which is a unix file descriptor.
+
+    {e example}
+
+    {[
+      module P = Reparse.Parser
+      ;;
+
+      let fd = Unix.openfile fname [Unix.O_RDWR; Unix.O_CREAT] 0o640 in
+      let file_input = new P.file_input fd
+    ]} *)
 
 (** {2 Parser execution} *)
 
@@ -48,7 +70,8 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
     if [track_num] is [true] then the parser tracks both the line and the column
     numbers. It is set to [false] by default.
 
-    Line number and column number both start count from [1].
+    Line number and column number both start count from [1] if enabled [0]
+    otherwise.
 
     Also see, {!val:lnum} and {!val:cnum}
 
@@ -89,9 +112,7 @@ exception
     ; msg : string }
 (** [Parser_error (lnum, cnum, msg)] Raised by failed parsers. [lnum], [cnum] is
     line number and column number respectively at the time of parser failure.
-    [msg] contains a descriptive error message.
-
-    Both [lnum], [cnum] are [0] if line tracking is disabled. *)
+    [msg] contains a descriptive error message. *)
 
 (** {2 Pure parser} *)
 
