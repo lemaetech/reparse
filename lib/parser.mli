@@ -136,7 +136,7 @@ val return : 'a -> 'a t
 
 (** {3 Fail}
 
-    Also see {!val:Infix.(<?>)} *)
+    Also see {!val:Infix.(<?>)} and {!val:named} *)
 
 val fail : string -> 'a t
 (** [fail err_msg] creates a parser that always fails with [err_msg].
@@ -355,10 +355,8 @@ val named : string -> 'a t -> 'a t
       open P.Infix
 
       ;;
-      let p =
-        P.(all_unit [char 'a'; char 'b'; char 'c']) |> P.named "parse_abc"
-      in
-      let input = new P.string_input "abd" in
+      let p = P.(char 'a') |> P.named "parse_c" in
+      let input = new P.string_input "zzd" in
       let r =
         try
           let _ = P.parse input p in
@@ -371,8 +369,8 @@ val named : string -> 'a t -> 'a t
           ; line_number = 0
           ; column_number = 0
           ; msg =
-              "[parse_abc] Reparse.Parser.Parse_error(0, 0, 0, \"[all_unit] \
-               one of the parsers failed\")" }
+              "[parse_c] Reparse.Parser.Parse_error(0, 0, 0, \"[char] expected \
+               'a'\")" }
     ]} *)
 
 val delay : 'a t Lazy.t -> 'a t
