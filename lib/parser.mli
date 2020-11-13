@@ -460,6 +460,12 @@ val any : 'a t list -> 'a t
       let input = new P.string_input "xabc" in
       let r = P.parse input p in
       r = 'x'
+
+      ;;
+      let p = P.(any [char 'z'; char 'x'; char 'a']) in
+      let input = new P.string_input "abc" in
+      let r = P.parse input p in
+      r = 'a'
     ]}
 
     {e example - parser fails when one of the parsers in [l] are successful}
