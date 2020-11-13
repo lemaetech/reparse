@@ -767,7 +767,7 @@ val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 (** [take_while ~sep_by p ~while_ p] returns a parser which encapsulates a list
     of values returned by evaluating parser [p] repeatedly.
 
-    [p] is only evaluated when [while_] evaluates to [true].
+    [p] is evaluated only after [while_] evaluates to [true].
 
     If [sep_by] is specified then the evaluation of [p] must be followed by a
     successful evaluation of [sep_by]. The parsed value of [sep_by] is
@@ -801,17 +801,44 @@ val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
     ]} *)
 
 val take_while_cb :
-  ?sep_by:_ t -> 'a t -> while_:bool t -> on_take_cb:('a -> unit) -> int t
-(** [take_while_on p ~while_ ~on_take] parses [p] while [while_] is true. It
-    calls [on_take] each time it consumes the input. Returns the count of items
-    consumed.
+  ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> int t
+(** [take_while_on ~sep_by ~while_ ~on_take p] returns a parser which evaluates
+    [on_take_cb a] on every successful evaluation of [p]. [a] is the parsed
+    value of [p].
+
+    [p] is evaluated only after [while_] evaluates to [true].
+
+    If [sep_by] is specified then the evaluation of [p] must be followed by a
+    successful evaluation of [sep_by]. The parsed value of [sep_by] is
+    discarded.
+
+    [p] is evaluated repeatedly. The repetition ends when one of the following
+    occurs:
+
+    [on_take_cb] is the callback function that is called every time [p] is
+    evaluated.
+
+    - [p] evaluates to failure
+    - [while_] returns [false]
+    - [sep_by] evaluates to failure
+
+    [take_while_cb] is the general version of {!val:take_while}. It allows to
+    specify how the value [a] is to be collected.
+
+    {b Note} [while_] does not consume input.
 
     {[
-      open Reparse.Parse
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "aaab" in
       let buf = Buffer.create 0 in
-      let on_take a = Buffer.add_char buf a in
-      let p = take_while_on (char 'a') ~while_:(is_not (char 'b')) ~on_take in
-      let r = parse "aaab" p in
+      let on_take_cb a = Buffer.add_char buf a in
+      let p =
+        P.(take_while_cb (char 'a') ~while_:(is_not (char 'b')) ~on_take_cb)
+      in
+      let r = P.parse input p in
       let s = Buffer.contents buf in
       r = 3 && s = "aaa"
     ]} *)

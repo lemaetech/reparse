@@ -396,8 +396,8 @@ let take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t =
       state )
 
 let take_while_cb :
-    ?sep_by:_ t -> 'a t -> while_:bool t -> on_take_cb:('a -> unit) -> int t =
- fun ?sep_by p ~while_ ~on_take_cb state ~ok ~err:_ ->
+    ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> int t =
+ fun ?sep_by ~while_ ~on_take_cb p state ~ok ~err:_ ->
   let cond = ref true in
   let take_count = ref 0 in
   let do_condition () =
