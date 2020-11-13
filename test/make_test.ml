@@ -1,19 +1,15 @@
-module type S = Reparse.PARSER
+module P = Reparse.Parser
 
-type 's test = (module S with type input = 's) -> 's -> unit -> unit
+type test' = P.input -> unit -> unit
 
-let () = Random.self_init ()
-
-let make_string_test test_name (test : 's test) test_data =
-  let input = Reparse.String_input.create test_data in
-  ("[String] " ^ test_name, `Quick, test (module Reparse.String_parser) input)
-
-let make_file_test test_name (test : 's test) test_data =
-  let make_file content =
+let make test_name test data =
+  let fd =
     let fname = string_of_int @@ Random.bits () in
     let fd = Unix.openfile fname [Unix.O_RDWR; Unix.O_CREAT] 0o640 in
-    let _w = Unix.write_substring fd content 0 (String.length content) in
+    let _w = Unix.write_substring fd data 0 (String.length data) in
     fd
   in
-  let input = make_file test_data |> Reparse.File_input.create in
-  ("[File]   " ^ test_name, `Quick, test (module Reparse.File_parser) input)
+  let s_input = new P.string_input data in
+  let fd_input = new P.file_input fd in
+  [ ("[String] " ^ test_name, `Quick, test s_input)
+  ; ("[File]   " ^ test_name, `Quick, test fd_input) ]
