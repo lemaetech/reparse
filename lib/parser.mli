@@ -646,7 +646,7 @@ val satisfy : (char -> bool) -> char t
     ]} *)
 
 val string : string -> string t
-(** [string s] returns a parser which accepts [s] exactly and encapsulates it.
+(** [string s] returns a parser which accepts [s] exactly.
 
     {[
       module P = Reparse.Parser
@@ -661,7 +661,7 @@ val string : string -> string t
 
 val line : [`LF | `CRLF] -> string t
 (** [line c] returns a parser which consumes a line of text from input. The line
-    is specified by [c].
+    delimiter is specified by [c].
 
     Line delimiter [c] can be either [`LF] or [`CRLF]. This corresponds to [\n]
     or [\r\n] character respectively.
