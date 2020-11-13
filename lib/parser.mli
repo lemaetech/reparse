@@ -8,6 +8,8 @@
  * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
 
+(** {2 Types} *)
+
 type 'a t
 (** Represents a parser which can parse value ['a]. *)
 
@@ -35,6 +37,8 @@ class string_input : string -> input
 class file_input : Unix.file_descr -> input
 (** Represents a unix file_descriptor parser input type. *)
 
+(** {2 Parser_error} *)
+
 exception
   Parse_error of
     { offset : int
@@ -46,12 +50,20 @@ exception
     [msg] contains a descriptive error message. {b Note} [lnum], [cnum] is both
     [0] if line tracking is disabled. *)
 
+(** {2 Start parser} *)
+
 val parse : ?track_lnum:bool -> input -> 'a t -> 'a
-(** [parse ~tract_lnum input p] executes parser [p] with [input]. If
+(** [parse ~track_lnum input p] executes parser [p] with [input]. If
     [track_lnum] is true then the parser tracks both line and column numbers. It
     is set to [false] by default.
 
+    Line number and column number both start count from [1].
+
+    Also see, {!val:lnum} and {!val:cnum}
+
     @raise Parse_error
+    {e example - track line and column number}
+
     {[
       module P = Reparse.Parser
       open P.Infix
@@ -60,110 +72,182 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
       let p = P.(take next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum) in
       let input = new P.string_input "hello world" in
       let r1 = P.parse ~track_lnum:true input p in
+      r1 = (1, 12)
+    ]}
+
+    {e example - don't track line, column number. Default behaviour}
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let p = P.(take next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum) in
+      let input = new P.string_input "hello world" in
       let r2 = P.parse input p in
-      r1 = (1, 12) && r2 = (0, 0)
+      r2 = (0, 0)
+    ]} *)
+
+(** {2 Pure parser} *)
+
+val pure : 'a -> 'a t
+(** [pure v] returns a parser that always parses value [v].
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let input = new P.string_input "" in
+      let r1 = P.(parse input (pure 5)) in
+      let r2 = P.(parse input (pure "hello")) in
+      r1 = 5 && r2 = "hello"
     ]} *)
 
 val return : 'a -> 'a t
-(** [return v] returns a parser that always parses value [v].
+(** [return v] is [pure v]. *)
 
-    {[
-      module P = Reparse.Parser
-      open P.Infix
+(** {2 Error related parsers}
 
-      let input = new P.string_input ""
-
-      ;;
-      let r = P.(parse input (P.return 5)) in
-      r = 5
-
-      ;;
-      let r = P.parse input (P.return "hello") in
-      r = "hello"
-    ]} *)
+    Also see {!val:Infix.(<?>)} *)
 
 val fail : string -> 'a t
-(** [fail err_msg] creates a parser that always fails with [err_msg]. *)
-
-val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-(** [p >>= f] Binder. Returns a parser as a result of applying [f a] where [a]
-    is the parsed value of [p].
+(** [fail err_msg] creates a parser that always fails with [err_msg].
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let p = P.(char 'h' >>= fun c -> return (Char.code c)) in
-      let input = new P.string_input "hello" in
-      let r = P.parse input p in
-      r = 104
+      let input = new P.string_input "" in
+      let r =
+        try
+          let _ = P.(parse input (fail "hello")) in
+          false
+        with _ -> true
+      in
+      r = true
     ]} *)
 
-val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
-(** [p >|= f] Mapper parser. Returns a parser which encapsulates value [b] as a
-    result of applying [f a] where [a] is the parsed value of [p].
+(** {2 Infix} *)
 
-    {[
-      module P = Reparse.Parser
-      open P.Infix
+(** Provides {i infix} and {i let syntax} operators.
 
-      ;;
-      let p = P.(char 'h' >|= fun c -> Char.code c) in
-      let input = new P.string_input "hello" in
-      let r = P.parse input p in
-      r = 104
-    ]} *)
+    Below code snippet is the recommended approach to use Infix operators:
 
-val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
-(** [pf <*> q] Applicative parser. Returns a parser encapsulating value [b] as a
-    result of applying [f a], where [f] is the function value parsed by parser
-    [pf] and [a] is the value parsed by [q].
+    {[ open Reparse.Parser.Infix ]} *)
+module Infix : sig
+  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+  (** [p >>= f] Binder. Returns a parser as a result of applying [f a] where [a]
+      is the parsed value of [p].
 
-    {[
-      module P = Reparse.Parser
-      open P.Infix
+      {[
+        module P = Reparse.Parser
+        open P.Infix
 
-      ;;
-      let p = P.(return (fun a -> a + 2) <*> return 2) in
-      let input = new P.string_input "hello" in
-      let r = P.parse input p in
-      r = 4
-    ]} *)
+        ;;
+        let p = P.(char 'h' >>= fun c -> return (Char.code c)) in
+        let input = new P.string_input "hello" in
+        let r = P.parse input p in
+        r = 104
+      ]} *)
 
-val ( <$ ) : 'b -> 'a t -> 'b t
-(** [v <$ p] replaces the result of [p] with [v].
+  val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
+  (** [p >|= f] Mapper parser. Returns a parser which encapsulates value [b] as
+      a result of applying [f a] where [a] is the parsed value of [p].
 
-    {[
-      module P = Reparse.Parser
-      open P.Infix
+      {[
+        module P = Reparse.Parser
+        open P.Infix
 
-      ;;
-      let p = P.("hello" <$ char 'h') in
-      let input = new P.string_input "hello" in
-      let r = P.parse input p in
-      r = "hello"
-    ]} *)
+        ;;
+        let p = P.(char 'h' >|= fun c -> Char.code c) in
+        let input = new P.string_input "hello" in
+        let r = P.parse input p in
+        r = 104
+      ]} *)
 
-(** Mappers over pairs of parsers. Joins their parsing results together. *)
+  val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
+  (** [pf <*> q] Applicative parser. Returns a parser encapsulating value [b] as
+      a result of applying [f a], where [f] is the function value parsed by
+      parser [pf] and [a] is the value parsed by [q].
 
-val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
-(** [f <$> p] returns a parser encapsulating value [b] as a result of applying
-    [f a]. [a] is value parsed by [p].
+      {[
+        module P = Reparse.Parser
+        open P.Infix
 
-    {[
-      module P = Reparse.Parser
-      open P.Infix
+        ;;
+        let p = P.(return (fun a -> a + 2) <*> return 2) in
+        let input = new P.string_input "hello" in
+        let r = P.parse input p in
+        r = 4
+      ]} *)
 
-      ;;
-      let p = P.((fun a -> a ^ " world") <$> string "hello") in
-      let input = new P.string_input "hello" in
-      let r = P.parse input p in
-      r = "hello world"
-    ]} *)
+  val ( <$ ) : 'b -> 'a t -> 'b t
+  (** [v <$ p] replaces the result of [p] with [v].
+
+      {[
+        module P = Reparse.Parser
+        open P.Infix
+
+        ;;
+        let p = P.("hello" <$ char 'h') in
+        let input = new P.string_input "hello" in
+        let r = P.parse input p in
+        r = "hello"
+      ]} *)
+
+  val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
+  (** [f <$> p] returns a parser encapsulating value [b] as a result of applying
+      [f a]. [a] is value parsed by [p].
+
+      {[
+        module P = Reparse.Parser
+        open P.Infix
+
+        ;;
+        let p = P.((fun a -> a ^ " world") <$> string "hello") in
+        let input = new P.string_input "hello" in
+        let r = P.parse input p in
+        r = "hello world"
+      ]} *)
+
+  val ( *> ) : _ t -> 'a t -> 'a t
+  val ( <* ) : 'a t -> _ t -> 'a t
+  val ( <|> ) : 'a t -> 'a t -> 'a t
+
+  val ( <?> ) : 'a t -> string -> 'a t
+  (** [p <?> err_mg] If parser [p] is unable to parse successfully then fails
+      with error message [err_msg]. Used as a last choice in [<|>], e.g.
+      [a <|> b <|> c <?> "expected a b c"].
+
+      {[
+        module P = Reparse.Parser
+        open P.Infix
+
+        ;;
+        let input = new P.string_input "" in
+        let p = P.next <?> "[error]" in
+        let r =
+          try
+            let _ = P.parse input p in
+            false
+          with
+          | P.Parse_error
+              {offset = 0; line_number = 0; column_number = 0; msg = "[error]"}
+            ->
+              true
+          | _ -> false
+        in
+        r = true
+      ]} *)
+
+  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+  (** [let*] is let binding for {!val:(>>=)} *)
+
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+end
 
 val map : ('a -> 'b) -> 'a t -> 'b t
-(** [map f p] is [f <$> p] *)
+(** [map f p] is [f <$> p]. {!val:Infix.<$>} *)
 
 val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
 (** [map2 f p q] returns a parser which encapsulates value [c] a result of
@@ -284,31 +368,6 @@ val ( <|> ) : 'a t -> 'a t -> 'a t
           let _ = P.parse input p in
           false
         with _ -> true
-      in
-      r = true
-    ]} *)
-
-val ( <?> ) : 'a t -> string -> 'a t
-(** [p <?> err_mg] If parser [p] is unable to parse successfully then fails with
-    error message [err_msg]. Used as a last choice in [<|>], e.g.
-    [a <|> b <|> c <?> "expected a b c"].
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let input = new P.string_input "" in
-      let p = P.next <?> "[error]" in
-      let r =
-        try
-          let _ = P.parse input p in
-          false
-        with
-        | P.Parse_error
-            {offset = 0; line_number = 0; column_number = 0; msg = "[error]"} ->
-            true
-        | _ -> false
       in
       r = true
     ]} *)
@@ -543,8 +602,6 @@ val offset : int t
 
 val unit : unit t
 (** [unit] is [return ()]. *)
-
-(** {2 Parsers} *)
 
 val peek_char : char t
 (** [peek_char t] returns a parser encapsulating a character from input without
@@ -898,7 +955,9 @@ val line : [`LF | `CRLF] -> string t
       l = "line1"
     ]} *)
 
-(** {2 Core parsers - RFC 5234, Appending B.1}
+(** {2 RFC 5234 parsers}
+
+    Parsers as defined in RFC 5234 Appending B.1.
 
     {i https://tools.ietf.org/html/rfc5234} *)
 
@@ -1121,18 +1180,3 @@ val whitespace : char t
       let r = P.(parse input (take whitespace)) in
       r = ['\t'; ' '; '\t'; ' ']
     ]} *)
-
-(** Reparse Infix functions. *)
-module Infix : sig
-  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-  val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
-  val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
-  val ( <$ ) : 'b -> 'a t -> 'b t
-  val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
-  val ( *> ) : _ t -> 'a t -> 'a t
-  val ( <* ) : 'a t -> _ t -> 'a t
-  val ( <|> ) : 'a t -> 'a t -> 'a t
-  val ( <?> ) : 'a t -> string -> 'a t
-  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
-end

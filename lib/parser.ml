@@ -106,7 +106,8 @@ let next state ~ok ~err =
       ok c
   | exception _ -> error ~err "[next]" state
 
-let return : 'a -> 'a t = fun v _state ~ok ~err:_ -> ok v
+let pure v _state ~ok ~err:_ = ok v
+let return = pure
 
 let ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t =
  fun p f state ~ok ~err -> p state ~ok:(fun a -> f a state ~ok ~err) ~err
