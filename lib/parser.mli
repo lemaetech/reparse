@@ -898,57 +898,229 @@ val line : [`LF | `CRLF] -> string t
       l = "line1"
     ]} *)
 
-(** {2 Core parsers - RFC 5254, Appending B.1} *)
+(** {2 Core parsers - RFC 5234, Appending B.1}
+
+    {i https://tools.ietf.org/html/rfc5234} *)
 
 val alpha : char t
-(** [alpha] parses a character in range [A- Z] or [a-z]. *)
+(** [alpha] parses a character in range [A- Z] or [a-z].
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "abcdABCD" in
+      let r = P.(parse input (take alpha)) in
+      r = ['a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D']
+    ]} *)
 
 val alpha_num : char t
-(** [alpha_num] parses a character in range [A-Z] or [a-z] or [0-9]. *)
+(** [alpha_num] parses a character in range [A-Z] or [a-z] or [0-9].
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "ab123ABCD" in
+      let r = P.(parse input (take alpha_num)) in
+      r = ['a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D']
+    ]} *)
 
 val bit : char t
-(** [bit] parses a character which is wither '0' or '1'. *)
+(** [bit] parses a character which is wither '0' or '1'.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "0110 ab" in
+      let r = P.(parse input (take bit)) in
+      r = ['0'; '1'; '1'; '0']
+    ]} *)
 
 val ascii_char : char t
-(** [ascii_char] parses any US-ASCII character. *)
+(** [ascii_char] parses any US-ASCII character.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "0110 abc '" in
+      let r = P.(parse input (take ascii_char)) in
+      r = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']
+    ]} *)
 
 val cr : char t
-(** [cr] parses CR '\r' character. *)
+(** [cr] parses CR '\r' character.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "\rab" in
+      let r = P.(parse input cr) in
+      r = '\r'
+    ]} *)
 
 val crlf : string t
-(** [crlf] parses CRLF - \r\n - string. *)
+(** [crlf] parses CRLF - \r\n - string.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "\r\n abc" in
+      let r = P.(parse input crlf) in
+      r = "\r\n"
+    ]} *)
 
 val control : char t
-(** [control] parses characters in range %x00-1F or %x7F. *)
+(** [control] parses characters in range %x00-1F or %x7F.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "\x00" in
+      let r = P.(parse input control) in
+      r = '\x00'
+    ]} *)
 
 val digit : char t
-(** [digit] parses a digit character - [0 .. 9]. *)
+(** [digit] parses a digit character - [0 .. 9].
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "0123456789a" in
+      let r = P.(parse input (take digit)) in
+      r = ['0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9']
+    ]} *)
 
 val dquote : char t
-(** [dquote] parses double quote character - '"'. *)
+(** [dquote] parses double quote character - '"'.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "\"hello " in
+      let r = P.(parse input dquote) in
+      r = '"'
+    ]} *)
 
 val hex_digit : char t
-(** [hex_digit] parses a hexadecimal digit - [0..9, A, B, C, D, E, F]. *)
+(** [hex_digit] parses a hexadecimal digit - [0..9, A, B, C, D, E, F].
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "0ABCDEFa" in
+      let r = P.(parse input (take hex_digit)) in
+      r = ['0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F']
+    ]} *)
 
 val htab : char t
-(** [htab] parses a horizontal tab ('\t') character. *)
+(** [htab] parses a horizontal tab ('\t') character.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "\t" in
+      let r = P.(parse input htab) in
+      r = '\t'
+    ]} *)
 
 val lf : char t
-(** [lf] parses a linefeed ('\n') character. *)
+(** [lf] parses a linefeed ('\n') character.
 
-val octect : char t
-(** [octect] parses a byte of character, [%x00-FF] 8 bytes of data. *)
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "\n" in
+      let r = P.(parse input lf) in
+      r = '\n'
+    ]} *)
+
+val octet : char t
+(** [octect] parses a character in the range [\x00-\xFF]. Synonym for
+    {!val:next}
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "0110 abc '" in
+      let r = P.(parse input (take octet)) in
+      r = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']
+    ]} *)
 
 val space : char t
-(** [space] parses a space character. *)
+(** [space] parses a space character.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input " abc '" in
+      let r = P.(parse input space) in
+      r = ' '
+    ]} *)
 
 val spaces : char list t
+(** {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "   abc" in
+      let r = P.(parse input spaces) in
+      r = [' '; ' '; ' ']
+    ]} *)
 
 val vchar : char t
-(** [vchar] parses a Visible (printing) character. *)
+(** [vchar] parses a Visible (printing) character.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "0110abc\x00" in
+      let r = P.(parse input (take vchar)) in
+      r = ['0'; '1'; '1'; '0'; 'a'; 'b'; 'c']
+    ]} *)
 
 val whitespace : char t
-(** [whitespace] parses a space or horizontal - ' ' or '\t' - character. *)
+(** [whitespace] parses a space or horizontal - ' ' or '\t' - character.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "\t \t " in
+      let r = P.(parse input (take whitespace)) in
+      r = ['\t'; ' '; '\t'; ' ']
+    ]} *)
 
 (** Reparse Infix functions. *)
 module Infix : sig

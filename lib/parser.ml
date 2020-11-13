@@ -529,7 +529,7 @@ let lf =
         | '\n' -> true
         | _    -> false))
 
-let octect = next
+let octet = next
 
 let space =
   char_parser
