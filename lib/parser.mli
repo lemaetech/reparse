@@ -346,7 +346,34 @@ val all_unit : 'a t list -> unit t
 
 val named : string -> 'a t -> 'a t
 (** [named name p] names parser [p] with [name]. The name is used on error
-    message. This may be helpful when debugging parsers. *)
+    message. This may be helpful when debugging parsers.
+
+    {e example}
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let p =
+        P.(all_unit [char 'a'; char 'b'; char 'c']) |> P.named "parse_abc"
+      in
+      let input = new P.string_input "abd" in
+      let r =
+        try
+          let _ = P.parse input p in
+          assert false
+        with e -> e
+      in
+      r
+      = P.Parse_error
+          { offset = 0
+          ; line_number = 0
+          ; column_number = 0
+          ; msg =
+              "[parse_abc] Reparse.Parser.Parse_error(0, 0, 0, \"[all_unit] \
+               one of the parsers failed\")" }
+    ]} *)
 
 val delay : 'a t Lazy.t -> 'a t
 (** [delay p] returns a parser which lazyily evaluates parser [p].
