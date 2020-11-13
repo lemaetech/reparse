@@ -77,7 +77,7 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
 
     {i Also see} {!val:lnum} and {!val:cnum}.
 
-    @raise {Parser}
+    @raise Parser
     {e example - track line and column number}
 
     {[
@@ -211,7 +211,6 @@ val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let p = P.(map2 (fun a b -> a + b) (return 1) (return 2)) in
@@ -227,7 +226,6 @@ val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let p =
@@ -245,7 +243,6 @@ val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let p =
@@ -278,7 +275,6 @@ val any : 'a t list -> 'a t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let p = P.(any [char 'z'; char 'x'; char 'a']) in
@@ -319,14 +315,16 @@ val any : 'a t list -> 'a t
 
 val all : 'a t list -> 'a list t
 (** [all l] returns a parser encapsulating a list of of parser values
-    accumulated by evaluating parsers specified in [l] sequentially - from left
-    to right. It only succeeds if and only if all of the parsers in [l] succeed.
+    accumulated by evaluating parsers specified in [l].
+
+    Parsers in [l] are evaluated sequentially - from left to right.
+
+    The parser only succeeds if and only if all of the parsers in [l] succeed.
 
     {e example - all specified parsers succeed}
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let p = P.(all [char 'a'; char 'b'; char 'c']) in
@@ -339,7 +337,6 @@ val all : 'a t list -> 'a list t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let p = P.(all [char 'a'; char 'b'; char 'c']) in
@@ -361,7 +358,6 @@ val all_unit : 'a t list -> unit t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
@@ -374,7 +370,6 @@ val all_unit : 'a t list -> unit t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
@@ -393,7 +388,7 @@ val all_unit : 'a t list -> unit t
     Delays evaluation of parser. *)
 
 val delay : 'a t Lazy.t -> 'a t
-(** [delay p] returns a parser which lazyily evaluates parser [p].
+(** [delay p] returns a parser which lazily evaluates parser [p].
 
     {[
       module P = Reparse.Parser
@@ -415,7 +410,6 @@ val is_eoi : bool t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "" in
@@ -434,7 +428,6 @@ val eoi : unit t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "" in
@@ -503,7 +496,6 @@ val not_ : 'a t -> unit t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "bbb" in
@@ -520,7 +512,6 @@ val not_followed_by : 'a t -> 'b t -> 'a t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "ab" in
@@ -535,7 +526,6 @@ val is_not : 'a t -> bool t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "bbb" in
@@ -550,7 +540,6 @@ val is : 'a t -> bool t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "bcb" in
@@ -568,7 +557,6 @@ val peek_char : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
       ;;
 
       let input = new P.string_input "hello" in
@@ -608,7 +596,6 @@ val next : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "hello" in
@@ -621,7 +608,6 @@ val char : char -> char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "hello" in
@@ -636,7 +622,6 @@ val satisfy : (char -> bool) -> char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "abc" in
@@ -654,7 +639,6 @@ val string : string -> string t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "hello world" in
@@ -672,7 +656,6 @@ val line : [`LF | `CRLF] -> string t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "line1\r\nline2" in
@@ -701,7 +684,6 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "     " in
@@ -726,7 +708,6 @@ val skip_while : _ t -> while_:bool t -> int t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "     " in
@@ -760,29 +741,47 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
     The parser fails if the count of repetition of [p] does not match the value
     specified by [at_least].
 
+    {e example - default behaviour}
+
     {[
       module P = Reparse.Parser
-      open P.Infix
 
+      ;;
       let input = new P.string_input "aaaaa" in
       let p = P.(take (char 'a')) in
       let r = P.parse input p in
-      r = ['a'; 'a'; 'a'; 'a';'a']
+      r = ['a'; 'a'; 'a'; 'a'; 'a']
+    ]}
+
+    {e example - specify [~sep_by]}
+
+    {[
+      module P = Reparse.Parser
+
       ;;
-
-
       let input = new P.string_input "a,a,a,a,a" in
-      (* specify sep_by restriction. *)
       let p = P.(take ~sep_by:(char ',') (char 'a')) in
       let r = P.parse input p in
       r = ['a'; 'a'; 'a'; 'a']
-      ;;
+    ]}
 
+    {e example - specify lower bound argument [at_least]}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
       let input = new P.string_input "a,a,a,a,a" in
       (* lower bound restriction met *)
       let p = P.(take ~at_least:3 ~sep_by:(char ',') (char 'a')) in
       let r = P.parse input p in
       r = ['a'; 'a'; 'a'; 'a']
+    ]}
+
+    {e example - lower bound not met results in error}
+
+    {[
+      module P = Reparse.Parser
 
       ;;
       let input = new P.string_input "a,a,a,a,a" in
@@ -792,9 +791,14 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
           let _ = P.parse input p in
           false
         with _ -> true
-        (* lower bound not met *)
       in
       r = true
+    ]}
+
+    {e example - specify upper bound [up_to]}
+
+    {[
+      module P = Reparse.Parser
 
       ;;
       let input = new P.string_input "a,a,a,a,a" in
