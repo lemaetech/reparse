@@ -61,7 +61,9 @@ class file_input : Unix.file_descr -> input
       let file_input = new P.file_input fd
     ]} *)
 
-(** {2 Parser execution} *)
+(** {2 Parse}
+
+    Evaluate a parser. *)
 
 val parse : ?track_lnum:bool -> input -> 'a t -> 'a
 (** [parse ~track_lnum input p] returns value [v] as a result of evaluating
