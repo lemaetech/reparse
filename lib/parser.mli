@@ -508,6 +508,23 @@ val not_ : 'a t -> unit t
       r = ()
     ]} *)
 
+val not_followed_by : 'a t -> 'b t -> 'a t
+(** [not_followed_by p q] returns a parser which encapsulates value [a] which is
+    evaluated from parser [p]. The parser evaluates successfully if parser [p]
+    succeeds and then parser [q] fails. The second parser [q] never consumes any
+    input.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "ab" in
+      let p = P.(not_followed_by (char 'a') (char 'a')) in
+      let r = P.parse input p in
+      r = 'a'
+    ]}*)
+
 val is_not : 'a t -> bool t
 (** [is_not p] returns a parser encapsulating value [true] if [p] fails to parse
     and [false] otherwise. {b Note} evaluating [p] doesn't consume any input.
@@ -536,6 +553,10 @@ val is : 'a t -> bool t
       let r = P.(parse input (is (char 'b'))) in
       r = true
     ]} *)
+
+(** {3 Text}
+
+    Text parsing. *)
 
 val peek_char : char t
 (** [peek_char t] returns a parser encapsulating a character from input without
@@ -638,6 +659,27 @@ val string : string -> string t
       r = "hello"
     ]} *)
 
+val line : [`LF | `CRLF] -> string t
+(** [line c] returns a parser which consumes a line text from input. The line is
+    specified by [c].
+
+    Line delimiter [c] can be either [`LF] or [`CRLF]. This corresponds to [\n]
+    or [\r\n] character respectively.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "line1\r\nline2" in
+      let l = P.(parse input (line `CRLF)) in
+      l = "line1"
+    ]} *)
+
+(** {3 Skip}
+
+    Parsers which discards parsed values. *)
+
 val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 (** [skip ~at_least ~up_to p] returns a parser which discards values returned by
     evaluating parser [p] repeatedly.
@@ -688,6 +730,10 @@ val skip_while : _ t -> while_:bool t -> int t
       let r = P.parse input p in
       r = 5
     ]} *)
+
+(** {3 Take}
+
+    Collects parsed values *)
 
 val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
 (** [take ~at_least ~up_to ~sep_by p] returns a parser which encapsulates a list
@@ -834,22 +880,9 @@ val take_while_cb :
       r = 3 && s = "aaa"
     ]} *)
 
-val not_followed_by : 'a t -> 'b t -> 'a t
-(** [not_followed_by p q] returns a parser which encapsulates value [a] which is
-    evaluated from parser [p]. The parser evaluates successfully if parser [p]
-    succeeds and then parser [q] fails. The second parser [q] never consumes any
-    input.
+(** {3 Optional}
 
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let input = new P.string_input "ab" in
-      let p = P.(not_followed_by (char 'a') (char 'a')) in
-      let r = P.parse input p in
-      r = 'a'
-    ]}*)
+    Doesn't fail when parsing is not successful*)
 
 val optional : 'a t -> 'a option t
 (** [optional p] returns a parser which evaluates to [Some a] if successful and
@@ -871,23 +904,6 @@ val optional : 'a t -> 'a option t
       let r = P.parse input p in
       r = None
     ]}*)
-
-val line : [`LF | `CRLF] -> string t
-(** [line c] returns a parser which consumes a line text from input. The line is
-    specified by [c].
-
-    Line delimiter [c] can be either [`LF] or [`CRLF]. This corresponds to [\n]
-    or [\r\n] character respectively.
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let input = new P.string_input "line1\r\nline2" in
-      let l = P.(parse input (line `CRLF)) in
-      l = "line1"
-    ]} *)
 
 (** {2 RFC 5234 parsers}
 
