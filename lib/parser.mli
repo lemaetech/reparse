@@ -53,33 +53,25 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
 
     @raise Parse_error
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
-      let p = P.(take next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum)
-      let input = Reparse.String_input.create "hello world"
-
-      (* Track line, column number. *)
-
       ;;
-      let r = P.parse ~track_lnum:true input p in
-      r = (1, 12)
-
-      (* Don't track line, column number. *)
-
-      ;;
-      let r = P.parse input p in
-      r = (0, 0)
+      let p = P.(take next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum) in
+      let input = new P.string_input "hello world" in
+      let r1 = P.parse ~track_lnum:true input p in
+      let r2 = P.parse input p in
+      r1 = (1, 12) && r2 = (0, 0)
     ]} *)
 
 val return : 'a -> 'a t
 (** [return v] returns a parser that always parses value [v].
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
-      let input = Reparse.String_input.create ""
+      let input = new P.string_input ""
 
       ;;
       let r = P.(parse input (P.return 5)) in
@@ -98,12 +90,12 @@ val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
     is the parsed value of [p].
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.(char 'h' >>= fun c -> return (Char.code c)) in
-      let input = Reparse.String_input.create "hello" in
+      let input = new P.string_input "hello" in
       let r = P.parse input p in
       r = 104
     ]} *)
@@ -113,12 +105,12 @@ val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
     result of applying [f a] where [a] is the parsed value of [p].
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.(char 'h' >|= fun c -> Char.code c) in
-      let input = Reparse.String_input.create "hello" in
+      let input = new P.string_input "hello" in
       let r = P.parse input p in
       r = 104
     ]} *)
@@ -129,12 +121,12 @@ val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
     [pf] and [a] is the value parsed by [q].
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.(return (fun a -> a + 2) <*> return 2) in
-      let input = Reparse.String_input.create "hello" in
+      let input = new P.string_input "hello" in
       let r = P.parse input p in
       r = 4
     ]} *)
@@ -143,12 +135,12 @@ val ( <$ ) : 'b -> 'a t -> 'b t
 (** [v <$ p] replaces the result of [p] with [v].
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.("hello" <$ char 'h') in
-      let input = Reparse.String_input.create "hello" in
+      let input = new P.string_input "hello" in
       let r = P.parse input p in
       r = "hello"
     ]} *)
@@ -160,12 +152,12 @@ val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
     [f a]. [a] is value parsed by [p].
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.((fun a -> a ^ " world") <$> string "hello") in
-      let input = Reparse.String_input.create "hello" in
+      let input = new P.string_input "hello" in
       let r = P.parse input p in
       r = "hello world"
     ]} *)
@@ -179,12 +171,12 @@ val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
     respectively.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.(map2 (fun a b -> a + b) (return 1) (return 2)) in
-      let input = Reparse.String_input.create "" in
+      let input = new P.string_input "" in
       let r = P.parse input p in
       r = 3
     ]} *)
@@ -195,14 +187,14 @@ val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
     [r] respectively.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p =
         P.(map3 (fun a b c -> a + b + c) (return 1) (return 2) (return 3))
       in
-      let input = Reparse.String_input.create "" in
+      let input = new P.string_input "" in
       let r = P.parse input p in
       r = 6
     ]} *)
@@ -213,7 +205,7 @@ val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
     [r] and [s] respectively.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
@@ -226,7 +218,7 @@ val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
             (return 3)
             (return 4))
       in
-      let input = Reparse.String_input.create "" in
+      let input = new P.string_input "" in
       let r = P.parse input p in
       r = 10
     ]} *)
@@ -237,12 +229,12 @@ val ( *> ) : _ t -> 'a t -> 'a t
     [p] is discarded.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.(string "world" *> P.return "hello") in
-      let input = Reparse.String_input.create "world" in
+      let input = new P.string_input "world" in
       let r = P.parse input p in
       r = "hello"
     ]} *)
@@ -251,12 +243,12 @@ val ( <* ) : 'a t -> _ t -> 'a t
 (** [p <* q] similar to [*>]. However, the result of [q] is discarded instead.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.(string "world" <* P.return "hello") in
-      let input = Reparse.String_input.create "world" in
+      let input = new P.string_input "world" in
       let r = P.parse input p in
       r = "world"
     ]} *)
@@ -269,24 +261,24 @@ val ( <|> ) : 'a t -> 'a t -> 'a t
     fails with [Parser_error]
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.(char 'h' <|> char 'w') in
-      let input = Reparse.String_input.create "world" in
+      let input = new P.string_input "world" in
       let r = P.parse input p in
       r = 'w'
 
       ;;
       let p = P.(char 'h' <|> char 'w') in
-      let input = Reparse.String_input.create "hello" in
+      let input = new P.string_input "hello" in
       let r = P.parse input p in
       r = 'h'
 
       ;;
       let p = P.(char 'h' <|> char 'w') in
-      let input = Reparse.String_input.create "" in
+      let input = new P.string_input "" in
       let r =
         try
           let _ = P.parse input p in
@@ -302,11 +294,11 @@ val ( <?> ) : 'a t -> string -> 'a t
     [a <|> b <|> c <?> "expected a b c"].
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "" in
+      let input = new P.string_input "" in
       let p = P.next <?> "[error]" in
       let r =
         try
@@ -328,18 +320,18 @@ val any : 'a t list -> 'a t
     fails if none of the parsers in [l] are evaluated successfully.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.(any [char 'z'; char 'x'; char 'a']) in
-      let input = Reparse.String_input.create "abc" in
+      let input = new P.string_input "abc" in
       let r = P.parse input p in
       r = 'a'
 
       ;;
       let p = P.(any [char 'z'; char 'x'; char 'a']) in
-      let input = Reparse.String_input.create "yyy" in
+      let input = new P.string_input "yyy" in
       let r =
         try
           let _ = P.parse input p in
@@ -355,18 +347,18 @@ val all : 'a t list -> 'a list t
     to right. It only succeeds if and only if all of the parsers in [l] succeed.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.(all [char 'a'; char 'b'; char 'c']) in
-      let input = Reparse.String_input.create "abc" in
+      let input = new P.string_input "abc" in
       let r = P.parse input p in
       r = ['a'; 'b'; 'c']
 
       ;;
       let p = P.(all [char 'a'; char 'b'; char 'c']) in
-      let input = Reparse.String_input.create "abd" in
+      let input = new P.string_input "abd" in
       let r =
         try
           let _ = P.parse input p in
@@ -381,18 +373,18 @@ val all_unit : 'a t list -> unit t
     all of the parser values are discarded.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
-      let input = Reparse.String_input.create "abc" in
+      let input = new P.string_input "abc" in
       let r = P.parse input p in
       r = ()
 
       ;;
       let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
-      let input = Reparse.String_input.create "abd" in
+      let input = new P.string_input "abd" in
       let r =
         try
           let _ = P.parse input p in
@@ -410,12 +402,12 @@ val delay : 'a t Lazy.t -> 'a t
 (** [delay p] returns a parser which lazyily evaluates parser [p].
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
       let p = P.(delay (lazy (char 'z')) <|> delay (lazy (char 'a'))) in
-      let input = Reparse.String_input.create "abc" in
+      let input = new P.string_input "abc" in
       let r = P.parse input p in
       r = 'a'
     ]} *)
@@ -424,16 +416,16 @@ val is_eoi : bool t
 (** [is_eoi] returns [true] if parser has reached end of input.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "" in
+      let input = new P.string_input "" in
       let r = P.(parse input is_eoi) in
       r = true
 
       ;;
-      let input = Reparse.String_input.create "a" in
+      let input = new P.string_input "a" in
       let r = P.(parse input is_eoi) in
       r = false
     ]} *)
@@ -443,16 +435,16 @@ val eoi : unit t
     end of input.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "" in
+      let input = new P.string_input "" in
       let r = P.(parse input eoi) in
       r = ()
 
       ;;
-      let input = Reparse.String_input.create "a" in
+      let input = new P.string_input "a" in
       let r =
         try
           let _ = P.(parse input eoi) in
@@ -466,11 +458,11 @@ val not_ : 'a t -> unit t
 (** [not_ p] returns a parser which succeeds if and only if [p] fails to parse.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "bbb" in
+      let input = new P.string_input "bbb" in
       let p = P.(not_ (char 'a')) in
       let r = P.parse input p in
       r = ()
@@ -481,11 +473,11 @@ val is_not : 'a t -> bool t
     and [false] otherwise. {b Note} evaluating [p] doesn't consume any input.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "bbb" in
+      let input = new P.string_input "bbb" in
       let r = P.(parse input (is_not (char 'a'))) in
       r = true
     ]} *)
@@ -496,11 +488,11 @@ val is : 'a t -> bool t
     any input.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "bcb" in
+      let input = new P.string_input "bcb" in
       let r = P.(parse input (is (char 'b'))) in
       r = true
     ]} *)
@@ -510,11 +502,11 @@ val lnum : int t
     line number is [1].
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "bcb" in
+      let input = new P.string_input "bcb" in
       let p = P.(next *> lnum) in
       let r = P.parse ~track_lnum:true input p in
       r = 1
@@ -524,11 +516,11 @@ val cnum : int t
 (** [cnum] returns the current column number. The first column number is [1].
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "bcb" in
+      let input = new P.string_input "bcb" in
       let p = P.(next *> cnum) in
       let r = P.parse ~track_lnum:true input p in
       r = 2
@@ -539,11 +531,11 @@ val offset : int t
     offset is [0].
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "bcb" in
+      let input = new P.string_input "bcb" in
       let p = P.(next *> offset) in
       let r = P.parse ~track_lnum:true input p in
       r = 1
@@ -559,16 +551,16 @@ val peek_char : char t
     consuming it.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
       ;;
 
-      let input = Reparse.String_input.create "hello" in
+      let input = new P.string_input "hello" in
       let p = P.peek_char in
       let r = P.parse input p in
       r = 'h'
 
-      let input = Reparse.String_input.create "hello" in
+      let input = new P.string_input "hello" in
       (* Input offset value remains the same. *)
       let p = P.(peek_char *> offset) in
       let r = P.parse input p in
@@ -580,16 +572,16 @@ val peek_string : int -> string t
     input. No input is consumed.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "hello" in
+      let input = new P.string_input "hello" in
       let r = P.(parse input (peek_string 5)) in
       r = "hello"
 
       ;;
-      let input = Reparse.String_input.create "hello" in
+      let input = new P.string_input "hello" in
       let r = P.(parse input (peek_string 5 *> offset)) in
       r = 0
     ]} *)
@@ -599,11 +591,11 @@ val next : char t
     of input.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "hello" in
+      let input = new P.string_input "hello" in
       let r = P.(parse input next) in
       r = 'h'
     ]} *)
@@ -612,11 +604,11 @@ val char : char -> char t
 (** [char c] returns a parser which accepts a character [c] from input exactly.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "hello" in
+      let input = new P.string_input "hello" in
       let p = P.char 'h' in
       let r = P.parse input p in
       r = 'h'
@@ -627,11 +619,11 @@ val satisfy : (char -> bool) -> char t
     [f c] is true and encapsulates it.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "abc" in
+      let input = new P.string_input "abc" in
       let p =
         P.satisfy (function
             | 'a' -> true
@@ -645,11 +637,11 @@ val string : string -> string t
 (** [string s] returns a parser which accepts [s] exactly and encapsulates it.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "hello world" in
+      let input = new P.string_input "hello world" in
       let p = P.string "hello" in
       let r = P.parse input p in
       r = "hello"
@@ -671,11 +663,11 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
     The parser encapsulates the count of times [p] was evaluated successfully.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "     " in
+      let input = new P.string_input "     " in
       let r = P.(parse input (skip space)) in
       r = 5
     ]} *)
@@ -696,11 +688,11 @@ val skip_while : _ t -> while_:bool t -> int t
     The parser encapsulates the count of times [p] was evaluated successfully.
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
       ;;
-      let input = Reparse.String_input.create "     " in
+      let input = new P.string_input "     " in
       let p = P.(skip_while next ~while_:(is space)) in
       let r = P.parse input p in
       r = 5
@@ -728,31 +720,31 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
     specified by [at_least].
 
     {[
-      module P = Reparse.String_parser
+      module P = Reparse.Parser
       open P.Infix
 
-      let input = Reparse.String_input.create "aaaaa" in
+      let input = new P.string_input "aaaaa" in
       let p = P.(take (char 'a')) in
       let r = P.parse input p in
       r = ['a'; 'a'; 'a'; 'a';'a']
       ;;
 
 
-      let input = Reparse.String_input.create "a,a,a,a,a" in
+      let input = new P.string_input "a,a,a,a,a" in
       (* specify sep_by restriction. *)
       let p = P.(take ~sep_by:(char ',') (char 'a')) in
       let r = P.parse input p in
       r = ['a'; 'a'; 'a'; 'a']
       ;;
 
-      let input = Reparse.String_input.create "a,a,a,a,a" in
+      let input = new P.string_input "a,a,a,a,a" in
       (* lower bound restriction met *)
       let p = P.(take ~at_least:3 ~sep_by:(char ',') (char 'a')) in
       let r = P.parse input p in
       r = ['a'; 'a'; 'a'; 'a']
 
       ;;
-      let input = Reparse.String_input.create "a,a,a,a,a" in
+      let input = new P.string_input "a,a,a,a,a" in
       let p = P.(take ~at_least:5 ~sep_by:(char ',') (char 'a')) in
       let r =
         try
@@ -764,7 +756,7 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       r = true
 
       ;;
-      let input = Reparse.String_input.create "a,a,a,a,a" in
+      let input = new P.string_input "a,a,a,a,a" in
       (* upper bound restriction *)
       let p = P.(take ~up_to:3 ~sep_by:(char ',') (char 'a')) in
       let r = P.parse input p in
