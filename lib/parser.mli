@@ -65,9 +65,9 @@ class file_input : Unix.file_descr -> input
 
 val parse : ?track_lnum:bool -> input -> 'a t -> 'a
 (** [parse ~track_lnum input p] returns value [v] as a result of evaluating
-    parser [p] with [input].
+    parser [p] and [input].
 
-    if [track_num] is [true] then the parser tracks both the line and the column
+    If [track_num] is [true] then the parser tracks both the line and the column
     numbers. It is set to [false] by default.
 
     Line number and column number both start count from [1] if enabled. They are
@@ -75,7 +75,7 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
 
     {i Also see} {!val:lnum} and {!val:cnum}.
 
-    @raise Parse_error
+    @raise Parser
     {e example - track line and column number}
 
     {[
@@ -105,7 +105,7 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
 (** {2 Parser_error} *)
 
 exception
-  Parse_error of
+  Parser of
     { offset : int
     ; line_number : int
     ; column_number : int
@@ -141,7 +141,7 @@ val unit : unit t
 
 (** {3 Errors}
 
-    Parser to handle, generate exceptions and failures. *)
+    Parsers to handle, generate exceptions and failures. *)
 
 val fail : string -> 'a t
 (** [fail err_msg] creates a parser that always fails with [err_msg].
@@ -153,11 +153,13 @@ val fail : string -> 'a t
       let input = new P.string_input "" in
       let r =
         try
-          let _ = P.(parse input (fail "hello")) in
-          false
-        with _ -> true
+          let _ = P.(parse input (fail "hello error")) in
+          assert false
+        with e -> e
       in
-      r = true
+      r
+      = P.Parser
+          {offset = 0; line_number = 0; column_number = 0; msg = "hello error"}
     ]} *)
 
 val named : string -> 'a t -> 'a t
@@ -182,12 +184,12 @@ val named : string -> 'a t -> 'a t
         with e -> e
       in
       r
-      = P.Parse_error
+      = P.Parser
           { offset = 0
           ; line_number = 0
           ; column_number = 0
           ; msg =
-              "[parse_c] Reparse.Parser.Parse_error(0, 0, 0, \"[char] expected \
+              "[parse_c] Reparse.Parser.Parser(0, 0, 0, \"[char] expected \
                'a'\")" }
     ]} *)
 
@@ -1296,7 +1298,7 @@ module Infix : sig
             let _ = P.parse input p in
             false
           with
-          | P.Parse_error
+          | P.Parser
               {offset = 0; line_number = 0; column_number = 0; msg = "[error]"}
             ->
               true

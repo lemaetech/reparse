@@ -11,7 +11,7 @@ let any_fail input () =
   Alcotest.(
     check_raises
       "any"
-      (P.Parse_error
+      (P.Parser
          { offset = 0
          ; line_number = 0
          ; column_number = 0
@@ -29,7 +29,7 @@ let all_fail input () =
   Alcotest.(
     check_raises
       "all fail"
-      (P.Parse_error
+      (P.Parser
          { offset = 0
          ; line_number = 0
          ; column_number = 0
@@ -47,7 +47,7 @@ let all_unit_fail input () =
   Alcotest.(
     check_raises
       "all fail"
-      (P.Parse_error
+      (P.Parser
          { offset = 0
          ; line_number = 0
          ; column_number = 0

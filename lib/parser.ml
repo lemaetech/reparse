@@ -68,7 +68,7 @@ type state =
 type 'a t = state -> ok:('a -> unit) -> err:(exn -> unit) -> unit
 
 exception
-  Parse_error of
+  Parser of
     { offset : int
     ; line_number : int
     ; column_number : int
@@ -76,7 +76,7 @@ exception
 
 let error ~err msg state =
   err
-    (Parse_error
+    (Parser
        { offset = state.offset
        ; line_number = state.lnum
        ; column_number = state.cnum

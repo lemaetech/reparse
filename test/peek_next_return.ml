@@ -26,7 +26,7 @@ let peek_char_exn input () =
   Alcotest.(
     check_raises
       "peek_char"
-      (P.Parse_error
+      (P.Parser
          {offset = 0; line_number = 0; column_number = 0; msg = "[peek_char]"})
       p)
 
@@ -35,7 +35,7 @@ let peek_string_exn input () =
   Alcotest.(
     check_raises
       "peek_string 6"
-      (P.Parse_error
+      (P.Parser
          {offset = 0; line_number = 0; column_number = 0; msg = "[peek_string]"})
       p)
 
@@ -51,8 +51,7 @@ let next_exn input () =
   Alcotest.(
     check_raises
       "next exn"
-      (P.Parse_error
-         {offset = 2; line_number = 0; column_number = 0; msg = "[next]"})
+      (P.Parser {offset = 2; line_number = 0; column_number = 0; msg = "[next]"})
       p)
 
 let return_int input () =
