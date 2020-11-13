@@ -38,7 +38,7 @@ class type input =
   end
 
 class string_input : string -> input
-(** Represents a parser input which is a [string].
+(** Represents a string as a parser input.
 
     {e example}
 
@@ -49,7 +49,7 @@ class string_input : string -> input
     ]} *)
 
 class file_input : Unix.file_descr -> input
-(** Represents a parser input which is a unix file descriptor.
+(** Represents a unix file descriptor a parser input.
 
     {e example}
 
