@@ -1135,7 +1135,7 @@ val whitespace : char t
 
 (** Provides {i infix} and {i let syntax} operators.
 
-    Below code snippet is the recommended approach to use Infix operators:
+    Usage recomendation:
 
     {[ open Reparse.Parser.Infix ]} *)
 module Infix : sig
