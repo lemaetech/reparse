@@ -923,7 +923,7 @@ val optional : 'a t -> 'a option t
 
     Parsers as defined in RFC 5234, Appendix B.1.
 
-    {i https://tools.ietf.org/html/rfc5234} *)
+    @see <https://tools.ietf.org/html/rfc5234#appendix-B> *)
 
 val alpha : char t
 (** [alpha] parses a character in range [A- Z] or [a-z].
@@ -1149,7 +1149,7 @@ val whitespace : char t
 
 (** Provides {i infix} and {i let syntax} operators.
 
-    Usage recomendation:
+    Usage recommendation:
 
     {[ open Reparse.Parser.Infix ]} *)
 module Infix : sig
