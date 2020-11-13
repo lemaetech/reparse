@@ -802,7 +802,6 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
 
       ;;
       let input = new P.string_input "a,a,a,a,a" in
-      (* upper bound restriction *)
       let p = P.(take ~up_to:3 ~sep_by:(char ',') (char 'a')) in
       let r = P.parse input p in
       r = ['a'; 'a'; 'a']
@@ -826,15 +825,22 @@ val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 
     {b Note} [while_] does not consume input.
 
+    {e example - default}
+
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
       let input = new P.string_input "aab" in
       let p = P.(take_while ~while_:(is_not (char 'b')) (char 'a')) in
       let r = P.parse input p in
       r = ['a'; 'a']
+    ]}
+
+    {e example - specify [sep_by]}
+
+    {[
+      module P = Reparse.Parser
 
       ;;
       let input = new P.string_input "a,a,ab" in
