@@ -844,8 +844,21 @@ val take_while_cb :
     ]} *)
 
 val not_followed_by : 'a t -> 'b t -> 'a t
-(** [not_followed_by a b] Succeeds if parser [p] succeeds and parser [q] fails.
-    The second parser [q] never consumes any input. *)
+(** [not_followed_by p q] returns a parser which encapsulates value [a] which is
+    evaluated from parser [p]. The parser evaluates successfully if parser [p]
+    succeeds and then parser [q] fails. The second parser [q] never consumes any
+    input.
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "ab" in
+      let p = P.(not_followed_by (char 'a') (char 'a')) in
+      let r = P.parse input p in
+      r = 'a'
+    ]}*)
 
 val optional : 'a t -> 'a option t
 (** [optional p] parses [p] and retruns [SOME a] if successful. Otherwise
