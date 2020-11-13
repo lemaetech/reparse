@@ -901,55 +901,56 @@ val line : [`LF | `CRLF] -> string t
 (** {2 Core parsers - RFC 5254, Appending B.1} *)
 
 val alpha : char t
-(** [alpha] parse a character in range [A- Z] or [a-z]. *)
+(** [alpha] parses a character in range [A- Z] or [a-z]. *)
 
 val alpha_num : char t
-(** [alpha_num] parse a character in range [A-Z] or [a-z] or [0-9]. *)
+(** [alpha_num] parses a character in range [A-Z] or [a-z] or [0-9]. *)
 
 val bit : char t
-(** [bit] returns a character which is wither '0' or '1'. *)
+(** [bit] parses a character which is wither '0' or '1'. *)
 
 val ascii_char : char t
 (** [ascii_char] parses any US-ASCII character. *)
 
 val cr : char t
-(** [cr] parse CR '\r' character. *)
+(** [cr] parses CR '\r' character. *)
 
 val crlf : string t
-(** [crlf] parse CRLF - \r\n - string. *)
+(** [crlf] parses CRLF - \r\n - string. *)
 
 val control : char t
-(** [control] parse characters in range %x00-1F or %x7F. *)
+(** [control] parses characters in range %x00-1F or %x7F. *)
 
 val digit : char t
-(** [digit] parse a digit character - [0 .. 9]. *)
+(** [digit] parses a digit character - [0 .. 9]. *)
 
 val dquote : char t
-(** [dquote] parse double quote character - '"'. *)
+(** [dquote] parses double quote character - '"'. *)
 
 val hex_digit : char t
-(** [hex_digit] parse a hexadecimal digit - [0..9, A, B, C, D, E, F]. *)
+(** [hex_digit] parses a hexadecimal digit - [0..9, A, B, C, D, E, F]. *)
 
 val htab : char t
-(** [htab] parse a horizontal tab ('\t') character. *)
+(** [htab] parses a horizontal tab ('\t') character. *)
 
 val lf : char t
-(** [lf] parse a linefeed ('\n') character. *)
+(** [lf] parses a linefeed ('\n') character. *)
 
 val octect : char t
-(** [octect] parse a byte of character, [%x00-FF] 8 bytes of data. *)
+(** [octect] parses a byte of character, [%x00-FF] 8 bytes of data. *)
 
 val space : char t
-(** [space] parse a space character. *)
+(** [space] parses a space character. *)
 
 val spaces : char list t
 
 val vchar : char t
-(** [vchar] parse a Visible (printing) character. *)
+(** [vchar] parses a Visible (printing) character. *)
 
 val whitespace : char t
-(** [whitespace] parse a space or horizontal - ' ' or '\t' - character. *)
+(** [whitespace] parses a space or horizontal - ' ' or '\t' - character. *)
 
+(** Reparse Infix functions. *)
 module Infix : sig
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
