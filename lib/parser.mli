@@ -348,7 +348,24 @@ module Infix : sig
       ]} *)
 
   val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
-  (** [let*] is let binding for {!val:(>|=)} *)
+  (** [let*] is let binding for {!val:(>|=)}
+
+      {e example}
+
+      {[
+        module P = Reparse.Parser
+        open P.Infix
+
+        ;;
+        let input = new P.string_input "" in
+        let p =
+          let+ a = P.return 5 in
+          let total = a + 5 in
+          total
+        in
+        let r = P.parse input p in
+        r = 10
+      ]} *)
 end
 
 val map : ('a -> 'b) -> 'a t -> 'b t
