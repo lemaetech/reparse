@@ -861,8 +861,25 @@ val not_followed_by : 'a t -> 'b t -> 'a t
     ]}*)
 
 val optional : 'a t -> 'a option t
-(** [optional p] parses [p] and retruns [SOME a] if successful. Otherwise
-    returns [NONE]. *)
+(** [optional p] returns a parser which evaluates to [Some a] if successful and
+    [None] otherwise. [a] is the value evaluated from parser [p].
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "ab" in
+      let p = P.(optional (char 'a')) in
+      let r = P.parse input p in
+      r = Some 'a'
+
+      ;;
+      let input = new P.string_input "ab" in
+      let p = P.(optional (char 'z')) in
+      let r = P.parse input p in
+      r = None
+    ]}*)
 
 val line : [`LF | `CRLF] -> string t
 (** [line] consumes and returns a line of input along with line length. The line
