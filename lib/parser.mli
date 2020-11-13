@@ -355,7 +355,7 @@ val named : string -> 'a t -> 'a t
       open P.Infix
 
       ;;
-      let p = P.(char 'a') |> P.named "parse_c" in
+      let p = P.(char 'a' |> named "parse_c") in
       let input = new P.string_input "zzd" in
       let r =
         try
