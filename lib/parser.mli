@@ -19,9 +19,9 @@ class type input =
         end of input. *)
 
     method sub : offset:int -> len:int -> string
-    (** [sub t ~offset ~len] reads and returns a string of length [len] from
-        position [offset] in input [t]. May return a string of length less than
-        [len]. *)
+    (** [i#sub t ~offset ~len] reads and returns a string of length [len] at
+        position [offset] from input [i]. May return a string of length less
+        than [len]. *)
 
     method nth : int -> char
     (** [i#nth n] returns the [n]th char from input [i].
