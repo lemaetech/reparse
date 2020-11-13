@@ -316,31 +316,32 @@ val all_unit : 'a t list -> unit t
     {e example - all specified parsers succeed}
 
     {[
-        module P = Reparse.Parser
-        open P.Infix
+      module P = Reparse.Parser
+      open P.Infix
 
-        ;;
-        let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
-        let input = new P.string_input "abc" in
-        let r = P.parse input p in
-        r = ()
+      ;;
+      let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
+      let input = new P.string_input "abc" in
+      let r = P.parse input p in
+      r = ()
+    ]}
 
-      {e example - one of the specified parsers} - [char 'c'] {e fails}
+    {e example - one of the specified parsers} - [char 'c'] {e fails}
 
-      {[
-        module P = Reparse.Parser
-        open P.Infix
+    {[
+      module P = Reparse.Parser
+      open P.Infix
 
-        ;;
-        let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
-        let input = new P.string_input "abd" in
-        let r =
-          try
-            let _ = P.parse input p in
-            false
-          with _ -> true
-        in
-        r = true
+      ;;
+      let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
+      let input = new P.string_input "abd" in
+      let r =
+        try
+          let _ = P.parse input p in
+          false
+        with _ -> true
+      in
+      r = true
     ]} *)
 
 val named : string -> 'a t -> 'a t
