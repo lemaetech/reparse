@@ -77,7 +77,7 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
 
     {i Also see} {!val:lnum} and {!val:cnum}.
 
-    @raise Parser
+    @raise {Parser}
     {e example - track line and column number}
 
     {[
