@@ -153,7 +153,7 @@ val fail : string -> 'a t
       r = true
     ]} *)
 
-(** {2 Infix} *)
+(** {2 Infix & Let operators} *)
 
 (** Provides {i infix} and {i let syntax} operators.
 
@@ -237,8 +237,69 @@ module Infix : sig
       ]} *)
 
   val ( *> ) : _ t -> 'a t -> 'a t
+  (** [p *> q] returns a parser which executes parsers [p] and then [q] and
+      encapsulates value [a]. [a] is the parsed value of [q]. The parsed value
+      of [p] is discarded.
+
+      {[
+        module P = Reparse.Parser
+        open P.Infix
+
+        ;;
+        let p = P.(string "world" *> P.return "hello") in
+        let input = new P.string_input "world" in
+        let r = P.parse input p in
+        r = "hello"
+      ]} *)
+
   val ( <* ) : 'a t -> _ t -> 'a t
+  (** [p <* q] similar to [*>]. However, the result of [q] is discarded instead.
+
+      {[
+        module P = Reparse.Parser
+        open P.Infix
+
+        ;;
+        let p = P.(string "world" <* P.return "hello") in
+        let input = new P.string_input "world" in
+        let r = P.parse input p in
+        r = "world"
+      ]} *)
+
   val ( <|> ) : 'a t -> 'a t -> 'a t
+  (** [p <|> q] Alternate parser. Returns a parser which evaluates both [p] and
+      [q] returning [a] and [b] respectively. If [p] succeeds then it returns a
+      parser encapsulating [a]. If [p] fails and [q] is a success, then it
+      returns a parser encapsulating [b]. If both - [p] and [q] - fails, then
+      the parser fails with [Parser_error]
+
+      {[
+        module P = Reparse.Parser
+        open P.Infix
+
+        ;;
+        let p = P.(char 'h' <|> char 'w') in
+        let input = new P.string_input "world" in
+        let r = P.parse input p in
+        r = 'w'
+
+        ;;
+        let p = P.(char 'h' <|> char 'w') in
+        let input = new P.string_input "hello" in
+        let r = P.parse input p in
+        r = 'h'
+
+        ;;
+        let p = P.(char 'h' <|> char 'w') in
+        let input = new P.string_input "" in
+        let r =
+          try
+            let _ = P.parse input p in
+            false
+          with _ -> true
+        in
+        r = true
+      ]} *)
 
   val ( <?> ) : 'a t -> string -> 'a t
   (** [p <?> err_mg] If parser [p] is unable to parse successfully then fails
@@ -267,9 +328,27 @@ module Infix : sig
       ]} *)
 
   val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-  (** [let*] is let binding for {!val:(>>=)} *)
+  (** [let*] is let binding for {!val:(>>=)}
+
+      {e example}
+
+      {[
+        module P = Reparse.Parser
+        open P.Infix
+
+        ;;
+        let input = new P.string_input "" in
+        let p =
+          let* a = P.return 5 in
+          let total = a + 5 in
+          P.return total
+        in
+        let r = P.parse input p in
+        r = 10
+      ]} *)
 
   val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+  (** [let*] is let binding for {!val:(>|=)} *)
 end
 
 val map : ('a -> 'b) -> 'a t -> 'b t
@@ -331,71 +410,6 @@ val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
       let input = new P.string_input "" in
       let r = P.parse input p in
       r = 10
-    ]} *)
-
-val ( *> ) : _ t -> 'a t -> 'a t
-(** [p *> q] returns a parser which executes parsers [p] and then [q] and
-    encapsulates value [a]. [a] is the parsed value of [q]. The parsed value of
-    [p] is discarded.
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let p = P.(string "world" *> P.return "hello") in
-      let input = new P.string_input "world" in
-      let r = P.parse input p in
-      r = "hello"
-    ]} *)
-
-val ( <* ) : 'a t -> _ t -> 'a t
-(** [p <* q] similar to [*>]. However, the result of [q] is discarded instead.
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let p = P.(string "world" <* P.return "hello") in
-      let input = new P.string_input "world" in
-      let r = P.parse input p in
-      r = "world"
-    ]} *)
-
-val ( <|> ) : 'a t -> 'a t -> 'a t
-(** [p <|> q] Alternate parser. Returns a parser which evaluates both [p] and
-    [q] returning [a] and [b] respectively. If [p] succeeds then it returns a
-    parser encapsulating [a]. If [p] fails and [q] is a success, then it returns
-    a parser encapsulating [b]. If both - [p] and [q] - fails, then the parser
-    fails with [Parser_error]
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let p = P.(char 'h' <|> char 'w') in
-      let input = new P.string_input "world" in
-      let r = P.parse input p in
-      r = 'w'
-
-      ;;
-      let p = P.(char 'h' <|> char 'w') in
-      let input = new P.string_input "hello" in
-      let r = P.parse input p in
-      r = 'h'
-
-      ;;
-      let p = P.(char 'h' <|> char 'w') in
-      let input = new P.string_input "" in
-      let r =
-        try
-          let _ = P.parse input p in
-          false
-        with _ -> true
-      in
-      r = true
     ]} *)
 
 val any : 'a t list -> 'a t
