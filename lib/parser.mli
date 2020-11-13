@@ -882,13 +882,19 @@ val optional : 'a t -> 'a option t
     ]}*)
 
 val line : [`LF | `CRLF] -> string t
-(** [line] consumes and returns a line of input along with line length. The line
-    is delimited by either [\n] or [\r\n].
+(** [line c] returns a parser which consumes a line text from input. The line is
+    specified by [c].
+
+    Line delimiter [c] can be either [`LF] or [`CRLF]. This corresponds to [\n]
+    or [\r\n] character respectively.
 
     {[
-      open Reparse.Parse
+      module P = Reparse.Parser
+      open P.Infix
 
-      let l = parse "line1\r\nline2" (line `CRLF) in
+      ;;
+      let input = new P.string_input "line1\r\nline2" in
+      let l = P.(parse input (line `CRLF)) in
       l = "line1"
     ]} *)
 
