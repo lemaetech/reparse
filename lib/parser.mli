@@ -1154,8 +1154,10 @@ val whitespace : char t
     {[ open Reparse.Parser.Infix ]} *)
 module Infix : sig
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-  (** [p >>= f] Binder. Returns a parser as a result of applying [f a] where [a]
-      is the parsed value of [p].
+  (** [p >>= f] Binder.
+
+      Returns a parser as a result of applying [f a] where [a] is the parsed
+      value of [p].
 
       {[
         module P = Reparse.Parser
@@ -1169,8 +1171,10 @@ module Infix : sig
       ]} *)
 
   val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
-  (** [p >|= f] Mapper parser. Returns a parser which encapsulates value [b] as
-      a result of applying [f a] where [a] is the parsed value of [p].
+  (** [p >|= f] Mapper.
+
+      Returns a parser which encapsulates value [b] as a result of applying
+      [f a] where [a] is the parsed value of [p].
 
       {[
         module P = Reparse.Parser
@@ -1184,9 +1188,11 @@ module Infix : sig
       ]} *)
 
   val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
-  (** [pf <*> q] Applicative parser. Returns a parser encapsulating value [b] as
-      a result of applying [f a], where [f] is the function value parsed by
-      parser [pf] and [a] is the value parsed by [q].
+  (** [pf <*> q] Applicative.
+
+      Returns a parser encapsulating value [b] as a result of applying [f a],
+      where [f] is the function value parsed by parser [pf] and [a] is the value
+      parsed by [q].
 
       {[
         module P = Reparse.Parser
@@ -1259,12 +1265,16 @@ module Infix : sig
       ]} *)
 
   val ( <|> ) : 'a t -> 'a t -> 'a t
-  (** [p <|> q] Alternate parser. Returns a parser which evaluates both [p] and
-      [q] returning [a] and [b] respectively. If [p] succeeds then it returns a
-      parser encapsulating [a]. If [p] fails and [q] is a success, then it
-      returns a parser encapsulating [b]. If both - [p] and [q] - fails, then
-      the parser fails with [Parser_error]
+  (** [p <|> q] Alternate.
 
+      Returns a parser which evaluates both [p] and [q] returning values [a] and
+      [b] respectively. If [p] succeeds then it returns a parser encapsulating
+      [a]. If [p] fails and [q] is a success, then it returns a parser
+      encapsulating [b].
+
+      If both - [p] and [q] - fails, then the parser fails with [Parser].
+
+      @raise Parser
       {[
         module P = Reparse.Parser
         open P.Infix
@@ -1294,9 +1304,9 @@ module Infix : sig
       ]} *)
 
   val ( <?> ) : 'a t -> string -> 'a t
-  (** [p <?> err_mg] If parser [p] is unable to parse successfully then fails
-      with error message [err_msg]. Used as a last choice in [<|>], e.g.
-      [a <|> b <|> c <?> "expected a b c"].
+  (** [p <?> err_mg] returns a parser where if parser [p] is unable to parse
+      successfully then fails with error message [err_msg]. Used as a last
+      choice in [<|>], e.g. [a <|> b <|> c <?> "expected a b c"].
 
       {[
         module P = Reparse.Parser
