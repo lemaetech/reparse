@@ -368,8 +368,12 @@ module Infix : sig
       ]} *)
 end
 
+(** {2 Transform parsers}*)
+
 val map : ('a -> 'b) -> 'a t -> 'b t
-(** [map f p] is [f <$> p]. {!val:Infix.<$>} *)
+(** [map f p] is [f <$> p].
+
+    {e see} {!Infix.(<$>)} *)
 
 val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
 (** [map2 f p q] returns a parser which encapsulates value [c] a result of
@@ -429,11 +433,17 @@ val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
       r = 10
     ]} *)
 
+(** {2 Choices} *)
+
 val any : 'a t list -> 'a t
 (** [any l] returns a parser encapsulating value [a]. [a] is the parser value of
-    the first successfully evaluated parser specified in list [l]. Specified
-    parsers in [l] are evaluated sequentially from left to right. The parser
-    fails if none of the parsers in [l] are evaluated successfully.
+    the first successfully evaluated parser specified in list [l].
+
+    Specified parsers in [l] are evaluated sequentially from left to right.
+
+    The parser fails if none of the parsers in [l] are evaluated successfully.
+
+    {e example - first successful parser result is returned}
 
     {[
       module P = Reparse.Parser
@@ -441,11 +451,14 @@ val any : 'a t list -> 'a t
 
       ;;
       let p = P.(any [char 'z'; char 'x'; char 'a']) in
-      let input = new P.string_input "abc" in
+      let input = new P.string_input "zabc" in
       let r = P.parse input p in
-      r = 'a'
+      r = 'z'
+    ]}
 
-      ;;
+    {e example - parser fails when one of the parsers in [l] are successful}
+
+    {[
       let p = P.(any [char 'z'; char 'x'; char 'a']) in
       let input = new P.string_input "yyy" in
       let r =
