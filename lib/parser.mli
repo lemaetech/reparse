@@ -186,7 +186,9 @@ val named : string -> 'a t -> 'a t
                'a'\")" }
     ]} *)
 
-(** {3 Transforms}*)
+(** {3 Transforms}
+
+    Parsers that can transform from one parser value to another. *)
 
 val map : ('a -> 'b) -> 'a t -> 'b t
 (** [map f p] is [f <$> p].
