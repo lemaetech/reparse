@@ -109,34 +109,41 @@ let next state ~ok ~err =
 let pure v _state ~ok ~err:_ = ok v
 let return = pure
 
-let ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t =
- fun p f state ~ok ~err -> p state ~ok:(fun a -> f a state ~ok ~err) ~err
+module Infix = struct
+  let ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t =
+   fun p f state ~ok ~err -> p state ~ok:(fun a -> f a state ~ok ~err) ~err
 
-let ( >|= ) : 'a t -> ('a -> 'b) -> 'b t =
- fun p f st ~ok ~err -> p st ~ok:(fun a -> ok (f a)) ~err
+  let ( >|= ) : 'a t -> ('a -> 'b) -> 'b t =
+   fun p f st ~ok ~err -> p st ~ok:(fun a -> ok (f a)) ~err
 
-let ( <*> ) p q = p >>= fun f -> q >|= f
-let ( <$> ) f p = return f <*> p
+  let ( <*> ) p q = p >>= fun f -> q >|= f
+  let ( <$> ) f p = return f <*> p
+  let ( <$ ) v p = (fun _ -> v) <$> p
+  let ( *> ) p q = p >>= fun _ -> q
+  let ( <* ) p q = p >>= fun a -> a <$ q
+
+  let ( <|> ) : 'a t -> 'a t -> 'a t =
+   fun p q state ~ok ~err ->
+    let ofs = state.offset in
+    p state ~ok ~err:(fun e ->
+        if ofs = state.offset then q state ~ok ~err else err e)
+
+  let ( <?> ) : 'a t -> string -> 'a t =
+   fun p err_msg state ~ok ~err ->
+    let ofs = state.offset in
+    p state ~ok ~err:(fun e ->
+        if state.offset = ofs then error ~err err_msg state else err e)
+
+  let ( let* ) = ( >>= )
+  let ( let+ ) = ( >|= )
+end
+
+open Infix
+
 let map = ( <$> )
 let map2 f p q = return f <*> p <*> q
 let map3 f p q r = return f <*> p <*> q <*> r
 let map4 f p q r s = return f <*> p <*> q <*> r <*> s
-let ( <$ ) v p = (fun _ -> v) <$> p
-let ( *> ) p q = p >>= fun _ -> q
-let ( <* ) p q = p >>= fun a -> a <$ q
-
-let ( <|> ) : 'a t -> 'a t -> 'a t =
- fun p q state ~ok ~err ->
-  let ofs = state.offset in
-  p state ~ok ~err:(fun e ->
-      if ofs = state.offset then q state ~ok ~err else err e)
-
-let ( <?> ) : 'a t -> string -> 'a t =
- fun p err_msg state ~ok ~err ->
-  let ofs = state.offset in
-  p state ~ok ~err:(fun e ->
-      if state.offset = ofs then error ~err err_msg state else err e)
-
 let unit = return ()
 let pos state = (state.offset, state.lnum, state.cnum)
 
@@ -581,19 +588,3 @@ let line : [`LF | `CRLF] -> string t =
     ~ok:(fun (_ : unit) -> ())
     ~err ;
   ok (Buffer.contents buf)
-
-module Infix = struct
-  let ( >>= ) = ( >>= )
-  let ( >|= ) = ( >|= )
-  let ( <*> ) = ( <*> )
-  let ( <$ ) = ( <$ )
-  let ( <$> ) = ( <$> )
-  let ( *> ) = ( *> )
-  let ( <* ) = ( <* )
-  let ( <|> ) = ( <|> )
-  let ( <?> ) = ( <?> )
-  let ( let* ) = ( >>= )
-  let ( let+ ) = ( >|= )
-end
-
-(* end *)
