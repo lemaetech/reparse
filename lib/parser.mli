@@ -489,7 +489,7 @@ val offset : int t
       r = 1
     ]} *)
 
-(** {3 negation, un-negation}*)
+(** {3 Negation, un-negation}*)
 
 val not_ : 'a t -> unit t
 (** [not_ p] returns a parser which succeeds if and only if [p] fails to parse.
