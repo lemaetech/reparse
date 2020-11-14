@@ -19,7 +19,7 @@ type 'a t
 
 (** {3 Parser input types} *)
 
-(** Represents parser input interface. *)
+(** Parser input interface. *)
 class type input =
   object
     method eof : int -> bool
@@ -49,7 +49,7 @@ class string_input : string -> input
     ]} *)
 
 class file_input : Unix.file_descr -> input
-(** Represents a unix file descriptor a parser input.
+(** Represents a unix file descriptor as a parser input.
 
     {e example}
 
@@ -67,10 +67,10 @@ class file_input : Unix.file_descr -> input
 
 val parse : ?track_lnum:bool -> input -> 'a t -> 'a
 (** [parse ~track_lnum input p] returns value [v] as a result of evaluating
-    parser [p] and [input].
+    parser [p] with [input].
 
-    If [track_num] is [true] then the parser tracks both the line and the column
-    numbers. It is set to [false] by default.
+    If [track_num] is [true] then the parser tracks both the {e line} and the
+    {e column} numbers. It is set to [false] by default.
 
     Line number and column number both start count from [1] if enabled. They are
     both set to [0] otherwise.
@@ -112,9 +112,14 @@ exception
     ; line_number : int
     ; column_number : int
     ; msg : string }
-(** [Parser_error (lnum, cnum, msg)] Raised by failed parsers. [lnum], [cnum] is
-    line number and column number respectively at the time of parser failure.
-    [msg] contains a descriptive error message. *)
+(** Raised by parsers which are unable to parse successfully.
+
+    [offset] is the current index position of input at the time of failure.
+
+    [lnum], [cnum] is line number and column number respectively at the time of
+    failure.
+
+    [msg] contains an error description. *)
 
 (** {2 Parsers} *)
 
@@ -165,8 +170,8 @@ val fail : string -> 'a t
     ]} *)
 
 val named : string -> 'a t -> 'a t
-(** [named name p] names parser [p] with [name]. The name is used on error
-    message. This may be helpful when debugging parsers.
+(** [named name p] names parser [p] with [name] which is used when constructing
+    exception {!exception:Parser}.
 
     Also see {!val:Infix.(<?>)}
 
@@ -202,7 +207,19 @@ val named : string -> 'a t -> 'a t
 val map : ('a -> 'b) -> 'a t -> 'b t
 (** [map f p] is [f <$> p].
 
-    {e see} {!Infix.(<$>)} *)
+    {e see} {!Infix.(<$>)}
+
+    {e example}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let p = P.map (fun a -> a ^ " world") (P.string "hello") in
+      let input = new P.string_input "hello" in
+      let r = P.parse input p in
+      r = "hello world"
+    ]} *)
 
 val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
 (** [map2 f p q] returns a parser which encapsulates value [c] a result of
