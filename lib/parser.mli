@@ -344,7 +344,7 @@ val named : string -> 'a t -> 'a t
 
 (** {1 Alternation}
 
-    One, some or all may succeed. *)
+    One or the other *)
 
 val any : 'a t list -> 'a t
 (** [any l] returns a parser encapsulating value [a]. [a] is the parser value of
