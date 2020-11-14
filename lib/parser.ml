@@ -140,6 +140,7 @@ end
 
 open Infix
 
+let bind = ( >>= )
 let map = ( <$> )
 let map2 f p q = return f <*> p <*> q
 let map3 f p q r = return f <*> p <*> q <*> r

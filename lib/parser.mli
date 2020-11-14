@@ -8,16 +8,44 @@
  * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
 
-(** {2 Types} *)
+(** {1 Overview} *)
 
-(** {3 Parser type} *)
+(** Parser provides functions and types to construct robust, performant and
+    reusable parsers.
+
+    At the core is a type {!type:t} which represents a constructed parser
+    definition. A parser {!type:t} is additionally composed of other parsers via
+    parser operators.
+
+    Parser operators/functions are broadly organized into following categories:
+
+    - Pure
+    - Concatentation
+    - Alternation
+    - Grouping
+    - Repetition
+    - Optional
+    - Query input state
+    - Boolean
+    - Text
+
+    An {{:#infix} Infix} modules contains infix and let syntax support
+    functions.
+
+    Core parser operators as defined in {{:#rfc5234} RFC 5234} are also
+    provided.
+
+    {!type:t} represents an un-evaluated parser. In order to evaluate it, we
+    need to feed it to {!val:parse} function along with an {!type:input}. *)
+
+(** {2 Parser type} *)
 
 type 'a t
 (** Represents a parser which can parse value ['a].
 
     Use {!val:parse} to execute a parser. *)
 
-(** {3 Parser input types} *)
+(** {2 Parser input types} *)
 
 (** Parser input interface. *)
 class type input =
@@ -40,7 +68,7 @@ class type input =
 class string_input : string -> input
 (** Represents a string as a parser input.
 
-    {e example}
+    {4:string_input_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -51,7 +79,7 @@ class string_input : string -> input
 class file_input : Unix.file_descr -> input
 (** Represents a unix file descriptor as a parser input.
 
-    {e example}
+    {4:file_input_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -72,13 +100,14 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
     If [track_num] is [true] then the parser tracks both the {e line} and the
     {e column} numbers. It is set to [false] by default.
 
-    Line number and column number both start count from [1] if enabled. They are
-    both set to [0] otherwise.
+    Line number and column number both start count from [1] if enabled, [0]
+    otherwise.
 
     {i Also see} {!val:lnum} and {!val:cnum}.
 
-    @raise Parser
-    {e example - track line and column number}
+    {4:parse_examples Examples}
+
+    Track line and column number
 
     {[
       module P = Reparse.Parser
@@ -91,7 +120,7 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
       r1 = (1, 12)
     ]}
 
-    {e example - don't track line, column number. Default behaviour}
+    Default behaviour - doesn't track line, column number.
 
     {[
       module P = Reparse.Parser
@@ -102,7 +131,8 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
       let input = new P.string_input "hello world" in
       let r2 = P.parse input p in
       r2 = (0, 0)
-    ]} *)
+    ]}
+    @raise Parser when parser encounters error *)
 
 (** {2 Exception} *)
 
@@ -116,19 +146,20 @@ exception
 
     [offset] is the current index position of input at the time of failure.
 
-    [lnum], [cnum] is line number and column number respectively at the time of
-    failure.
+    [line_number] is line number at the time of failure.
+
+    [column_number] is column number at the time of failure.
 
     [msg] contains an error description. *)
 
-(** {2 Parsers} *)
-
-(** {3 Pure}
+(** {1 Pure}
 
     Create parsers from values. *)
 
 val pure : 'a -> 'a t
 (** [pure v] returns a parser that always parses value [v].
+
+    {4:pure_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -146,12 +177,14 @@ val return : 'a -> 'a t
 val unit : unit t
 (** [unit] is [return ()]. *)
 
-(** {3 Errors}
+(*(1** {2 Errors} *)
 
-    Parsers to handle, generate exceptions and failures. *)
+(*    Handle, generate exceptions and failures. *1) *)
 
 val fail : string -> 'a t
 (** [fail err_msg] creates a parser that always fails with [err_msg].
+
+    {4:fail_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -169,13 +202,122 @@ val fail : string -> 'a t
           {offset = 0; line_number = 0; column_number = 0; msg = "hello error"}
     ]} *)
 
+(** {1 Concatenation}
+
+    Bind, map two or more parsers to create a new parser. *)
+
+(** {2 Bind} *)
+
+val bind : 'a t -> ('a -> 'b t) -> 'b t
+(** [bind p f] is [p >>= f]
+
+    {!val:Infix.(>>=)} *)
+
+(** {2 Map}
+
+    Mappers transform from one parser value to another. *)
+
+val map : ('a -> 'b) -> 'a t -> 'b t
+(** [map f p] is [f <$> p].
+
+    {e see} {!Infix.(<$>)} for infix version.
+
+    {4:map_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let p = P.map (fun a -> a ^ " world") (P.string "hello") in
+      let input = new P.string_input "hello" in
+      let r = P.parse input p in
+      r = "hello world"
+    ]} *)
+
+val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
+(** [map2 f p q] returns a parser which encapsulates value [c] a result of
+    applying [f a b]. [a, b] are the parsed value of parsers [p] and [q]
+    respectively.
+
+    {4:map2_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let p = P.(map2 (fun a b -> a + b) (return 1) (return 2)) in
+      let input = new P.string_input "" in
+      let r = P.parse input p in
+      r = 3
+    ]} *)
+
+val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
+(** [map3 f p q r] returns a parser encapsulating value [d] as a result of
+    applying [f a b c]. [a, b, c] are the parsed value of parsers [p], [q] and
+    [r] respectively.
+
+    {4:map3_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let p =
+        P.(map3 (fun a b c -> a + b + c) (return 1) (return 2) (return 3))
+      in
+      let input = new P.string_input "" in
+      let r = P.parse input p in
+      r = 6
+    ]} *)
+
+val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
+(** [map4 f p q r s] returns a parser encapsulating value [e] as a result of
+    applying [f a b c d]. [a, b, c, d] are the parsed value of parsers [p], [q],
+    [r] and [s] respectively.
+
+    {4:map4_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let p =
+        P.(
+          map4
+            (fun a b c d -> a + b + c + d)
+            (return 1)
+            (return 2)
+            (return 3)
+            (return 4))
+      in
+      let input = new P.string_input "" in
+      let r = P.parse input p in
+      r = 10
+    ]} *)
+
+val delay : 'a t Lazy.t -> 'a t
+(** [delay p] returns a parser which lazily evaluates parser [p].
+
+    {4:delay_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let p = P.(delay (lazy (char 'z')) <|> delay (lazy (char 'a'))) in
+      let input = new P.string_input "abc" in
+      let r = P.parse input p in
+      r = 'a'
+    ]} *)
+
 val named : string -> 'a t -> 'a t
 (** [named name p] names parser [p] with [name] which is used when constructing
     exception {!exception:Parser}.
 
     Also see {!val:Infix.(<?>)}
 
-    {e example}
+    {4:named_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -200,95 +342,21 @@ val named : string -> 'a t -> 'a t
                'a'\")" }
     ]} *)
 
-(** {3 Transforms}
+(** {1 Alternation}
 
-    Parsers that can transform from one parser value to another. *)
-
-val map : ('a -> 'b) -> 'a t -> 'b t
-(** [map f p] is [f <$> p].
-
-    {e see} {!Infix.(<$>)}
-
-    {e example}
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let p = P.map (fun a -> a ^ " world") (P.string "hello") in
-      let input = new P.string_input "hello" in
-      let r = P.parse input p in
-      r = "hello world"
-    ]} *)
-
-val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
-(** [map2 f p q] returns a parser which encapsulates value [c] a result of
-    applying [f a b]. [a, b] are the parsed value of parsers [p] and [q]
-    respectively.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let p = P.(map2 (fun a b -> a + b) (return 1) (return 2)) in
-      let input = new P.string_input "" in
-      let r = P.parse input p in
-      r = 3
-    ]} *)
-
-val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
-(** [map3 f p q r] returns a parser encapsulating value [d] as a result of
-    applying [f a b c]. [a, b, c] are the parsed value of parsers [p], [q] and
-    [r] respectively.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let p =
-        P.(map3 (fun a b c -> a + b + c) (return 1) (return 2) (return 3))
-      in
-      let input = new P.string_input "" in
-      let r = P.parse input p in
-      r = 6
-    ]} *)
-
-val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
-(** [map4 f p q r s] returns a parser encapsulating value [e] as a result of
-    applying [f a b c d]. [a, b, c, d] are the parsed value of parsers [p], [q],
-    [r] and [s] respectively.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let p =
-        P.(
-          map4
-            (fun a b c d -> a + b + c + d)
-            (return 1)
-            (return 2)
-            (return 3)
-            (return 4))
-      in
-      let input = new P.string_input "" in
-      let r = P.parse input p in
-      r = 10
-    ]} *)
-
-(** {3 Choices} *)
+    One, some or all may succeed. *)
 
 val any : 'a t list -> 'a t
 (** [any l] returns a parser encapsulating value [a]. [a] is the parser value of
-    the first successfully evaluated parser specified in list [l].
+    the first successfully evaluated parser in list [l].
 
     Specified parsers in [l] are evaluated sequentially from left to right.
 
     The parser fails if none of the parsers in [l] are evaluated successfully.
 
-    Also see {!val:Infix.(<|>)}
+    {4:any_examples Examples}
 
-    {e example - first successful parser result is returned}
+    First successful parser result is returned
 
     {[
       module P = Reparse.Parser
@@ -312,7 +380,7 @@ val any : 'a t list -> 'a t
       r = 'a'
     ]}
 
-    {e example - parser fails when none of the parsers in [l] are successful}
+    Parser fails when none of the parsers in [l] are successful.
 
     {[
       let p = P.(any [char 'z'; char 'x'; char 'a']) in
@@ -326,19 +394,23 @@ val any : 'a t list -> 'a t
       r = true
     ]} *)
 
-(** {3 All}
+(** Also see {!val:Infix.(<|>)} *)
 
-    All specified parsers must succeed. *)
+(** {1 Grouping}
+
+    Groups parsers. *)
 
 val all : 'a t list -> 'a list t
 (** [all l] returns a parser encapsulating a list of of parser values
-    accumulated by evaluating parsers specified in [l].
-
-    Parsers in [l] are evaluated sequentially - from left to right.
+    accumulated by evaluating parsers in [l].
 
     The parser only succeeds if and only if all of the parsers in [l] succeed.
 
-    {e example - all specified parsers succeed}
+    Parsers in [l] are evaluated sequentially - from left to right.
+
+    {4:all_examples Examples}
+
+    All specified parsers succeed.
 
     {[
       module P = Reparse.Parser
@@ -350,7 +422,7 @@ val all : 'a t list -> 'a list t
       r = ['a'; 'b'; 'c']
     ]}
 
-    {e example - one of the specified parsers} - [char 'c'] {e fails}
+    One of the specified parsers - [char 'c'] fails.
 
     {[
       module P = Reparse.Parser
@@ -371,7 +443,9 @@ val all_unit : 'a t list -> unit t
 (** [all_unit l] returns a parser which behaves similar to {!val:all} - except
     all of the parser values are discarded.
 
-    {e example - all specified parsers succeed}
+    {4:all_unit_examples Examples}
+
+    All specified parsers succeed.
 
     {[
       module P = Reparse.Parser
@@ -383,7 +457,7 @@ val all_unit : 'a t list -> unit t
       r = ()
     ]}
 
-    {e example - one of the specified parsers} - [char 'c'] {e fails}
+    One of the specified parsers - [char 'c'] - fails.
 
     {[
       module P = Reparse.Parser
@@ -400,287 +474,9 @@ val all_unit : 'a t list -> unit t
       r = true
     ]} *)
 
-(** {3 Delay}
+(** {1 Repetition} *)
 
-    Delays evaluation of parser. *)
-
-val delay : 'a t Lazy.t -> 'a t
-(** [delay p] returns a parser which lazily evaluates parser [p].
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let p = P.(delay (lazy (char 'z')) <|> delay (lazy (char 'a'))) in
-      let input = new P.string_input "abc" in
-      let r = P.parse input p in
-      r = 'a'
-    ]} *)
-
-(** {3 Input state}
-
-    Returns parser input details. *)
-
-val is_eoi : bool t
-(** [is_eoi] returns [true] if parser has reached end of input.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let input = new P.string_input "" in
-      let r = P.(parse input is_eoi) in
-      r = true
-
-      ;;
-      let input = new P.string_input "a" in
-      let r = P.(parse input is_eoi) in
-      r = false
-    ]} *)
-
-val eoi : unit t
-(** [eoi] returns a parser which parses end of input. Fails if parser is not at
-    end of input.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let input = new P.string_input "" in
-      let r = P.(parse input eoi) in
-      r = ()
-
-      ;;
-      let input = new P.string_input "a" in
-      let r =
-        try
-          let _ = P.(parse input eoi) in
-          false
-        with _ -> true
-      in
-      r = true
-    ]} *)
-
-val lnum : int t
-(** [lnum] returns a parser encapsulating the current line number. The first
-    line number is [1].
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let input = new P.string_input "bcb" in
-      let p = P.(next *> lnum) in
-      let r = P.parse ~track_lnum:true input p in
-      r = 1
-    ]} *)
-
-val cnum : int t
-(** [cnum] returns the current column number. The first column number is [1].
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let input = new P.string_input "bcb" in
-      let p = P.(next *> cnum) in
-      let r = P.parse ~track_lnum:true input p in
-      r = 2
-    ]} *)
-
-val offset : int t
-(** [offset] returns a parser encapsulating the current input offset. The first
-    offset is [0].
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let input = new P.string_input "bcb" in
-      let p = P.(next *> offset) in
-      let r = P.parse ~track_lnum:true input p in
-      r = 1
-    ]} *)
-
-(** {3 Negation, un-negation}*)
-
-val not_ : 'a t -> unit t
-(** [not_ p] returns a parser which succeeds if and only if [p] fails to parse.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let input = new P.string_input "bbb" in
-      let p = P.(not_ (char 'a')) in
-      let r = P.parse input p in
-      r = ()
-    ]} *)
-
-val not_followed_by : 'a t -> 'b t -> 'a t
-(** [not_followed_by p q] returns a parser which encapsulates value [a] which is
-    evaluated from parser [p]. The parser evaluates successfully if parser [p]
-    succeeds and then parser [q] fails. The second parser [q] never consumes any
-    input.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let input = new P.string_input "ab" in
-      let p = P.(not_followed_by (char 'a') (char 'a')) in
-      let r = P.parse input p in
-      r = 'a'
-    ]}*)
-
-val is_not : 'a t -> bool t
-(** [is_not p] returns a parser encapsulating value [true] if [p] fails to parse
-    and [false] otherwise. {b Note} evaluating [p] doesn't consume any input.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let input = new P.string_input "bbb" in
-      let r = P.(parse input (is_not (char 'a'))) in
-      r = true
-    ]} *)
-
-val is : 'a t -> bool t
-(** [is p] returns a parser which encapsulates [true] is [p] parses
-    successfully, [false] otherwise. {b Note} evaluation of [p] doesn't consume
-    any input.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let input = new P.string_input "bcb" in
-      let r = P.(parse input (is (char 'b'))) in
-      r = true
-    ]} *)
-
-(** {3 Text}
-
-    Text parsing. *)
-
-val peek_char : char t
-(** [peek_char t] returns a parser encapsulating a character from input without
-    consuming it.
-
-    {[
-      module P = Reparse.Parser
-      ;;
-
-      let input = new P.string_input "hello" in
-      let p = P.peek_char in
-      let r = P.parse input p in
-      r = 'h'
-
-      let input = new P.string_input "hello" in
-      (* Input offset value remains the same. *)
-      let p = P.(peek_char *> offset) in
-      let r = P.parse input p in
-      r = 0
-    ]} *)
-
-val peek_string : int -> string t
-(** [peek_string n] returns a parser encapsulating a string of length [n] from
-    input. No input is consumed.
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let input = new P.string_input "hello" in
-      let r = P.(parse input (peek_string 5)) in
-      r = "hello"
-
-      ;;
-      let input = new P.string_input "hello" in
-      let r = P.(parse input (peek_string 5 *> offset)) in
-      r = 0
-    ]} *)
-
-val next : char t
-(** [next] Returns a parser which consumes and encapsulates the next character
-    of input.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let input = new P.string_input "hello" in
-      let r = P.(parse input next) in
-      r = 'h'
-    ]} *)
-
-val char : char -> char t
-(** [char c] returns a parser which accepts a character [c] from input exactly.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let input = new P.string_input "hello" in
-      let p = P.char 'h' in
-      let r = P.parse input p in
-      r = 'h'
-    ]} *)
-
-val satisfy : (char -> bool) -> char t
-(** [satisfy f] returns a parser which accepts a character [c] from input if
-    [f c] is true and encapsulates it.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let input = new P.string_input "abc" in
-      let p =
-        P.satisfy (function
-            | 'a' -> true
-            | _   -> false)
-      in
-      let r = P.parse input p in
-      r = 'a'
-    ]} *)
-
-val string : string -> string t
-(** [string s] returns a parser which accepts [s] exactly.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let input = new P.string_input "hello world" in
-      let p = P.string "hello" in
-      let r = P.parse input p in
-      r = "hello"
-    ]} *)
-
-val line : [`LF | `CRLF] -> string t
-(** [line c] returns a parser which consumes a line of text from input. The line
-    delimiter is specified by [c].
-
-    Line delimiter [c] can be either [`LF] or [`CRLF]. This corresponds to [\n]
-    or [\r\n] character respectively.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let input = new P.string_input "line1\r\nline2" in
-      let l = P.(parse input (line `CRLF)) in
-      l = "line1"
-    ]} *)
-
-(** {3 Skip}
+(** {2 Skip}
 
     Parsers which discards parsed values. *)
 
@@ -698,6 +494,8 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
     - [up_to] upper bound value is reached
 
     The parser encapsulates the count of times [p] was evaluated successfully.
+
+    {4:skip_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -723,6 +521,8 @@ val skip_while : _ t -> while_:bool t -> int t
 
     The parser encapsulates the count of times [p] was evaluated successfully.
 
+    {4:skip_while_examples Examples}
+
     {[
       module P = Reparse.Parser
 
@@ -733,7 +533,7 @@ val skip_while : _ t -> while_:bool t -> int t
       r = 5
     ]} *)
 
-(** {3 Take}
+(** {2 Take}
 
     Collects parsed values *)
 
@@ -758,7 +558,9 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
     The parser fails if the count of repetition of [p] does not match the value
     specified by [at_least].
 
-    {e example - default behaviour}
+    {4:take_examples Examples}
+
+    Default behaviour.
 
     {[
       module P = Reparse.Parser
@@ -770,7 +572,7 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       r = ['a'; 'a'; 'a'; 'a'; 'a']
     ]}
 
-    {e example - specify [~sep_by]}
+    Specify [~sep_by].
 
     {[
       module P = Reparse.Parser
@@ -782,7 +584,7 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       r = ['a'; 'a'; 'a'; 'a']
     ]}
 
-    {e example - specify lower bound argument [at_least]}
+    Specify lower bound argument [at_least].
 
     {[
       module P = Reparse.Parser
@@ -795,7 +597,7 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       r = ['a'; 'a'; 'a'; 'a']
     ]}
 
-    {e example - lower bound not met results in error}
+    Lower bound not met results in error.
 
     {[
       module P = Reparse.Parser
@@ -812,7 +614,7 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       r = true
     ]}
 
-    {e example - specify upper bound [up_to]}
+    Specify upper bound [up_to].
 
     {[
       module P = Reparse.Parser
@@ -842,7 +644,9 @@ val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 
     {b Note} [while_] does not consume input.
 
-    {e example - default}
+    {4:take_while_examples Examples}
+
+    Default behaviour.
 
     {[
       module P = Reparse.Parser
@@ -854,7 +658,7 @@ val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
       r = ['a'; 'a']
     ]}
 
-    {e example - specify [sep_by]}
+    Specify [sep_by].
 
     {[
       module P = Reparse.Parser
@@ -895,6 +699,8 @@ val take_while_cb :
 
     {b Note} [while_] does not consume input.
 
+    {4:take_while_cb_examples Examples}
+
     {[
       module P = Reparse.Parser
       open P.Infix
@@ -911,13 +717,15 @@ val take_while_cb :
       r = 3 && s = "aaa"
     ]} *)
 
-(** {3 Optional}
+(** {1 Optional}
 
-    Doesn't fail when parsing is not successful*)
+    Doesn't fail when parsing is not successful.*)
 
 val optional : 'a t -> 'a option t
 (** [optional p] returns a parser which evaluates to [Some a] if successful and
     [None] otherwise. [a] is the value evaluated from parser [p].
+
+    {4:optional_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -936,7 +744,301 @@ val optional : 'a t -> 'a option t
       r = None
     ]}*)
 
-(** {2 RFC 5234 parsers}
+(** {1 Query Input state} *)
+
+val is_eoi : bool t
+(** [is_eoi] returns [true] if parser has reached end of input.
+
+    {4:is_eoi_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let input = new P.string_input "" in
+      let r = P.(parse input is_eoi) in
+      r = true
+
+      ;;
+      let input = new P.string_input "a" in
+      let r = P.(parse input is_eoi) in
+      r = false
+    ]} *)
+
+val eoi : unit t
+(** [eoi] returns a parser which parses end of input. Fails if parser is not at
+    end of input.
+
+    {4:eoi_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let input = new P.string_input "" in
+      let r = P.(parse input eoi) in
+      r = ()
+
+      ;;
+      let input = new P.string_input "a" in
+      let r =
+        try
+          let _ = P.(parse input eoi) in
+          false
+        with _ -> true
+      in
+      r = true
+    ]} *)
+
+val lnum : int t
+(** [lnum] returns a parser encapsulating the current line number. The first
+    line number is [1].
+
+    {4:lnum_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "bcb" in
+      let p = P.(next *> lnum) in
+      let r = P.parse ~track_lnum:true input p in
+      r = 1
+    ]} *)
+
+val cnum : int t
+(** [cnum] returns the current column number. The first column number is [1].
+
+    {4:cnum_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "bcb" in
+      let p = P.(next *> cnum) in
+      let r = P.parse ~track_lnum:true input p in
+      r = 2
+    ]} *)
+
+val offset : int t
+(** [offset] returns a parser encapsulating the current input offset. The first
+    offset is [0].
+
+    {4:offset_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "bcb" in
+      let p = P.(next *> offset) in
+      let r = P.parse ~track_lnum:true input p in
+      r = 1
+    ]} *)
+
+(** {1 Boolean}
+
+    [true], [false], is, is not. *)
+
+val not_ : 'a t -> unit t
+(** [not_ p] returns a parser which succeeds if and only if [p] fails to parse.
+
+    {4:not__examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let input = new P.string_input "bbb" in
+      let p = P.(not_ (char 'a')) in
+      let r = P.parse input p in
+      r = ()
+    ]} *)
+
+val not_followed_by : 'a t -> 'b t -> 'a t
+(** [not_followed_by p q] returns a parser which encapsulates value [a] which is
+    evaluated from parser [p]. The parser evaluates successfully if parser [p]
+    succeeds and then parser [q] fails. The second parser [q] never consumes any
+    input.
+
+    {4:not_followed_by_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let input = new P.string_input "ab" in
+      let p = P.(not_followed_by (char 'a') (char 'a')) in
+      let r = P.parse input p in
+      r = 'a'
+    ]}*)
+
+val is_not : 'a t -> bool t
+(** [is_not p] returns a parser encapsulating value [true] if [p] fails to parse
+    and [false] otherwise. {b Note} evaluating [p] doesn't consume any input.
+
+    {4:is_not_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let input = new P.string_input "bbb" in
+      let r = P.(parse input (is_not (char 'a'))) in
+      r = true
+    ]} *)
+
+val is : 'a t -> bool t
+(** [is p] returns a parser which encapsulates [true] is [p] parses
+    successfully, [false] otherwise. {b Note} evaluation of [p] doesn't consume
+    any input.
+
+    {4:is_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let input = new P.string_input "bcb" in
+      let r = P.(parse input (is (char 'b'))) in
+      r = true
+    ]} *)
+
+(** {1 Text}
+
+    Text parsing. *)
+
+val peek_char : char t
+(** [peek_char t] returns a parser encapsulating a character from input without
+    consuming it.
+
+    {4:peek_char_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+      ;;
+
+      let input = new P.string_input "hello" in
+      let p = P.peek_char in
+      let r = P.parse input p in
+      r = 'h'
+
+      let input = new P.string_input "hello" in
+      (* Input offset value remains the same. *)
+      let p = P.(peek_char *> offset) in
+      let r = P.parse input p in
+      r = 0
+    ]} *)
+
+val peek_string : int -> string t
+(** [peek_string n] returns a parser encapsulating a string of length [n] from
+    input. No input is consumed.
+
+    {4:peek_string_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "hello" in
+      let r = P.(parse input (peek_string 5)) in
+      r = "hello"
+
+      ;;
+      let input = new P.string_input "hello" in
+      let r = P.(parse input (peek_string 5 *> offset)) in
+      r = 0
+    ]} *)
+
+val next : char t
+(** [next] Returns a parser which consumes and encapsulates the next character
+    of input.
+
+    {4:next_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let input = new P.string_input "hello" in
+      let r = P.(parse input next) in
+      r = 'h'
+    ]} *)
+
+val char : char -> char t
+(** [char c] returns a parser which accepts a character [c] from input exactly.
+
+    {4:char_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let input = new P.string_input "hello" in
+      let p = P.char 'h' in
+      let r = P.parse input p in
+      r = 'h'
+    ]} *)
+
+val satisfy : (char -> bool) -> char t
+(** [satisfy f] returns a parser which accepts a character [c] from input if
+    [f c] is true and encapsulates it.
+
+    {4:satisfy_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let input = new P.string_input "abc" in
+      let p =
+        P.satisfy (function
+            | 'a' -> true
+            | _   -> false)
+      in
+      let r = P.parse input p in
+      r = 'a'
+    ]} *)
+
+val string : string -> string t
+(** [string s] returns a parser which accepts [s] exactly.
+
+    {4:string_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let input = new P.string_input "hello world" in
+      let p = P.string "hello" in
+      let r = P.parse input p in
+      r = "hello"
+    ]} *)
+
+val line : [`LF | `CRLF] -> string t
+(** [line c] returns a parser which consumes a line of text from input. The line
+    delimiter is specified by [c].
+
+    Line delimiter [c] can be either [`LF] or [`CRLF]. This corresponds to [\n]
+    or [\r\n] character respectively.
+
+    {4:line_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let input = new P.string_input "line1\r\nline2" in
+      let l = P.(parse input (line `CRLF)) in
+      l = "line1"
+    ]} *)
+
+(** {1:rfc5234 RFC 5234}
 
     Parsers as defined in RFC 5234, Appendix B.1.
 
@@ -944,6 +1046,8 @@ val optional : 'a t -> 'a option t
 
 val alpha : char t
 (** [alpha] parses a character in range [A- Z] or [a-z].
+
+    {4:alpha_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -958,6 +1062,8 @@ val alpha : char t
 val alpha_num : char t
 (** [alpha_num] parses a character in range [A-Z] or [a-z] or [0-9].
 
+    {4:alpha_num_examples Examples}
+
     {[
       module P = Reparse.Parser
       open P.Infix
@@ -970,6 +1076,8 @@ val alpha_num : char t
 
 val bit : char t
 (** [bit] parses a character which is either ['0'] or ['1'].
+
+    {4:bit_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -984,6 +1092,8 @@ val bit : char t
 val ascii_char : char t
 (** [ascii_char] parses any US-ASCII character.
 
+    {4:ascii_char_examples Examples}
+
     {[
       module P = Reparse.Parser
       open P.Infix
@@ -996,6 +1106,8 @@ val ascii_char : char t
 
 val cr : char t
 (** [cr] parses character ['\r'].
+
+    {4:cr_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -1010,6 +1122,8 @@ val cr : char t
 val crlf : string t
 (** [crlf] parses string ["\r\n"].
 
+    {4:crlf_examples Examples}
+
     {[
       module P = Reparse.Parser
       open P.Infix
@@ -1022,6 +1136,8 @@ val crlf : string t
 
 val control : char t
 (** [control] parses characters in range [0x00 - 0x1F] or character [0x7F].
+
+    {4:control_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -1036,6 +1152,8 @@ val control : char t
 val digit : char t
 (** [digit] parses a digit character - [0 .. 9].
 
+    {4:digit_examples Examples}
+
     {[
       module P = Reparse.Parser
       open P.Infix
@@ -1048,6 +1166,8 @@ val digit : char t
 
 val dquote : char t
 (** [dquote] parses double quote character ['"'].
+
+    {4:dquote_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -1062,6 +1182,8 @@ val dquote : char t
 val hex_digit : char t
 (** [hex_digit] parses any of the hexadecimal digits - [0..9, A, B, C, D, E, F].
 
+    {4:hex_digit_examples Examples}
+
     {[
       module P = Reparse.Parser
       open P.Infix
@@ -1075,6 +1197,8 @@ val hex_digit : char t
 val htab : char t
 (** [htab] parses a horizontal tab character ['\t'].
 
+    {4:htab_examples Examples}
+
     {[
       module P = Reparse.Parser
       open P.Infix
@@ -1087,6 +1211,8 @@ val htab : char t
 
 val lf : char t
 (** [lf] parses a linefeed ['\n'] character.
+
+    {4:lf_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -1102,6 +1228,8 @@ val octet : char t
 (** [octect] parses any character in the range [\x00 - \xFF]. Synonym for
     {!val:next}
 
+    {4:octet_examples Examples}
+
     {[
       module P = Reparse.Parser
       open P.Infix
@@ -1115,6 +1243,8 @@ val octet : char t
 val space : char t
 (** [space] parses a space character.
 
+    {4:space_examples Examples}
+
     {[
       module P = Reparse.Parser
       open P.Infix
@@ -1126,7 +1256,12 @@ val space : char t
     ]} *)
 
 val spaces : char list t
-(** {[
+(** [spaces] returns a parsesr which parser any number of sequential space
+    characters.
+
+    {4:spaces_examples Examples}
+
+    {[
       module P = Reparse.Parser
       open P.Infix
 
@@ -1138,6 +1273,8 @@ val spaces : char list t
 
 val vchar : char t
 (** [vchar] parses any of the visible - printable - characters.
+
+    {4:vchar_examples Examples}
 
     {[
       module P = Reparse.Parser
@@ -1152,6 +1289,8 @@ val vchar : char t
 val whitespace : char t
 (** [whitespace] parses a space [' '] or horizontal tab ['\t'] character.
 
+    {4:whitespace_examples Examples}
+
     {[
       module P = Reparse.Parser
       open P.Infix
@@ -1162,19 +1301,22 @@ val whitespace : char t
       r = ['\t'; ' '; '\t'; ' ']
     ]} *)
 
-(** {2 Infix & Let operators} *)
+(** {1:infix Infix & Let}
 
-(** Provides {i infix} and {i let syntax} operators.
+    {i infix} and {i let syntax} operators.
 
-    Usage recommendation:
+    Open the module to use it:
 
     {[ open Reparse.Parser.Infix ]} *)
+
 module Infix : sig
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   (** [p >>= f] Binder.
 
       Returns a parser as a result of applying [f a] where [a] is the parsed
       value of [p].
+
+      {4:infix_bind_examples Examples}
 
       {[
         module P = Reparse.Parser
@@ -1192,6 +1334,8 @@ module Infix : sig
 
       Returns a parser which encapsulates value [b] as a result of applying
       [f a] where [a] is the parsed value of [p].
+
+      {4:infix_map_examples Examples}
 
       {[
         module P = Reparse.Parser
@@ -1211,6 +1355,8 @@ module Infix : sig
       where [f] is the function value parsed by parser [pf] and [a] is the value
       parsed by [q].
 
+      {4:infix_applicative_examples Examples}
+
       {[
         module P = Reparse.Parser
         open P.Infix
@@ -1224,6 +1370,8 @@ module Infix : sig
 
   val ( <$ ) : 'b -> 'a t -> 'b t
   (** [v <$ p] replaces the result of [p] with [v].
+
+      {4:infix_replace_examples Examples}
 
       {[
         module P = Reparse.Parser
@@ -1240,6 +1388,8 @@ module Infix : sig
   (** [f <$> p] returns a parser encapsulating value [b] as a result of applying
       [f a]. [a] is value parsed by [p].
 
+      {4:infix_mapper_examples Examples}
+
       {[
         module P = Reparse.Parser
         open P.Infix
@@ -1252,9 +1402,11 @@ module Infix : sig
       ]} *)
 
   val ( *> ) : _ t -> 'a t -> 'a t
-  (** [p *> q] returns a parser which executes parsers [p] and then [q] and
-      encapsulates value [a]. [a] is the parsed value of [q]. The parsed value
-      of [p] is discarded.
+  (** [p *> q] discard left. Returns a parser which executes parsers [p] and
+      then [q] and encapsulates value [a]. [a] is the parsed value of [q]. The
+      parsed value of [p] is discarded.
+
+      {4:infix_discard_left_examples Examples}
 
       {[
         module P = Reparse.Parser
@@ -1268,7 +1420,10 @@ module Infix : sig
       ]} *)
 
   val ( <* ) : 'a t -> _ t -> 'a t
-  (** [p <* q] similar to [*>]. However, the result of [q] is discarded instead.
+  (** [p <* q] discard right. Similar to [*>]. However, the result of [q] is
+      discarded instead.
+
+      {4:infix_discard_right_examples Examples}
 
       {[
         module P = Reparse.Parser
@@ -1282,7 +1437,7 @@ module Infix : sig
       ]} *)
 
   val ( <|> ) : 'a t -> 'a t -> 'a t
-  (** [p <|> q] Alternate.
+  (** [p <|> q] alternate.
 
       Returns a parser which evaluates both [p] and [q] returning values [a] and
       [b] respectively. If [p] succeeds then it returns a parser encapsulating
@@ -1291,7 +1446,8 @@ module Infix : sig
 
       If both - [p] and [q] - fails, then the parser fails with [Parser].
 
-      @raise Parser
+      {4:infix_alternate_examples Examples}
+
       {[
         module P = Reparse.Parser
         open P.Infix
@@ -1325,6 +1481,8 @@ module Infix : sig
       successfully then fails with error message [err_msg]. Used as a last
       choice in [<|>], e.g. [a <|> b <|> c <?> "expected a b c"].
 
+      {4:infix_error_named_examples Examples}
+
       {[
         module P = Reparse.Parser
         open P.Infix
@@ -1349,7 +1507,7 @@ module Infix : sig
   val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
   (** [let*] is let binding for {!val:(>>=)}
 
-      {e example}
+      {4:infix_let_bind_examples Examples}
 
       {[
         module P = Reparse.Parser
@@ -1369,7 +1527,7 @@ module Infix : sig
   val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
   (** [let*] is let binding for {!val:(>|=)}
 
-      {e example}
+      {4:infix_let_map_examples Examples}
 
       {[
         module P = Reparse.Parser
