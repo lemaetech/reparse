@@ -29,11 +29,9 @@
     - Boolean
     - Text
 
-    An {{:#infix} Infix} modules contains infix and let syntax support
-    functions.
+    {{:#rfc5234} RFC 5234} defined core parser operators are provided.
 
-    Core parser operators as defined in {{:#rfc5234} RFC 5234} are also
-    provided.
+    An {{:#infix} Infix} module contains infix and let syntax support functions.
 
     {!type:t} represents an un-evaluated parser. In order to evaluate it, we
     need to feed it to {!val:parse} function along with an {!type:input}. *)
@@ -211,7 +209,7 @@ val fail : string -> 'a t
 val bind : 'a t -> ('a -> 'b t) -> 'b t
 (** [bind p f] is [p >>= f]
 
-    {!val:Infix.(>>=)} *)
+    See {!val:Infix.(>>=)} *)
 
 (** {2 Map}
 
@@ -394,11 +392,14 @@ val any : 'a t list -> 'a t
       r = true
     ]} *)
 
-(** Also see {!val:Infix.(<|>)} *)
+val alt : 'a t -> 'a t -> 'a t
+(** [alt p q] is [p <|> q].
+
+    See {!val:Infix.(<|>)} *)
 
 (** {1 Grouping}
 
-    Groups parsers. *)
+    Group parsers. *)
 
 val all : 'a t list -> 'a list t
 (** [all l] returns a parser encapsulating a list of of parser values
