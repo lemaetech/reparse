@@ -1272,7 +1272,7 @@ val space : char t
     ]} *)
 
 val spaces : char list t
-(** [spaces] returns a parser which parses zero or more spaces.
+(** [spaces] parses zero or more spaces.
 
     {4:spaces_examples Examples}
 
