@@ -11,7 +11,7 @@ let char_exn input () =
   Alcotest.(
     check_raises
       "char"
-      (P.Parse_error
+      (P.Parser
          { offset = 0
          ; line_number = 0
          ; column_number = 0
@@ -29,7 +29,7 @@ let string_exn input () =
   Alcotest.(
     check_raises
       "string"
-      (P.Parse_error
+      (P.Parser
          {offset = 0; line_number = 0; column_number = 0; msg = "[string]"})
       r)
 
@@ -51,7 +51,7 @@ let satisfy_exn input () =
   Alcotest.(
     check_raises
       "satisfy"
-      (P.Parse_error
+      (P.Parser
          {offset = 0; line_number = 0; column_number = 0; msg = "[satisfy]"})
       r)
 

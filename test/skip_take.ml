@@ -18,7 +18,7 @@ let skip_at_least_fail input () =
   Alcotest.(
     check_raises
       "skip ~at_least fails"
-      (P.Parse_error
+      (P.Parser
          { offset = 0
          ; line_number = 0
          ; column_number = 0
@@ -71,7 +71,7 @@ let take_at_least_fail input () =
   Alcotest.(
     check_raises
       "skip ~at_least fails"
-      (P.Parse_error
+      (P.Parser
          { offset = 0
          ; line_number = 0
          ; column_number = 0
