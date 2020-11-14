@@ -17,7 +17,10 @@
     definition. A parser {!type:t} is additionally composed of other parsers via
     parser operators.
 
-    Parser operators/functions are broadly organized into following categories:
+    An instance of {!type:t} represents an un-evaluated parser. In order to
+    evaluate it, we need to feed it to {!val:parse} function along with an
+    {!type:input} instance. Parser operators/functions are broadly organized
+    into following categories:
 
     - Pure
     - Concatentation
@@ -31,10 +34,7 @@
 
     {{:#rfc5234} RFC 5234} defined core parser operators are provided.
 
-    An {{:#infix} Infix} module contains infix and let syntax support functions.
-
-    {!type:t} represents an un-evaluated parser. In order to evaluate it, we
-    need to feed it to {!val:parse} function along with an {!type:input}. *)
+    An {{:#infix} Infix} module contains infix and let syntax support functions. *)
 
 (** {2 Parser type} *)
 
@@ -1163,6 +1163,21 @@ val digit : char t
       let input = new P.string_input "0123456789a" in
       let r = P.(parse input (take digit)) in
       r = ['0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9']
+    ]} *)
+
+val digits : string t
+(** [digits] parsers string of digit characters - [0 .. 9].
+
+    {4:digits_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let input = new P.string_input "1234 +" in
+      let r = P.(parse input digits) in
+      r = "1234"
     ]} *)
 
 val dquote : char t

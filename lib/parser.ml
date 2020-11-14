@@ -510,6 +510,10 @@ let control =
 
 let digit = char_parser "DIGIT" (satisfy is_digit)
 
+let digits =
+  let+ d = take digit in
+  d |> List.to_seq |> String.of_seq
+
 let dquote =
   char_parser
     "DQUOTE"
