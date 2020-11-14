@@ -1303,7 +1303,7 @@ val whitespace : char t
 
 (** {1:infix Infix & Let}
 
-    {i infix} and {i let syntax} operators.
+    Infix and let syntax support operators.
 
     Open the module to use it:
 
