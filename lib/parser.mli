@@ -719,7 +719,7 @@ val take_while_cb :
 
 (** {1 Optional}
 
-    Doesn't fail when parsing is not successful.*)
+    Don't fail when parsing is not successful.*)
 
 val optional : 'a t -> 'a option t
 (** [optional p] returns a parser which evaluates to [Some a] if successful and
