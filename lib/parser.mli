@@ -952,7 +952,7 @@ val alpha_num : char t
     ]} *)
 
 val bit : char t
-(** [bit] parses a character which is wither '0' or '1'.
+(** [bit] parses a character which is either ['0'] or ['1'].
 
     {[
       module P = Reparse.Parser
@@ -978,7 +978,7 @@ val ascii_char : char t
     ]} *)
 
 val cr : char t
-(** [cr] parses CR '\r' character.
+(** [cr] parses character ['\r'].
 
     {[
       module P = Reparse.Parser
@@ -991,7 +991,7 @@ val cr : char t
     ]} *)
 
 val crlf : string t
-(** [crlf] parses CRLF - \r\n - string.
+(** [crlf] parses string ["\r\n"].
 
     {[
       module P = Reparse.Parser
@@ -1004,7 +1004,7 @@ val crlf : string t
     ]} *)
 
 val control : char t
-(** [control] parses characters in range %x00-1F or %x7F.
+(** [control] parses characters in range [0x00 - 0x1F] or character [0x7F].
 
     {[
       module P = Reparse.Parser
@@ -1030,7 +1030,7 @@ val digit : char t
     ]} *)
 
 val dquote : char t
-(** [dquote] parses double quote character - '"'.
+(** [dquote] parses double quote character ['"'].
 
     {[
       module P = Reparse.Parser
@@ -1043,7 +1043,7 @@ val dquote : char t
     ]} *)
 
 val hex_digit : char t
-(** [hex_digit] parses a hexadecimal digit - [0..9, A, B, C, D, E, F].
+(** [hex_digit] parses any of the hexadecimal digits - [0..9, A, B, C, D, E, F].
 
     {[
       module P = Reparse.Parser
@@ -1056,7 +1056,7 @@ val hex_digit : char t
     ]} *)
 
 val htab : char t
-(** [htab] parses a horizontal tab ('\t') character.
+(** [htab] parses a horizontal tab character ['\t'].
 
     {[
       module P = Reparse.Parser
@@ -1069,7 +1069,7 @@ val htab : char t
     ]} *)
 
 val lf : char t
-(** [lf] parses a linefeed ('\n') character.
+(** [lf] parses a linefeed ['\n'] character.
 
     {[
       module P = Reparse.Parser
@@ -1082,7 +1082,7 @@ val lf : char t
     ]} *)
 
 val octet : char t
-(** [octect] parses a character in the range [\x00-\xFF]. Synonym for
+(** [octect] parses any character in the range [\x00 - \xFF]. Synonym for
     {!val:next}
 
     {[
@@ -1120,7 +1120,7 @@ val spaces : char list t
     ]} *)
 
 val vchar : char t
-(** [vchar] parses a Visible (printing) character.
+(** [vchar] parses any of the visible - printable - characters.
 
     {[
       module P = Reparse.Parser
@@ -1133,7 +1133,7 @@ val vchar : char t
     ]} *)
 
 val whitespace : char t
-(** [whitespace] parses a space or horizontal - ' ' or '\t' - character.
+(** [whitespace] parses a space [' '] or horizontal tab ['\t'] character.
 
     {[
       module P = Reparse.Parser
