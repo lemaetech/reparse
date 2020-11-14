@@ -1166,7 +1166,7 @@ val digit : char t
     ]} *)
 
 val digits : string t
-(** [digits] parsers string of digit characters - [0 .. 9].
+(** [digits] parses a string of digit characters - [0 .. 9].
 
     {4:digits_examples Examples}
 
@@ -1272,8 +1272,7 @@ val space : char t
     ]} *)
 
 val spaces : char list t
-(** [spaces] returns a parsesr which parser any number of sequential space
-    characters.
+(** [spaces] returns a parser which parses zero or more spaces.
 
     {4:spaces_examples Examples}
 
