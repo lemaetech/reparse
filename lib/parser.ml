@@ -511,7 +511,7 @@ let control =
 let digit = char_parser "DIGIT" (satisfy is_digit)
 
 let digits =
-  let+ d = take digit in
+  let+ d = take ~at_least:1 digit in
   d |> List.to_seq |> String.of_seq
 
 let dquote =
@@ -552,7 +552,7 @@ let space =
         | '\x20' -> true
         | _      -> false))
 
-let spaces = take space
+let spaces = take ~at_least:1 space
 
 let vchar =
   char_parser
