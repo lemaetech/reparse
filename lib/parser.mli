@@ -481,8 +481,8 @@ val all_unit : 'a t list -> unit t
 (** {2 Fix} *)
 
 val fix : ('a t -> 'a t) -> 'a t
-(** [fix f] is a fixpoint combinator. It is also known as y combinator. It can
-    be used to implement recursion in a parser. *)
+(** [fix f] is a fixpoint or y combinator. It can be used to implement recursion
+    in a parser. *)
 
 (** {2 Skip}
 
