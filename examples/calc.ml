@@ -22,8 +22,6 @@
 module P = Reparse.Parser
 open P.Infix
 
-let pf = Printf.printf
-
 type expr =
   | Int  of int
   | Add  of expr * expr
