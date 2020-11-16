@@ -163,15 +163,10 @@ let any : 'a t list -> 'a t =
   let rec loop = function
     | []      -> err' ()
     | p :: tl ->
-        let ofs = state.offset in
         let bt = pos state in
         p
           state
-          ~ok:(fun a ->
-            if state.offset = ofs then (
-              backtrack state bt ;
-              (loop [@tailrec]) tl )
-            else item := Some a)
+          ~ok:(fun a -> item := Some a)
           ~err:(fun _ ->
             backtrack state bt ;
             (loop [@tailrec]) tl)

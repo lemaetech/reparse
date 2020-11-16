@@ -75,7 +75,7 @@ let parse s =
   P.parse input expr
 
 (* Test AST *)
-let _ =
+let r =
   let actual = parse "1*2-4+3" in
   let expected = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
   Bool.equal (expected = actual) true
