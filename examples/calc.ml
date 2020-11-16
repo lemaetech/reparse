@@ -11,15 +11,15 @@
            | integer
     v}
 
-    Sample inputs:
+    Sample toplevel (utop/ocaml) inputs:
 
-    {[
-      '123'
-      '123 - 123'
-      '123+123'
-      '123*123'
-      '123*123 - 23*234'
-    ]} *)
+    {v
+      parse "123";;
+      parse "123 - 123";;
+      parse "123+123";;
+      parse "123*123";;
+      parse "123*123 - 23*234";;
+    v} *)
 
 module P = Reparse.Parser
 open P.Infix
