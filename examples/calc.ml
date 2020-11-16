@@ -86,3 +86,13 @@ let r =
 
 (* Run the evaluator. *)
 let exp_result = eval (parse "12+1*10") |> Int.equal 22
+
+(*-------------------------------------------------------------------------
+ * Copyright (c) 2020 Bikal Gurung. All rights reserved.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License,  v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * %%NAME%% %%VERSION%%
+ *-------------------------------------------------------------------------*)
