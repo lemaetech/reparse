@@ -108,6 +108,14 @@ let next state ~ok ~err =
 
 let pure v _state ~ok ~err:_ = ok v
 let return = pure
+let unit = return ()
+let pos state = (state.offset, state.lnum, state.cnum)
+
+let backtrack state (o, l, c) =
+  assert (0 <= o && o <= state.offset) ;
+  state.offset <- o ;
+  state.lnum <- l ;
+  state.cnum <- c
 
 module Infix = struct
   let ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t =
@@ -124,9 +132,10 @@ module Infix = struct
 
   let ( <|> ) : 'a t -> 'a t -> 'a t =
    fun p q state ~ok ~err ->
-    let ofs = state.offset in
-    p state ~ok ~err:(fun e ->
-        if ofs = state.offset then q state ~ok ~err else err e)
+    let bt = pos state in
+    p state ~ok ~err:(fun _e ->
+        backtrack state bt ;
+        q state ~ok ~err)
 
   let ( <?> ) : 'a t -> string -> 'a t =
    fun p err_msg state ~ok ~err ->
@@ -146,14 +155,6 @@ let map = ( <$> )
 let map2 f p q = return f <*> p <*> q
 let map3 f p q r = return f <*> p <*> q <*> r
 let map4 f p q r s = return f <*> p <*> q <*> r <*> s
-let unit = return ()
-let pos state = (state.offset, state.lnum, state.cnum)
-
-let backtrack state (o, l, c) =
-  assert (0 <= o && o <= state.offset) ;
-  state.offset <- o ;
-  state.lnum <- l ;
-  state.cnum <- c
 
 let any : 'a t list -> 'a t =
  fun l state ~ok ~err ->
@@ -163,11 +164,17 @@ let any : 'a t list -> 'a t =
     | []      -> err' ()
     | p :: tl ->
         let ofs = state.offset in
+        let bt = pos state in
         p
           state
           ~ok:(fun a ->
-            if state.offset = ofs then (loop [@tailrec]) tl else item := Some a)
-          ~err:(fun _ -> (loop [@tailrec]) tl)
+            if state.offset = ofs then (
+              backtrack state bt ;
+              (loop [@tailrec]) tl )
+            else item := Some a)
+          ~err:(fun _ ->
+            backtrack state bt ;
+            (loop [@tailrec]) tl)
   in
   loop l ;
   match !item with
@@ -284,6 +291,10 @@ let not_followed_by p q = p <* not_ q
 let optional : 'a t -> 'a option t =
  fun p state ~ok ~err:_ ->
   p state ~ok:(fun a -> ok (Some a)) ~err:(fun _ -> ok None)
+
+let fix f =
+  let rec p st ~ok ~err = f p st ~ok ~err in
+  p
 
 let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
  fun ?(at_least = 0) ?up_to p state ~ok ~err ->

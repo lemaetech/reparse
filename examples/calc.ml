@@ -1,4 +1,12 @@
-(** Parses the following into exp AST,
+(** Parses the following BNF grammar into exp AST,
+
+    <expr> ::= <term> "+" <expr> | <term>
+
+    <term> ::= <factor> "*" <term> | <factor>
+
+    <factor> ::= "(" <expr> ")" | <const>
+
+    <const> ::= integer
 
     '123'
 
@@ -13,57 +21,62 @@
 module P = Reparse.Parser
 open P.Infix
 
-(** Integer based binary math expression. *)
-type math_exp =
-  | Int    of int
-  | Bin_op of math_exp * binary_op * math_exp
+let pf = Printf.printf
 
-(** Binary operation *)
-and binary_op =
-  | Plus
-  | Mult
-
-let parse_int =
-  let+ d = P.digits in
-  Int (int_of_string d)
+type expr =
+  | Int  of int
+  | Add  of expr * expr
+  | Sub  of expr * expr
+  | Mult of expr * expr
+  | Div  of expr * expr
 
 let skip_spaces = P.skip P.space
 
-let parse_binop =
-  let+ op =
-    skip_spaces *> (P.char '+' <|> P.char '*')
-    <* skip_spaces
-    >>= (function
-          | '+' -> P.pure Plus
-          | '*' -> P.pure Mult
-          | c   -> P.fail (Printf.sprintf "unsupported operation: %c" c))
-    |> P.optional
-  in
-  op
+let binop exp1 op exp2 f =
+  P.map3
+    (fun e1 _ e2 -> f e1 e2)
+    exp1
+    (skip_spaces *> P.char op <* skip_spaces)
+    exp2
 
-let rec parse_exp () =
-  let* exp1 = parse_int in
-  let* op = parse_binop in
-  match op with
-  | Some bin_op ->
-      let+ exp2 = parse_exp () in
-      Bin_op (exp1, bin_op, exp2)
-  | None        -> P.pure exp1
+let integer =
+  let+ d = P.digits in
+  Int (int_of_string d)
+
+let factor expr =
+  P.any
+    [ P.char '(' *> skip_spaces *> expr <* skip_spaces <* P.char ')'
+    ; skip_spaces *> integer <* skip_spaces ]
+
+let term factor =
+  P.fix (fun term ->
+      let mult = binop factor '*' term (fun e1 e2 -> Mult (e1, e2)) in
+      let div = binop factor '/' term (fun e1 e2 -> Div (e1, e2)) in
+      mult <|> div <|> factor)
+
+let expr =
+  P.fix (fun expr ->
+      let factor = factor expr in
+      let term = term factor in
+      let add = binop term '+' expr (fun e1 e2 -> Add (e1, e2)) in
+      let sub = binop term '-' expr (fun e1 e2 -> Sub (e1, e2)) in
+      P.any [add; sub; term])
+
+let rec eval = function
+  | Int i         -> i
+  | Add (e1, e2)  -> eval e1 + eval e2
+  | Sub (e1, e2)  -> eval e1 - eval e2
+  | Mult (e1, e2) -> eval e1 * eval e2
+  | Div (e1, e2)  -> eval e1 / eval e2
 
 let parse s =
   let input = new P.string_input s in
-  P.parse input (parse_exp ())
-
-(** Evaluate expression. *)
-let rec eval = function
-  | Int i                 -> i
-  | Bin_op (e1, Plus, e2) -> eval e1 + eval e2
-  | Bin_op (e1, Mult, e2) -> eval e1 * eval e2
+  P.parse input expr
 
 (* Test AST *)
 let result (* true *) =
-  let e1 = Bin_op (Int 123, Plus, Bin_op (Int 123, Mult, Int 234)) in
-  let e2 = parse "123+123 * 234" in
+  let e1 = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
+  let e2 = parse "1*2-4+3" in
   e1 = e2
 
 (* Run the evaluator. *)

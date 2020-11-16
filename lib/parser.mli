@@ -348,7 +348,8 @@ val any : 'a t list -> 'a t
 (** [any l] returns a parser encapsulating value [a]. [a] is the parser value of
     the first successfully evaluated parser in list [l].
 
-    Specified parsers in [l] are evaluated sequentially from left to right.
+    Specified parsers in [l] are evaluated sequentially from left to right. A
+    failed parser doesn't consume any input, i.e. [offset] is unaffected.
 
     The parser fails if none of the parsers in [l] are evaluated successfully.
 
@@ -476,6 +477,8 @@ val all_unit : 'a t list -> unit t
     ]} *)
 
 (** {1 Repetition} *)
+
+val fix : ('a t -> 'a t) -> 'a t
 
 (** {2 Skip}
 
