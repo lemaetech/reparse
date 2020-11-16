@@ -81,4 +81,4 @@ let r =
   Bool.equal (expected = actual) true
 
 (* Run the evaluator. *)
-let exp_result = eval (parse "12+1*10") (* Should be 22. *)
+let exp_result = eval (parse "12+1*10") |> Int.equal 22
