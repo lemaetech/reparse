@@ -1,22 +1,23 @@
-(** Parses the following BNF grammar into exp AST,
+(** An implementation of a calculator.
 
-    <expr> ::= <term> "+" <expr> | <term>
+    The expression grammar is defined by the following BNF grammar:
 
-    <term> ::= <factor> "*" <term> | <factor>
+    {[
+      <expr> ::= <term> "+" <expr> | <term>
+      <term> ::= <factor> "*" <term> | <factor>
+      <factor> ::= "(" <expr> ")" | <const>
+      <const> ::= integer
+    ]}
 
-    <factor> ::= "(" <expr> ")" | <const>
+    Sample inputs:
 
-    <const> ::= integer
-
-    '123'
-
-    '123 + 123'
-
-    '123+123'
-
-    '123*123'
-
-    '123 + 123 * 234' *)
+    {[
+      '123'
+      '123 - 123'
+      '123+123'
+      '123*123'
+      '123*123 - 23*234'
+    ]} *)
 
 module P = Reparse.Parser
 open P.Infix
@@ -74,10 +75,10 @@ let parse s =
   P.parse input expr
 
 (* Test AST *)
-let result (* true *) =
-  let e1 = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
-  let e2 = parse "1*2-4+3" in
-  e1 = e2
+let _ =
+  let actual = parse "1*2-4+3" in
+  let expected = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
+  Bool.equal (expected = actual) true
 
 (* Run the evaluator. *)
 let exp_result = eval (parse "12+1*10") (* Should be 22. *)
