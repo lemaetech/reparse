@@ -368,44 +368,44 @@ let take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t =
   if at_least < 0 then invalid_arg "at_least"
   else if Option.is_some up_to && Option.get up_to < 0 then invalid_arg "up_to"
   else () ;
-
   let sep_by =
     match sep_by with
-    | None   -> unit
-    | Some p -> p *> unit
+    | None   -> pure true
+    | Some p -> (
+        optional p
+        >|= function
+        | Some _ -> true
+        | None   -> false )
   in
-
   let upto = Option.value up_to ~default:(-1) in
-  let count = ref 0 in
+  let take_count = ref 0 in
   let items = ref [] in
   let ok2 (count', items') =
-    count := count' ;
+    take_count := count' ;
     items := items'
   in
-
-  (* if at_least fails then backtrack to this value. *)
-  let at_least_bt = pos state in
-
   let rec loop count offset acc =
     if upto = -1 || count < upto then
       let bt = pos state in
-      (p <* sep_by)
+      let p = map2 (fun v continue -> (v, continue)) p sep_by in
+      p
         state
-        ~ok:(fun a ->
-          if offset <> state.offset then
+        ~ok:(fun (a, continue) ->
+          if offset <> state.offset && continue then
             (loop [@tailcall]) (count + 1) state.offset (a :: acc)
+          else if offset <> state.offset && not continue then
+            ok2 (count + 1, a :: acc)
           else ok2 (count, acc))
         ~err:(fun _ ->
           backtrack state bt ;
           ok2 (count, acc))
     else ok2 (count, acc)
   in
-
+  let init_state = pos state in
   loop 0 state.offset [] ;
-
-  if !count >= at_least then ok (List.rev !items)
+  if !take_count >= at_least then ok (List.rev !items)
   else (
-    backtrack state at_least_bt ;
+    backtrack state init_state ;
     error
       ~err
       (Format.sprintf "[take] unable to parse at least %d times" at_least)
@@ -416,25 +416,30 @@ let take_while_cb :
  fun ?sep_by ~while_ ~on_take_cb p state ~ok ~err:_ ->
   let cond = ref true in
   let take_count = ref 0 in
-  let do_condition () =
+  let eval_condition () =
     let bt = pos state in
     while_ state ~ok:(fun cond' -> cond := cond') ~err:(fun _ -> cond := false) ;
     backtrack state bt
   in
   let sep_by =
     match sep_by with
-    | None   -> unit
-    | Some p -> p *> unit
+    | None   -> pure true
+    | Some p -> (
+        optional p
+        >|= function
+        | Some _ -> true
+        | None   -> false )
   in
-  do_condition () ;
+  eval_condition () ;
   while !cond do
     let bt = pos state in
-    (p <* sep_by)
+    let p = map2 (fun v continue -> (v, continue)) p sep_by in
+    p
       state
-      ~ok:(fun a ->
+      ~ok:(fun (a, continue) ->
         take_count := !take_count + 1 ;
         on_take_cb a ;
-        do_condition ())
+        if continue then eval_condition () else cond := false)
       ~err:(fun _ ->
         backtrack state bt ;
         cond := false)
