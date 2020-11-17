@@ -418,35 +418,30 @@ let is_digit = function '0' .. '9' -> true | _ -> false
 let alpha = named_ch "ALPHA" is_alpha
 let alpha_num = named_ch "ALPHA NUM" (function c -> is_alpha c || is_digit c)
 let bit = named_ch "BIT" (function '0' | '1' -> true | _ -> false)
-
-let ascii_char =
-  named_ch "US-ASCII" (function '\x00' .. '\x7F' -> true | _ -> false)
-
 let cr = named_ch "CR" (function '\r' -> true | _ -> false)
 let crlf = string "\r\n" <?> "[crlf]"
-
-let control =
-  named_ch "CONTROL" (function '\x00' .. '\x1F' | '\x7F' -> true | _ -> false)
-
 let digit = named_ch "DIGIT" is_digit
 let digits = take ~at_least:1 digit >|= fun d -> List.to_seq d |> String.of_seq
 let dquote = named_ch "DQUOTE" (function '"' -> true | _ -> false)
-
-let hex_digit =
-  named_ch "HEX DIGIT" (function
-    | c when is_digit c -> true
-    | 'A' .. 'F' -> true
-    | _ -> false)
-
 let htab = named_ch "HTAB" (function '\t' -> true | _ -> false)
 let lf = named_ch "LF" (function '\n' -> true | _ -> false)
 let octet = next
 let space = named_ch "SPACE" (function '\x20' -> true | _ -> false)
 let spaces = take ~at_least:1 space
 let vchar = named_ch "VCHAR" (function '\x21' .. '\x7E' -> true | _ -> false)
+let whitespace = named_ch "WSP" (function ' ' | '\t' -> true | _ -> false)
 
-let whitespace =
-  named_ch "WSP" (function '\x20' | '\x09' -> true | _ -> false)
+let ascii_char =
+  named_ch "US-ASCII" (function '\x00' .. '\x7F' -> true | _ -> false)
+
+let control =
+  named_ch "CONTROL" (function '\x00' .. '\x1F' | '\x7F' -> true | _ -> false)
+
+let hex_digit =
+  named_ch "HEX DIGIT" (function
+    | c when is_digit c -> true
+    | 'A' .. 'F' -> true
+    | _ -> false)
 
 let line : [`LF | `CRLF] -> string t =
  fun line_delimiter state ~ok ~err ->
