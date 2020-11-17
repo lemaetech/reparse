@@ -14,8 +14,8 @@
     reusable parsers.
 
     At the core is a type {!type:t} which represents a constructed parser
-    definition. A parser {!type:t} is additionally composed of other parsers via
-    parser operators.
+    definition. A parser {!type:t} is defined by composing together one or more
+    parsers or {!type:t}s.
 
     An instance of {!type:t} represents an un-evaluated parser. In order to
     evaluate it, we need to feed it to {!val:parse} function along with an
@@ -152,7 +152,7 @@ exception
     Create parsers from values. *)
 
 val pure : 'a -> 'a t
-(** [pure v] returns a parser that always parses value [v].
+(** [pure v] always parses value [v].
 
     {4:pure_examples Examples}
 
@@ -177,7 +177,7 @@ val unit : unit t
 (*    Handle, generate exceptions and failures. *1) *)
 
 val fail : string -> 'a t
-(** [fail err_msg] creates a parser that always fails with [err_msg].
+(** [fail err_msg] fails a parse with [err_msg].
 
     {4:fail_examples Examples}
 
@@ -198,7 +198,7 @@ val fail : string -> 'a t
 
 (** {1 Concatenation}
 
-    Bind, map two or more parsers to create a new parser. *)
+    Join two or more parsers to create a new parser. *)
 
 (** {2 Bind} *)
 
@@ -229,9 +229,8 @@ val map : ('a -> 'b) -> 'a t -> 'b t
     ]} *)
 
 val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
-(** [map2 f p q] returns a parser which encapsulates value [c] a result of
-    applying [f a b]. [a, b] are the parsed value of parsers [p] and [q]
-    respectively.
+(** [map2 f p q] returns the value of applying [f a b]. [a, b] are the parsed
+    values of parsers [p] and [q] respectively.
 
     {4:map2_examples Examples}
 
@@ -246,9 +245,8 @@ val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
     ]} *)
 
 val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
-(** [map3 f p q r] returns a parser encapsulating value [d] as a result of
-    applying [f a b c]. [a, b, c] are the parsed value of parsers [p], [q] and
-    [r] respectively.
+(** [map3 f p q r] returns the value of applying [f a b c]. [a, b, c] are the
+    parsed values of parsers [p], [q] and [r] respectively.
 
     {4:map3_examples Examples}
 
@@ -264,9 +262,8 @@ val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
     ]} *)
 
 val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
-(** [map4 f p q r s] returns a parser encapsulating value [e] as a result of
-    applying [f a b c d]. [a, b, c, d] are the parsed value of parsers [p], [q],
-    [r] and [s] respectively.
+(** [map4 f p q r s] returns the value of applying [f a b c d]. [a, b, c, d] are
+    the parsed values of parsers [p], [q], [r] and [s] respectively.
 
     {4:map4_examples Examples}
 
@@ -285,7 +282,7 @@ val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
     ]} *)
 
 val delay : 'a t Lazy.t -> 'a t
-(** [delay p] returns a parser which lazily evaluates parser [p].
+(** [delay p] returns a parser which lazily parses [p].
 
     {4:delay_examples Examples}
 
@@ -301,8 +298,8 @@ val delay : 'a t Lazy.t -> 'a t
     ]} *)
 
 val named : string -> 'a t -> 'a t
-(** [named name p] names parser [p] with [name] which is used when constructing
-    exception {!exception:Parser}.
+(** [named name p] uses [name] as part of an error message when constructing
+    exception {!exception:Parser} if parse of [p] fails.
 
     Also see {!val:Infix.(<?>)}
 
@@ -335,8 +332,7 @@ val named : string -> 'a t -> 'a t
     One or the other. *)
 
 val any : 'a t list -> 'a t
-(** [any l] returns a parser encapsulating value [a]. [a] is the parser value of
-    the first successfully evaluated parser in list [l].
+(** [any l] parses the value of the first successful parser in list [l].
 
     Specified parsers in [l] are evaluated sequentially from left to right. A
     failed parser doesn't consume any input, i.e. [offset] is unaffected.
@@ -392,8 +388,7 @@ val alt : 'a t -> 'a t -> 'a t
     Group parsers. *)
 
 val all : 'a t list -> 'a list t
-(** [all l] returns a parser encapsulating a list of of parser values
-    accumulated by evaluating parsers in [l].
+(** [all l] parses all parsers in [l] and returns the parsed values.
 
     The parser only succeeds if and only if all of the parsers in [l] succeed.
 
@@ -430,8 +425,7 @@ val all : 'a t list -> 'a list t
     ]} *)
 
 val all_unit : 'a t list -> unit t
-(** [all_unit l] returns a parser which behaves similar to {!val:all} - except
-    all of the parser values are discarded.
+(** [all_unit l] parses all parsers in [l] while discarding the parsed values.
 
     {4:all_unit_examples Examples}
 
@@ -465,19 +459,21 @@ val all_unit : 'a t list -> unit t
 
 (** {1 Repetition} *)
 
-(** {2 Fix} *)
+(** {2 Recur} *)
 
-val fix : ('a t -> 'a t) -> 'a t
-(** [fix f] is a fixpoint or y combinator. It can be used to implement recursion
-    in a parser. *)
+val recur : ('a t -> 'a t) -> 'a t
+(** [recur f] returns a recursive parser. Function value [f] accepts a parser
+    [p] as its argument and returns a parser [q]. Parser [q] in its definition
+    can refer to [p] and [p] can refer to [q] in its own definition.
+
+    Such parsers are also known as a fixpoint or y combinator. *)
 
 (** {2 Skip}
 
-    Parsers which discards parsed values. *)
+    Discards parsed values. *)
 
 val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
-(** [skip ~at_least ~up_to p] returns a parser which discards values returned by
-    evaluating parser [p] repeatedly.
+(** [skip ~at_least ~up_to p] repeatedly parses [p] and discards its value.
 
     The lower and upper bound of repetition is specified by arguments [at_least]
     and [up_to] respectively. The default value of [at_least] is 0. The default
@@ -502,10 +498,8 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
     ]} *)
 
 val skip_while : _ t -> while_:bool t -> int t
-(** [skip_while p ~while_] returns a parser which discards parsed values
-    returned by evaluating parser [p] repeatedly.
-
-    [p] is only evaluated when [while_] evaluates to [true].
+(** [skip_while p ~while_] repeatedly parses [p] and discards its value if
+    parser [while_] parses to value [true].
 
     The repetition ends when one of the following occurs:
 
@@ -533,8 +527,8 @@ val skip_while : _ t -> while_:bool t -> int t
     Collects parsed values *)
 
 val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
-(** [take ~at_least ~up_to ~sep_by p] returns a parser which encapsulates a list
-    of values returned by evaluating parser [p] repeatedly.
+(** [take ~at_least ~up_to ~sep_by p] repeatedly parses [p] and returns the
+    parsed values.
 
     The lower and upper bound of repetition is specified by arguments [at_least]
     and [up_to] respectively. The default value of [at_least] is [0]. The
@@ -621,10 +615,10 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
     ]} *)
 
 val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
-(** [take_while ~sep_by p ~while_ p] returns a parser which encapsulates a list
-    of values returned by evaluating parser [p] repeatedly.
+(** [take_while ~sep_by p ~while_ p] repeatedly parses [p] and returns its
+    value.
 
-    [p] is evaluated only after [while_] evaluates to [true].
+    [p] is evaluated if and only if [while_] evaluates to [true].
 
     If [sep_by] is specified then the evaluation of [p] must be followed by a
     successful evaluation of [sep_by]. The parsed value of [sep_by] is
@@ -668,11 +662,10 @@ val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 
 val take_while_cb :
   ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> int t
-(** [take_while_on ~sep_by ~while_ ~on_take p] returns a parser which evaluates
-    [on_take_cb a] on every successful evaluation of [p]. [a] is the parsed
-    value of [p].
+(** [take_while_on ~sep_by ~while_ ~on_take p] repeatedly parses [p] and calls
+    callback [on_take_cb] with the parsed value.
 
-    [p] is evaluated only after [while_] evaluates to [true].
+    [p] is evaluated if and only if [while_] evaluates to [true].
 
     If [sep_by] is specified then the evaluation of [p] must be followed by a
     successful evaluation of [sep_by]. The parsed value of [sep_by] is
@@ -716,8 +709,8 @@ val take_while_cb :
     Don't fail when parsing is not successful.*)
 
 val optional : 'a t -> 'a option t
-(** [optional p] returns a parser which evaluates to [Some a] if successful and
-    [None] otherwise. [a] is the value evaluated from parser [p].
+(** [optional p] parses [Some a] if successful and [None] otherwise. [a] is the
+    parsed value of [p].
 
     {4:optional_examples Examples}
 
@@ -741,7 +734,8 @@ val optional : 'a t -> 'a option t
 (** {1 Query Input state} *)
 
 val is_eoi : bool t
-(** [is_eoi] returns [true] if parser has reached end of input.
+(** [is_eoi] parses to [true] if parser has reached end of input, [false]
+    otherwise.
 
     {4:is_eoi_examples Examples}
 
@@ -760,8 +754,7 @@ val is_eoi : bool t
     ]} *)
 
 val eoi : unit t
-(** [eoi] returns a parser which parses end of input. Fails if parser is not at
-    end of input.
+(** [eoi] parses end of input. Fails if parser is not at end of input.
 
     {4:eoi_examples Examples}
 
@@ -784,8 +777,8 @@ val eoi : unit t
     ]} *)
 
 val lnum : int t
-(** [lnum] returns a parser encapsulating the current line number. The first
-    line number is [1].
+(** [lnum] parses the current line number of input. line number count start form
+    [1].
 
     {4:lnum_examples Examples}
 
@@ -801,7 +794,7 @@ val lnum : int t
     ]} *)
 
 val cnum : int t
-(** [cnum] returns the current column number. The first column number is [1].
+(** [cnum] parses the current column number. column number count start from [1].
 
     {4:cnum_examples Examples}
 
@@ -817,8 +810,7 @@ val cnum : int t
     ]} *)
 
 val offset : int t
-(** [offset] returns a parser encapsulating the current input offset. The first
-    offset is [0].
+(** [offset] parses the current input offset. offset count start from [0].
 
     {4:offset_examples Examples}
 
@@ -838,7 +830,8 @@ val offset : int t
     [true], [false], is, is not. *)
 
 val not_ : 'a t -> unit t
-(** [not_ p] returns a parser which succeeds if and only if [p] fails to parse.
+(** [not_ p] parses value [()] if and only if [p] fails to parse, otherwise the
+    parse fails.
 
     {4:not__examples Examples}
 
@@ -853,10 +846,8 @@ val not_ : 'a t -> unit t
     ]} *)
 
 val not_followed_by : 'a t -> 'b t -> 'a t
-(** [not_followed_by p q] returns a parser which encapsulates value [a] which is
-    evaluated from parser [p]. The parser evaluates successfully if parser [p]
-    succeeds and then parser [q] fails. The second parser [q] never consumes any
-    input.
+(** [not_followed_by p q] parses value of [p] only if immediate and subsequent
+    parse of [q] is a failure. Parser [q] doesn't consumes any input.
 
     {4:not_followed_by_examples Examples}
 
@@ -871,8 +862,8 @@ val not_followed_by : 'a t -> 'b t -> 'a t
     ]}*)
 
 val is_not : 'a t -> bool t
-(** [is_not p] returns a parser encapsulating value [true] if [p] fails to parse
-    and [false] otherwise. {b Note} evaluating [p] doesn't consume any input.
+(** [is_not p] parses value [true] if [p] fails to parse and [false] otherwise.
+    {b Note} evaluating [p] doesn't consume any input.
 
     {4:is_not_examples Examples}
 
@@ -886,9 +877,8 @@ val is_not : 'a t -> bool t
     ]} *)
 
 val is : 'a t -> bool t
-(** [is p] returns a parser which encapsulates [true] is [p] parses
-    successfully, [false] otherwise. {b Note} evaluation of [p] doesn't consume
-    any input.
+(** [is p] parses [true] if [p] is successful, [false] otherwise. {b Note}
+    evaluation of [p] doesn't consume any input.
 
     {4:is_examples Examples}
 
@@ -906,8 +896,7 @@ val is : 'a t -> bool t
     Text parsing. *)
 
 val peek_char : char t
-(** [peek_char t] returns a parser encapsulating a character from input without
-    consuming it.
+(** [peek_char t] parses the next character from input without consuming it.
 
     {4:peek_char_examples Examples}
 
@@ -928,8 +917,7 @@ val peek_char : char t
     ]} *)
 
 val peek_string : int -> string t
-(** [peek_string n] returns a parser encapsulating a string of length [n] from
-    input. No input is consumed.
+(** [peek_string n] parse a string of length [n] without consuming it.
 
     {4:peek_string_examples Examples}
 
@@ -949,7 +937,7 @@ val peek_string : int -> string t
     ]} *)
 
 val next : char t
-(** [next] Returns a parser which consumes and encapsulates the next character
+(** [next] parses the next character from input. Fails if input has reached end
     of input.
 
     {4:next_examples Examples}
@@ -964,7 +952,7 @@ val next : char t
     ]} *)
 
 val char : char -> char t
-(** [char c] returns a parser which accepts a character [c] from input exactly.
+(** [char c] parses character [c] exactly.
 
     {4:char_examples Examples}
 
@@ -979,8 +967,7 @@ val char : char -> char t
     ]} *)
 
 val char_if : (char -> bool) -> char t
-(** [char_if f] returns a parser which accepts a character [c] from input if
-    [f c] is true and encapsulates it.
+(** [char_if f] parses a character [c] if [f c] is [true].
 
     {4:char_if_examples Examples}
 
@@ -995,7 +982,7 @@ val char_if : (char -> bool) -> char t
     ]} *)
 
 val string : string -> string t
-(** [string s] returns a parser which accepts [s] exactly.
+(** [string s] parses a string [s] exactly.
 
     {4:string_examples Examples}
 
@@ -1010,8 +997,7 @@ val string : string -> string t
     ]} *)
 
 val line : [`LF | `CRLF] -> string t
-(** [line c] returns a parser which consumes a line of text from input. The line
-    delimiter is specified by [c].
+(** [line c] parses a line of text from input.
 
     Line delimiter [c] can be either [`LF] or [`CRLF]. This corresponds to [\n]
     or [\r\n] character respectively.
@@ -1139,7 +1125,7 @@ val control : char t
     ]} *)
 
 val digit : char t
-(** [digit] parses a digit character - [0 .. 9].
+(** [digit] parses one of the digit characters, [0 .. 9].
 
     {4:digit_examples Examples}
 
@@ -1154,7 +1140,7 @@ val digit : char t
     ]} *)
 
 val digits : string t
-(** [digits] parses one or more digit characters - [0 .. 9].
+(** [digits] parses one or more digit characters, [0 .. 9].
 
     {4:digits_examples Examples}
 
@@ -1314,10 +1300,10 @@ val whitespace : char t
 
 module Infix : sig
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-  (** [p >>= f] Binder.
+  (** [p >>= f] parses [p] to value [a], creates value [b] = [f a] and then
+      returns a new parser encapsulating [b].
 
-      Returns a parser as a result of applying [f a] where [a] is the parsed
-      value of [p].
+      Also known as [bind] operation.
 
       {4:infix_bind_examples Examples}
 
@@ -1333,10 +1319,10 @@ module Infix : sig
       ]} *)
 
   val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
-  (** [p >|= f] Mapper.
+  (** [p >|= f] parses [p] to value [a], creates value [b] = [f a] and then
+      returns a new parser encapsulating [b].
 
-      Returns a parser which encapsulates value [b] as a result of applying
-      [f a] where [a] is the parsed value of [p].
+      Also known as [map] operation.
 
       {4:infix_map_examples Examples}
 
@@ -1352,11 +1338,10 @@ module Infix : sig
       ]} *)
 
   val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
-  (** [pf <*> q] Applicative.
+  (** [pf <*> q] parses [pf] to value [f], parses [q] to value [a], creates
+      value [b] = [f a] and then returns a new parser encapsulating [b].
 
-      Returns a parser encapsulating value [b] as a result of applying [f a],
-      where [f] is the function value parsed by parser [pf] and [a] is the value
-      parsed by [q].
+      Also known as [Applicative] operation.
 
       {4:infix_applicative_examples Examples}
 
@@ -1372,7 +1357,7 @@ module Infix : sig
       ]} *)
 
   val ( <$ ) : 'b -> 'a t -> 'b t
-  (** [v <$ p] replaces the result of [p] with [v].
+  (** [v <$ p] replaces the parse value of [p] with [v].
 
       {4:infix_replace_examples Examples}
 
@@ -1388,8 +1373,10 @@ module Infix : sig
       ]} *)
 
   val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
-  (** [f <$> p] returns a parser encapsulating value [b] as a result of applying
-      [f a]. [a] is value parsed by [p].
+  (** [f <$> p] parses [p] to value [a], creates value [b] = [f a] and returns a
+      new parser encapsulating [b].
+
+      This is the infix version of {!val:map}.
 
       {4:infix_mapper_examples Examples}
 
@@ -1405,9 +1392,10 @@ module Infix : sig
       ]} *)
 
   val ( *> ) : _ t -> 'a t -> 'a t
-  (** [p *> q] discard left. Returns a parser which executes parsers [p] and
-      then [q] and encapsulates value [a]. [a] is the parsed value of [q]. The
-      parsed value of [p] is discarded.
+  (** [p *> q] parses [p] and discards its parsed value, parses [q] to value [a]
+      and then returns a new parser encapsulating [a].
+
+      Also known as discard_left.
 
       {4:infix_discard_left_examples Examples}
 
@@ -1423,8 +1411,10 @@ module Infix : sig
       ]} *)
 
   val ( <* ) : 'a t -> _ t -> 'a t
-  (** [p <* q] discard right. Similar to [*>]. However, the result of [q] is
-      discarded instead.
+  (** [p <* q] parses [p] to value [a], parses [q] and discards its parsed value
+      and then returns a new parser encapsulating [a].
+
+      Also know as discard_right.
 
       {4:infix_discard_right_examples Examples}
 
@@ -1440,14 +1430,11 @@ module Infix : sig
       ]} *)
 
   val ( <|> ) : 'a t -> 'a t -> 'a t
-  (** [p <|> q] alternate.
+  (** [p <|> q] parses [p] to value [a], parses [q] to value [b]. If [p] is a
+      success returns a new parser encapsulating [a]. Otherwise if [q] is
+      success returns a parser encapsulating [b].
 
-      Returns a parser which evaluates both [p] and [q] returning values [a] and
-      [b] respectively. If [p] succeeds then it returns a parser encapsulating
-      [a]. If [p] fails and [q] is a success, then it returns a parser
-      encapsulating [b].
-
-      If both - [p] and [q] - fails, then the parser fails with [Parser].
+      If both - [p] and [q] - fails, then the parser fails.
 
       {4:infix_alternate_examples Examples}
 
@@ -1479,9 +1466,12 @@ module Infix : sig
       ]} *)
 
   val ( <?> ) : 'a t -> string -> 'a t
-  (** [p <?> err_mg] returns a parser where if parser [p] is unable to parse
-      successfully then fails with error message [err_msg]. Used as a last
-      choice in [<|>], e.g. [a <|> b <|> c <?> "expected a b c"].
+  (** [p <?> err_mg] parses [p] to value [a] and returns a new parser
+      encapsulating [a]. If [p] is a failure, then it fails with error message
+      [err_msg].
+
+      Often used as a last choice in [<|>], e.g.
+      [a <|> b <|> c <?> "expected a b c"].
 
       {4:infix_error_named_examples Examples}
 
@@ -1505,7 +1495,7 @@ module Infix : sig
       ]} *)
 
   val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-  (** [let*] is let binding for {!val:(>>=)}
+  (** [let*] is a let syntax binding for {!val:(>>=)}
 
       {4:infix_let_bind_examples Examples}
 
@@ -1524,7 +1514,7 @@ module Infix : sig
       ]} *)
 
   val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
-  (** [let*] is let binding for {!val:(>|=)}
+  (** [let*] is a let syntax binding for {!val:(>|=)}
 
       {4:infix_let_map_examples Examples}
 
@@ -1592,13 +1582,13 @@ end
 
       let term : expr P.t -> expr P.t =
        fun factor ->
-        P.fix (fun term ->
+        P.recur (fun term ->
             let mult = binop factor '*' term (fun e1 e2 -> Mult (e1, e2)) in
             let div = binop factor '/' term (fun e1 e2 -> Div (e1, e2)) in
             mult <|> div <|> factor)
 
       let expr : expr P.t =
-        P.fix (fun expr ->
+        P.recur (fun expr ->
             let factor = factor expr in
             let term = term factor in
             let add = binop term '+' expr (fun e1 e2 -> Add (e1, e2)) in
@@ -1729,7 +1719,7 @@ end
       let string_value = string >|= fun s -> String s
 
       let json_value =
-        P.fix (fun value ->
+        P.recur (fun value ->
             let value_sep = struct_char ',' in
             let object_value =
               let member =

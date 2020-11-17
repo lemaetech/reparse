@@ -90,7 +90,7 @@ let string =
 let string_value = string >|= fun s -> String s
 
 let json_value =
-  P.fix (fun value ->
+  P.recur (fun value ->
       let value_sep = struct_char ',' in
       let object_value =
         let member =
