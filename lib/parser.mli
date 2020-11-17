@@ -466,7 +466,7 @@ val recur : ('a t -> 'a t) -> 'a t
     [p] as its argument and returns a parser [q]. Parser [q] in its definition
     can refer to [p] and [p] can refer to [q] in its own definition.
 
-    It is also known as a fixpoint or y combinator. *)
+    Such parsers are also known as a fixpoint or y combinator. *)
 
 (** {2 Skip}
 
