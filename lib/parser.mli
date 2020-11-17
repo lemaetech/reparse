@@ -470,7 +470,7 @@ val recur : ('a t -> 'a t) -> 'a t
 
 (** {2 Skip}
 
-    Parsers which discards parsed values. *)
+    Discards parsed values. *)
 
 val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 (** [skip ~at_least ~up_to p] repeatedly parses [p] and discards its value.
