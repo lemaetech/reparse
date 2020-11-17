@@ -268,7 +268,7 @@ let optional : 'a t -> 'a option t =
  fun p state ~ok ~err:_ ->
   p state ~ok:(fun a -> ok (Some a)) ~err:(fun _ -> ok None)
 
-let fix f =
+let recur f =
   let rec p st ~ok ~err = f p st ~ok ~err in
   p
 

@@ -53,13 +53,13 @@ let factor : expr P.t -> expr P.t =
 
 let term : expr P.t -> expr P.t =
  fun factor ->
-  P.fix (fun term ->
+  P.recur (fun term ->
       let mult = binop factor '*' term (fun e1 e2 -> Mult (e1, e2)) in
       let div = binop factor '/' term (fun e1 e2 -> Div (e1, e2)) in
       mult <|> div <|> factor)
 
 let expr : expr P.t =
-  P.fix (fun expr ->
+  P.recur (fun expr ->
       let factor = factor expr in
       let term = term factor in
       let add = binop term '+' expr (fun e1 e2 -> Add (e1, e2)) in

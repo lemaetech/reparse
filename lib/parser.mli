@@ -459,12 +459,14 @@ val all_unit : 'a t list -> unit t
 
 (** {1 Repetition} *)
 
-(** {2 Fix} *)
+(** {2 Recur} *)
 
-val fix : ('a t -> 'a t) -> 'a t
-(** [fix f] function value [f] accepts a parser [p] as its argument and returns
-    a parser [q]. Parser [q] in its definition can refer to parser [p]. [fix] is
-    used to define a recursive parser. *)
+val recur : ('a t -> 'a t) -> 'a t
+(** [recur f] returns a recursive parser. Function value [f] accepts a parser
+    [p] as its argument and returns a parser [q]. Parser [q] in its definition
+    can refer to parser [p].
+
+    It is also known as a fixpoint or y combinator. *)
 
 (** {2 Skip}
 
@@ -1580,13 +1582,13 @@ end
 
       let term : expr P.t -> expr P.t =
        fun factor ->
-        P.fix (fun term ->
+        P.recur (fun term ->
             let mult = binop factor '*' term (fun e1 e2 -> Mult (e1, e2)) in
             let div = binop factor '/' term (fun e1 e2 -> Div (e1, e2)) in
             mult <|> div <|> factor)
 
       let expr : expr P.t =
-        P.fix (fun expr ->
+        P.recur (fun expr ->
             let factor = factor expr in
             let term = term factor in
             let add = binop term '+' expr (fun e1 e2 -> Add (e1, e2)) in
@@ -1717,7 +1719,7 @@ end
       let string_value = string >|= fun s -> String s
 
       let json_value =
-        P.fix (fun value ->
+        P.recur (fun value ->
             let value_sep = struct_char ',' in
             let object_value =
               let member =
