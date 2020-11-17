@@ -978,18 +978,18 @@ val char : char -> char t
       r = 'h'
     ]} *)
 
-val satisfy : (char -> bool) -> char t
-(** [satisfy f] returns a parser which accepts a character [c] from input if
+val char_if : (char -> bool) -> char t
+(** [char_if f] returns a parser which accepts a character [c] from input if
     [f c] is true and encapsulates it.
 
-    {4:satisfy_examples Examples}
+    {4:char_if_examples Examples}
 
     {[
       module P = Reparse.Parser
 
       ;;
       let input = new P.string_input "abc" in
-      let p = P.satisfy (function 'a' -> true | _ -> false) in
+      let p = P.char_if (function 'a' -> true | _ -> false) in
       let r = P.parse input p in
       r = 'a'
     ]} *)
@@ -1667,7 +1667,7 @@ end
 
       let ws =
         P.skip
-          (P.satisfy (function ' ' | '\t' | '\n' | '\r' -> true | _ -> false))
+          (P.char_if (function ' ' | '\t' | '\n' | '\r' -> true | _ -> false))
 
       let implode l = List.to_seq l |> String.of_seq
       let struct_char c = ws *> P.char c <* ws
@@ -1682,7 +1682,7 @@ end
         in
         let* int =
           let digits1_to_9 =
-            P.satisfy (function '1' .. '9' -> true | _ -> false) in
+            P.char_if (function '1' .. '9' -> true | _ -> false) in
           let num =
             P.map2
               (fun first_ch digits -> sprintf "%c%s" first_ch digits)
@@ -1705,7 +1705,7 @@ end
         let escaped =
           let ch =
             P.char '\\'
-            *> P.satisfy (function
+            *> P.char_if (function
                  | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -> true
                  | _ -> false)
             >|= sprintf "\\%c" in

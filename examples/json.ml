@@ -33,7 +33,7 @@ type value =
   | Null
 
 let ws =
-  P.skip (P.satisfy (function ' ' | '\t' | '\n' | '\r' -> true | _ -> false))
+  P.skip (P.char_if (function ' ' | '\t' | '\n' | '\r' -> true | _ -> false))
 
 let implode l = List.to_seq l |> String.of_seq
 let struct_char c = ws *> P.char c <* ws
@@ -47,7 +47,7 @@ let number_value =
     P.optional (P.char '-') >|= function Some '-' -> true | _ -> false
   in
   let* int =
-    let digits1_to_9 = P.satisfy (function '1' .. '9' -> true | _ -> false) in
+    let digits1_to_9 = P.char_if (function '1' .. '9' -> true | _ -> false) in
     let num =
       P.map2
         (fun first_ch digits -> sprintf "%c%s" first_ch digits)
@@ -69,7 +69,7 @@ let string =
   let escaped =
     let ch =
       P.char '\\'
-      *> P.satisfy (function
+      *> P.char_if (function
            | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -> true
            | _ -> false)
       >|= sprintf "\\%c" in

@@ -254,11 +254,11 @@ let char : char -> char t =
       else error ~err (Format.sprintf "[char] expected '%c'" c) state)
     ~err
 
-let satisfy : (char -> bool) -> char t =
+let char_if : (char -> bool) -> char t =
  fun f state ~ok ~err ->
   peek_char state
     ~ok:(fun c2 ->
-      if f c2 then (c2 <$ next) state ~ok ~err else error ~err "[satisfy]" state)
+      if f c2 then (c2 <$ next) state ~ok ~err else error ~err "[char_if]" state)
     ~err
 
 let not_followed_by p q = p <* not_ q
@@ -276,8 +276,7 @@ let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
   if at_least < 0 then invalid_arg "at_least"
   else if Option.is_some up_to && Option.get up_to < 0 then invalid_arg "up_to"
   else () ;
-  (* if at_least fails then backtrack to this value. *)
-  let at_least_bt = pos state in
+  let init_state = pos state in
   let up_to = ref (Option.value up_to ~default:(-1)) in
   let res = ref 0 in
   let rec loop offset count =
@@ -295,7 +294,7 @@ let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
   loop state.offset 0 ;
   if !res >= at_least then ok !res
   else (
-    backtrack state at_least_bt ;
+    backtrack state init_state ;
     error ~err
       (Format.sprintf "[skip] unable to parse at_least %d times" at_least)
       state )
@@ -321,13 +320,13 @@ let skip_while : _ t -> while_:bool t -> int t =
     backtrack state bt in
   do_condition () ;
   while !condition do
-    let bt = pos state in
+    let init_state = pos state in
     (p *> unit) state
       ~ok:(fun _ ->
         skip_count := !skip_count + 1 ;
         do_condition ())
       ~err:(fun _ ->
-        backtrack state bt ;
+        backtrack state init_state ;
         condition := false)
   done ;
   ok !skip_count
@@ -349,7 +348,7 @@ let take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t =
     items := items' in
   let rec loop count offset acc =
     if upto = -1 || count < upto then
-      let bt = pos state in
+      let init_state = pos state in
       let p = map2 (fun v continue -> (v, continue)) p sep_by in
       p state
         ~ok:(fun (a, continue) ->
@@ -359,7 +358,7 @@ let take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t =
             ok2 (count + 1, a :: acc)
           else ok2 (count, acc))
         ~err:(fun _ ->
-          backtrack state bt ;
+          backtrack state init_state ;
           ok2 (count, acc))
     else ok2 (count, acc) in
   let init_state = pos state in
@@ -386,7 +385,7 @@ let take_while_cb :
     | Some p -> ( optional p >|= function Some _ -> true | None -> false ) in
   eval_condition () ;
   while !cond do
-    let bt = pos state in
+    let init_state = pos state in
     let p = map2 (fun v continue -> (v, continue)) p sep_by in
     p state
       ~ok:(fun (a, continue) ->
@@ -394,7 +393,7 @@ let take_while_cb :
         on_take_cb a ;
         if continue then eval_condition () else cond := false)
       ~err:(fun _ ->
-        backtrack state bt ;
+        backtrack state init_state ;
         cond := false)
   done ;
   ok !take_count
@@ -410,62 +409,60 @@ let take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t =
     ~err ;
   ok (List.rev !items)
 
-let char_parser name p state ~ok ~err =
+let named_char name p state ~ok ~err =
   p state ~ok ~err:(fun exn ->
       error ~err (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state)
 
 let is_alpha = function 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false
 let is_digit = function '0' .. '9' -> true | _ -> false
-let alpha = char_parser "ALPHA" (satisfy is_alpha)
+let alpha = named_char "ALPHA" (char_if is_alpha)
 
 let alpha_num =
-  char_parser "ALPHA NUM" (satisfy (function c -> is_alpha c || is_digit c))
+  named_char "ALPHA NUM" (char_if (function c -> is_alpha c || is_digit c))
 
-let bit =
-  char_parser "BIT" (satisfy (function '0' | '1' -> true | _ -> false))
+let bit = named_char "BIT" (char_if (function '0' | '1' -> true | _ -> false))
 
 let ascii_char =
-  char_parser "US-ASCII"
-    (satisfy (function '\x00' .. '\x7F' -> true | _ -> false))
+  named_char "US-ASCII"
+    (char_if (function '\x00' .. '\x7F' -> true | _ -> false))
 
-let cr = char_parser "CR" (satisfy (function '\r' -> true | _ -> false))
+let cr = named_char "CR" (char_if (function '\r' -> true | _ -> false))
 let crlf = string "\r\n" <?> "[crlf]"
 
 let control =
-  char_parser "CONTROL"
-    (satisfy (function '\x00' .. '\x1F' | '\x7F' -> true | _ -> false))
+  named_char "CONTROL"
+    (char_if (function '\x00' .. '\x1F' | '\x7F' -> true | _ -> false))
 
-let digit = char_parser "DIGIT" (satisfy is_digit)
+let digit = named_char "DIGIT" (char_if is_digit)
 
 let digits =
   let+ d = take ~at_least:1 digit in
   d |> List.to_seq |> String.of_seq
 
-let dquote =
-  char_parser "DQUOTE" (satisfy (function '"' -> true | _ -> false))
+let dquote = named_char "DQUOTE" (char_if (function '"' -> true | _ -> false))
 
 let hex_digit =
-  char_parser "HEX DIGIT"
-    (satisfy (function
+  named_char "HEX DIGIT"
+    (char_if (function
       | c when is_digit c -> true
       | 'A' .. 'F' -> true
       | _ -> false))
 
-let htab = char_parser "HTAB" (satisfy (function '\t' -> true | _ -> false))
-let lf = char_parser "LF" (satisfy (function '\n' -> true | _ -> false))
+let htab = named_char "HTAB" (char_if (function '\t' -> true | _ -> false))
+let lf = named_char "LF" (char_if (function '\n' -> true | _ -> false))
 let octet = next
 
 let space =
-  char_parser "SPACE" (satisfy (function '\x20' -> true | _ -> false))
+  named_char "SPACE" (char_if (function '\x20' -> true | _ -> false))
 
 let spaces = take ~at_least:1 space
 
 let vchar =
-  char_parser "VCHAR"
-    (satisfy (function '\x21' .. '\x7E' -> true | _ -> false))
+  named_char "VCHAR"
+    (char_if (function '\x21' .. '\x7E' -> true | _ -> false))
 
 let whitespace =
-  char_parser "WSP" (satisfy (function '\x20' | '\x09' -> true | _ -> false))
+  named_char "WSP" (char_if (function '\x20' | '\x09' -> true | _ -> false))
 
 let line : [`LF | `CRLF] -> string t =
  fun line_delimiter state ~ok ~err ->
