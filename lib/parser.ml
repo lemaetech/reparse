@@ -56,28 +56,28 @@ class file_input fd =
   end
 
 type state =
-  { input : input
-  ; track_lnum : bool (* Track line numbers. *)
-  ; mutable offset : int (* Input offset. *)
-  ; mutable lnum : int (* Line count. *)
-  ; mutable cnum : int (* Column count. *) }
+  { input: input
+  ; track_lnum: bool (* Track line numbers. *)
+  ; mutable offset: int (* Input offset. *)
+  ; mutable lnum: int (* Line count. *)
+  ; mutable cnum: int (* Column count. *) }
 
 type 'a t = state -> ok:('a -> unit) -> err:(exn -> unit) -> unit
 
 exception
-  Parser of {offset : int; line_number : int; column_number : int; msg : string}
+  Parser of {offset: int; line_number: int; column_number: int; msg: string}
 
 let error ~err msg state =
   err
     (Parser
-       { offset = state.offset
-       ; line_number = state.lnum
-       ; column_number = state.cnum
+       { offset= state.offset
+       ; line_number= state.lnum
+       ; column_number= state.cnum
        ; msg })
 
 let parse ?(track_lnum = false) input p =
   let lnum, cnum = if track_lnum then (1, 1) else (0, 0) in
-  let state = {input; offset = 0; track_lnum; lnum; cnum} in
+  let state = {input; offset= 0; track_lnum; lnum; cnum} in
   let res = ref None in
   p state ~ok:(fun a -> res := Some a) ~err:(fun e -> raise e) ;
   match !res with None -> assert false | Some a -> a
@@ -124,7 +124,9 @@ module Infix = struct
   let ( <|> ) : 'a t -> 'a t -> 'a t =
    fun p q state ~ok ~err ->
     let bt = pos state in
-    p state ~ok ~err:(fun _e -> backtrack state bt ; q state ~ok ~err)
+    p state ~ok ~err:(fun _e ->
+        backtrack state bt ;
+        q state ~ok ~err)
 
   let ( <?> ) : 'a t -> string -> 'a t =
    fun p err_msg state ~ok ~err ->
@@ -155,7 +157,9 @@ let any : 'a t list -> 'a t =
         let bt = pos state in
         p state
           ~ok:(fun a -> item := Some a)
-          ~err:(fun _ -> backtrack state bt ; (loop [@tailrec]) tl) in
+          ~err:(fun _ ->
+            backtrack state bt ;
+            (loop [@tailrec]) tl) in
   loop l ;
   match !item with Some a -> ok a | None -> err' ()
 
@@ -217,9 +221,14 @@ let is_not : 'a t -> bool t =
   let ofs = state.offset in
   let bt = pos state in
   p state
-    ~ok:(fun _ -> backtrack state bt ; ok false)
+    ~ok:(fun _ ->
+      backtrack state bt ;
+      ok false)
     ~err:(fun _ ->
-      if ofs = state.offset then ok true else (backtrack state bt ; ok false))
+      if ofs = state.offset then ok true
+      else (
+        backtrack state bt ;
+        ok false ))
 
 let is : 'a t -> bool t =
  fun p state ~ok ~err:_ ->
@@ -229,7 +238,9 @@ let is : 'a t -> bool t =
     ~ok:(fun _ ->
       if ofs = state.offset then ok false else backtrack state bt ;
       ok true)
-    ~err:(fun _ -> backtrack state bt ; ok false)
+    ~err:(fun _ ->
+      backtrack state bt ;
+      ok false)
 
 let lnum state ~ok ~err:_ = ok state.lnum
 let cnum state ~ok ~err:_ = ok state.cnum

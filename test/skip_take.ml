@@ -18,10 +18,10 @@ let skip_at_least_fail input () =
   Alcotest.(
     check_raises "skip ~at_least fails"
       (P.Parser
-         { offset = 0
-         ; line_number = 0
-         ; column_number = 0
-         ; msg = "[skip] unable to parse at_least 5 times" })
+         { offset= 0
+         ; line_number= 0
+         ; column_number= 0
+         ; msg= "[skip] unable to parse at_least 5 times" })
       r)
 
 let skip_upto input () =
@@ -66,10 +66,10 @@ let take_at_least_fail input () =
   Alcotest.(
     check_raises "skip ~at_least fails"
       (P.Parser
-         { offset = 0
-         ; line_number = 0
-         ; column_number = 0
-         ; msg = "[take] unable to parse at least 5 times" })
+         { offset= 0
+         ; line_number= 0
+         ; column_number= 0
+         ; msg= "[take] unable to parse at least 5 times" })
       r)
 
 let take_up_to input () =

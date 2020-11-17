@@ -24,7 +24,7 @@ open P.Infix
 
 type value =
   | Object of (string * value) list
-  | Array of value list
+  | Array  of value list
   | Number of
       {negative: bool; int: string; frac: string option; exponent: string option}
   | String of string
@@ -113,3 +113,13 @@ let json_value =
 let parse p s =
   let input = new P.string_input s in
   P.parse input p
+
+(*-------------------------------------------------------------------------
+  * Copyright (c) 2020 Bikal Gurung. All rights reserved.
+  *
+  * This Source Code Form is subject to the terms of the Mozilla Public
+  * License,  v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+  *
+  * %%NAME%% %%VERSION%%
+  *-------------------------------------------------------------------------*)

@@ -11,10 +11,10 @@ let char_exn input () =
   Alcotest.(
     check_raises "char"
       (P.Parser
-         { offset = 0
-         ; line_number = 0
-         ; column_number = 0
-         ; msg = "[char] expected 'h'" })
+         { offset= 0
+         ; line_number= 0
+         ; column_number= 0
+         ; msg= "[char] expected 'h'" })
       r)
 
 let string input () =
@@ -27,8 +27,7 @@ let string_exn input () =
   let r () = ignore (P.parse input p) in
   Alcotest.(
     check_raises "string"
-      (P.Parser
-         {offset = 0; line_number = 0; column_number = 0; msg = "[string]"})
+      (P.Parser {offset= 0; line_number= 0; column_number= 0; msg= "[string]"})
       r)
 
 let is_char = function 'a' | 'b' | 'c' -> true | _ -> false
@@ -43,8 +42,7 @@ let satisfy_exn input () =
   let r () = ignore (P.parse input p) in
   Alcotest.(
     check_raises "satisfy"
-      (P.Parser
-         {offset = 0; line_number = 0; column_number = 0; msg = "[satisfy]"})
+      (P.Parser {offset= 0; line_number= 0; column_number= 0; msg= "[satisfy]"})
       r)
 
 let line_lf input () =

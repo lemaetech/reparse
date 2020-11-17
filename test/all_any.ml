@@ -11,10 +11,10 @@ let any_fail input () =
   Alcotest.(
     check_raises "any"
       (P.Parser
-         { offset = 0
-         ; line_number = 0
-         ; column_number = 0
-         ; msg = "[any] all parsers failed" })
+         { offset= 0
+         ; line_number= 0
+         ; column_number= 0
+         ; msg= "[any] all parsers failed" })
       r)
 
 let all input () =
@@ -28,10 +28,10 @@ let all_fail input () =
   Alcotest.(
     check_raises "all fail"
       (P.Parser
-         { offset = 0
-         ; line_number = 0
-         ; column_number = 0
-         ; msg = "[all] one of the parsers failed" })
+         { offset= 0
+         ; line_number= 0
+         ; column_number= 0
+         ; msg= "[all] one of the parsers failed" })
       r)
 
 let all_unit input () =
@@ -45,10 +45,10 @@ let all_unit_fail input () =
   Alcotest.(
     check_raises "all fail"
       (P.Parser
-         { offset = 0
-         ; line_number = 0
-         ; column_number = 0
-         ; msg = "[all_unit] one of the parsers failed" })
+         { offset= 0
+         ; line_number= 0
+         ; column_number= 0
+         ; msg= "[all_unit] one of the parsers failed" })
       r)
 
 module M = Make_test

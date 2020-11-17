@@ -136,7 +136,7 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
 (** {2 Exception} *)
 
 exception
-  Parser of {offset : int; line_number : int; column_number : int; msg : string}
+  Parser of {offset: int; line_number: int; column_number: int; msg: string}
 (** Raised by parsers which are unable to parse successfully.
 
     [offset] is the current index position of input at the time of failure.
@@ -193,7 +193,7 @@ val fail : string -> 'a t
         with e -> e in
       r
       = P.Parser
-          {offset = 0; line_number = 0; column_number = 0; msg = "hello error"}
+          {offset= 0; line_number= 0; column_number= 0; msg= "hello error"}
     ]} *)
 
 (** {1 Concatenation}
@@ -322,10 +322,10 @@ val named : string -> 'a t -> 'a t
         with e -> e in
       r
       = P.Parser
-          { offset = 0
-          ; line_number = 0
-          ; column_number = 0
-          ; msg =
+          { offset= 0
+          ; line_number= 0
+          ; column_number= 0
+          ; msg=
               "[parse_c] Reparse.Parser.Parser(0, 0, 0, \"[char] expected \
                'a'\")" }
     ]} *)
@@ -1498,8 +1498,7 @@ module Infix : sig
             false
           with
           | P.Parser
-              {offset = 0; line_number = 0; column_number = 0; msg = "[error]"}
-            ->
+              {offset= 0; line_number= 0; column_number= 0; msg= "[error]"} ->
               true
           | _ -> false in
         r = true
@@ -1657,10 +1656,10 @@ end
         | Object of (string * value) list
         | Array  of value list
         | Number of
-            { negative : bool
-            ; int : string
-            ; frac : string option
-            ; exponent : string option }
+            { negative: bool
+            ; int: string
+            ; frac: string option
+            ; exponent: string option }
         | String of string
         | False
         | True
