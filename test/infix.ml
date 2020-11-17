@@ -26,7 +26,5 @@ let test_less_dollar () =
   Alcotest.(check int "4" 4 r)
 
 let suite =
-  [ (">>= ", `Quick, test_bind)
-  ; (">|= ", `Quick, test_map)
-  ; ("<*>", `Quick, test_applicative)
-  ; ("<$", `Quick, test_less_dollar) ]
+  [ (">>= ", `Quick, test_bind); (">|= ", `Quick, test_map)
+  ; ("<*>", `Quick, test_applicative); ("<$", `Quick, test_less_dollar) ]

@@ -136,11 +136,7 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
 (** {2 Exception} *)
 
 exception
-  Parser of
-    { offset : int
-    ; line_number : int
-    ; column_number : int
-    ; msg : string }
+  Parser of {offset : int; line_number : int; column_number : int; msg : string}
 (** Raised by parsers which are unable to parse successfully.
 
     [offset] is the current index position of input at the time of failure.
@@ -194,8 +190,7 @@ val fail : string -> 'a t
         try
           let _ = P.(parse input (fail "hello error")) in
           assert false
-        with e -> e
-      in
+        with e -> e in
       r
       = P.Parser
           {offset = 0; line_number = 0; column_number = 0; msg = "hello error"}
@@ -262,8 +257,7 @@ val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
 
       ;;
       let p =
-        P.(map3 (fun a b c -> a + b + c) (return 1) (return 2) (return 3))
-      in
+        P.(map3 (fun a b c -> a + b + c) (return 1) (return 2) (return 3)) in
       let input = new P.string_input "" in
       let r = P.parse input p in
       r = 6
@@ -284,11 +278,7 @@ val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
         P.(
           map4
             (fun a b c d -> a + b + c + d)
-            (return 1)
-            (return 2)
-            (return 3)
-            (return 4))
-      in
+            (return 1) (return 2) (return 3) (return 4)) in
       let input = new P.string_input "" in
       let r = P.parse input p in
       r = 10
@@ -329,8 +319,7 @@ val named : string -> 'a t -> 'a t
         try
           let _ = P.parse input p in
           assert false
-        with e -> e
-      in
+        with e -> e in
       r
       = P.Parser
           { offset = 0
@@ -389,8 +378,7 @@ val any : 'a t list -> 'a t
         try
           let _ = P.parse input p in
           false
-        with _ -> true
-      in
+        with _ -> true in
       r = true
     ]} *)
 
@@ -437,8 +425,7 @@ val all : 'a t list -> 'a list t
         try
           let _ = P.parse input p in
           false
-        with _ -> true
-      in
+        with _ -> true in
       r = true
     ]} *)
 
@@ -472,8 +459,7 @@ val all_unit : 'a t list -> unit t
         try
           let _ = P.parse input p in
           false
-        with _ -> true
-      in
+        with _ -> true in
       r = true
     ]} *)
 
@@ -618,8 +604,7 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
         try
           let _ = P.parse input p in
           false
-        with _ -> true
-      in
+        with _ -> true in
       r = true
     ]}
 
@@ -794,8 +779,7 @@ val eoi : unit t
         try
           let _ = P.(parse input eoi) in
           false
-        with _ -> true
-      in
+        with _ -> true in
       r = true
     ]} *)
 
@@ -1005,11 +989,7 @@ val satisfy : (char -> bool) -> char t
 
       ;;
       let input = new P.string_input "abc" in
-      let p =
-        P.satisfy (function
-            | 'a' -> true
-            | _   -> false)
-      in
+      let p = P.satisfy (function 'a' -> true | _ -> false) in
       let r = P.parse input p in
       r = 'a'
     ]} *)
@@ -1494,8 +1474,7 @@ module Infix : sig
           try
             let _ = P.parse input p in
             false
-          with _ -> true
-        in
+          with _ -> true in
         r = true
       ]} *)
 
@@ -1522,8 +1501,7 @@ module Infix : sig
               {offset = 0; line_number = 0; column_number = 0; msg = "[error]"}
             ->
               true
-          | _ -> false
-        in
+          | _ -> false in
         r = true
       ]} *)
 
@@ -1541,8 +1519,7 @@ module Infix : sig
         let p =
           let* a = P.return 5 in
           let total = a + 5 in
-          P.return total
-        in
+          P.return total in
         let r = P.parse input p in
         r = 10
       ]} *)
@@ -1561,8 +1538,7 @@ module Infix : sig
         let p =
           let+ a = P.return 5 in
           let total = a + 5 in
-          total
-        in
+          total in
         let r = P.parse input p in
         r = 10
       ]} *)
@@ -1692,13 +1668,7 @@ end
 
       let ws =
         P.skip
-          (P.satisfy (function
-              | ' '
-              | '\t'
-              | '\n'
-              | '\r' ->
-                  true
-              | _ -> false))
+          (P.satisfy (function ' ' | '\t' | '\n' | '\r' -> true | _ -> false))
 
       let implode l = List.to_seq l |> String.of_seq
       let struct_char c = ws *> P.char c <* ws
@@ -1709,23 +1679,15 @@ end
 
       let number_value =
         let* negative =
-          P.optional (P.char '-')
-          >|= function
-          | Some '-' -> true
-          | _        -> false
+          P.optional (P.char '-') >|= function Some '-' -> true | _ -> false
         in
         let* int =
           let digits1_to_9 =
-            P.satisfy (function
-                | '1' .. '9' -> true
-                | _          -> false)
-          in
+            P.satisfy (function '1' .. '9' -> true | _ -> false) in
           let num =
             P.map2
               (fun first_ch digits -> sprintf "%c%s" first_ch digits)
-              digits1_to_9
-              P.digits
-          in
+              digits1_to_9 P.digits in
           P.any [P.string "0"; num]
         in
         let* frac = P.optional (P.char '.' *> P.digits) in
@@ -1734,10 +1696,7 @@ end
             (let* e = P.char 'E' <|> P.char 'e' in
              let* sign = P.optional (P.char '-' <|> P.char '+') in
              let sign =
-               match sign with
-               | Some c -> sprintf "%c" c
-               | None   -> ""
-             in
+               match sign with Some c -> sprintf "%c" c | None -> "" in
              let+ digits = P.digits in
              sprintf "%c%s%s" e sign digits)
         in
@@ -1748,33 +1707,21 @@ end
           let ch =
             P.char '\\'
             *> P.satisfy (function
-                   | '"'
-                   | '\\'
-                   | '/'
-                   | 'b'
-                   | 'f'
-                   | 'n'
-                   | 'r'
-                   | 't' ->
-                       true
-                   | _ -> false)
-            >|= sprintf "\\%c"
-          in
+                 | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -> true
+                 | _ -> false)
+            >|= sprintf "\\%c" in
           let hex4digit =
             let+ hex =
               P.string "\\u" *> P.take ~at_least:4 ~up_to:4 P.hex_digit
               >|= implode
             in
-            sprintf "\\u%s" hex
-          in
-          P.any [ch; hex4digit]
-        in
+            sprintf "\\u%s" hex in
+          P.any [ch; hex4digit] in
         let unescaped =
           P.take_while
             ~while_:(P.is_not (P.any [P.char '\\'; P.control; P.dquote]))
             P.next
-          >|= implode
-        in
+          >|= implode in
         let+ str =
           P.dquote *> P.take (P.any [escaped; unescaped]) <* P.dquote
         in
@@ -1789,29 +1736,21 @@ end
               let member =
                 let* nm = string <* struct_char ':' in
                 let+ v = value in
-                (nm, v)
-              in
+                (nm, v) in
               let+ object_value =
                 struct_char '{' *> P.take member ~sep_by:value_sep
                 <* struct_char '}'
               in
-              Object object_value
-            in
+              Object object_value in
             let array_value =
               let+ vals =
                 struct_char '[' *> P.take value ~sep_by:value_sep
                 <* struct_char ']'
               in
-              Array vals
-            in
+              Array vals in
             P.any
-              [ object_value
-              ; array_value
-              ; number_value
-              ; string_value
-              ; false_value
-              ; true_value
-              ; null_value ])
+              [ object_value; array_value; number_value; string_value
+              ; false_value; true_value; null_value ])
 
       let parse p s =
         let input = new P.string_input s in

@@ -9,8 +9,7 @@ let any_fail input () =
   let p = P.any [P.char 'a'; P.char 'b'; P.char 'c'] in
   let r () = ignore (P.parse input p) in
   Alcotest.(
-    check_raises
-      "any"
+    check_raises "any"
       (P.Parser
          { offset = 0
          ; line_number = 0
@@ -27,8 +26,7 @@ let all_fail input () =
   let p = P.all [P.char 'a'; P.char 'b'; P.char 'c'] in
   let r () = ignore (P.parse input p) in
   Alcotest.(
-    check_raises
-      "all fail"
+    check_raises "all fail"
       (P.Parser
          { offset = 0
          ; line_number = 0
@@ -45,8 +43,7 @@ let all_unit_fail input () =
   let p = P.all_unit [P.char 'a'; P.char 'b'; P.char 'c'] in
   let r () = ignore (P.parse input p) in
   Alcotest.(
-    check_raises
-      "all fail"
+    check_raises "all fail"
       (P.Parser
          { offset = 0
          ; line_number = 0
@@ -57,10 +54,8 @@ let all_unit_fail input () =
 module M = Make_test
 
 let suite =
-  [ M.make "any" any "cabd"
-  ; M.make "any fail" any_fail "zzz"
-  ; M.make "all" all "abcd"
-  ; M.make "all fail" all_fail "abz"
+  [ M.make "any" any "cabd"; M.make "any fail" any_fail "zzz"
+  ; M.make "all" all "abcd"; M.make "all fail" all_fail "abz"
   ; M.make "all_unit" all_unit "abcd"
   ; M.make "all_unit fail" all_unit_fail "abz" ]
   |> List.concat

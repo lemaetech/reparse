@@ -37,8 +37,7 @@ class file_input fd =
     else
       match unsafe_pread fd buf len fd_offset buf_offset with
       | 0 -> raise End_of_file
-      | r -> really_read fd buf (len - r) (fd_offset + r) (buf_offset + r)
-  in
+      | r -> really_read fd buf (len - r) (fd_offset + r) (buf_offset + r) in
   object (self)
     method nth offset =
       let buf = Bytes.create 1 in
@@ -48,9 +47,7 @@ class file_input fd =
       | _ -> failwith "IO.Unix_fd.nth"
 
     method eof ofs =
-      match self#nth ofs with
-      | (_ : char)  -> false
-      | exception _ -> true
+      match self#nth ofs with (_ : char) -> false | exception _ -> true
 
     method sub ~offset ~len =
       let buf = Bytes.create len in
@@ -68,11 +65,7 @@ type state =
 type 'a t = state -> ok:('a -> unit) -> err:(exn -> unit) -> unit
 
 exception
-  Parser of
-    { offset : int
-    ; line_number : int
-    ; column_number : int
-    ; msg : string }
+  Parser of {offset : int; line_number : int; column_number : int; msg : string}
 
 let error ~err msg state =
   err
@@ -87,9 +80,7 @@ let parse ?(track_lnum = false) input p =
   let state = {input; offset = 0; track_lnum; lnum; cnum} in
   let res = ref None in
   p state ~ok:(fun a -> res := Some a) ~err:(fun e -> raise e) ;
-  match !res with
-  | None   -> assert false
-  | Some a -> a
+  match !res with None -> assert false | Some a -> a
 
 let fail : string -> 'a t =
  fun err_msg state ~ok:_ ~err -> error ~err err_msg state
@@ -133,9 +124,7 @@ module Infix = struct
   let ( <|> ) : 'a t -> 'a t -> 'a t =
    fun p q state ~ok ~err ->
     let bt = pos state in
-    p state ~ok ~err:(fun _e ->
-        backtrack state bt ;
-        q state ~ok ~err)
+    p state ~ok ~err:(fun _e -> backtrack state bt ; q state ~ok ~err)
 
   let ( <?> ) : 'a t -> string -> 'a t =
    fun p err_msg state ~ok ~err ->
@@ -164,17 +153,11 @@ let any : 'a t list -> 'a t =
     | []      -> err' ()
     | p :: tl ->
         let bt = pos state in
-        p
-          state
+        p state
           ~ok:(fun a -> item := Some a)
-          ~err:(fun _ ->
-            backtrack state bt ;
-            (loop [@tailrec]) tl)
-  in
+          ~err:(fun _ -> backtrack state bt ; (loop [@tailrec]) tl) in
   loop l ;
-  match !item with
-  | Some a -> ok a
-  | None   -> err' ()
+  match !item with Some a -> ok a | None -> err' ()
 
 let all : 'a t list -> 'a list t =
  fun l state ~ok ~err ->
@@ -183,15 +166,13 @@ let all : 'a t list -> 'a list t =
   let rec loop = function
     | []      -> ok (List.rev !items)
     | p :: tl ->
-        p
-          state
+        p state
           ~ok:(fun a ->
             items := a :: !items ;
             (loop [@tailrec]) tl)
           ~err:(fun _ ->
             backtrack state bt ;
-            error ~err "[all] one of the parsers failed" state)
-  in
+            error ~err "[all] one of the parsers failed" state) in
   loop l
 
 let all_unit : 'a t list -> unit t =
@@ -227,8 +208,7 @@ let not_ : 'a t -> unit t =
  fun p state ~ok ~err ->
   let ofs = state.offset in
   let error' () = error ~err "[failing] expected failure to succeed" state in
-  p
-    state
+  p state
     ~ok:(fun _ -> error' ())
     ~err:(fun _ -> if ofs = state.offset then ok () else error' ())
 
@@ -236,29 +216,20 @@ let is_not : 'a t -> bool t =
  fun p state ~ok ~err:_ ->
   let ofs = state.offset in
   let bt = pos state in
-  p
-    state
-    ~ok:(fun _ ->
-      backtrack state bt ;
-      ok false)
+  p state
+    ~ok:(fun _ -> backtrack state bt ; ok false)
     ~err:(fun _ ->
-      if ofs = state.offset then ok true
-      else (
-        backtrack state bt ;
-        ok false ))
+      if ofs = state.offset then ok true else (backtrack state bt ; ok false))
 
 let is : 'a t -> bool t =
  fun p state ~ok ~err:_ ->
   let ofs = state.offset in
   let bt = pos state in
-  p
-    state
+  p state
     ~ok:(fun _ ->
       if ofs = state.offset then ok false else backtrack state bt ;
       ok true)
-    ~err:(fun _ ->
-      backtrack state bt ;
-      ok false)
+    ~err:(fun _ -> backtrack state bt ; ok false)
 
 let lnum state ~ok ~err:_ = ok state.lnum
 let cnum state ~ok ~err:_ = ok state.cnum
@@ -266,8 +237,7 @@ let offset state ~ok ~err:_ = ok state.offset
 
 let char : char -> char t =
  fun c state ~ok ~err ->
-  peek_char
-    state
+  peek_char state
     ~ok:(fun c2 ->
       if Char.equal c c2 then (c <$ next) state ~ok ~err
       else error ~err (Format.sprintf "[char] expected '%c'" c) state)
@@ -275,8 +245,7 @@ let char : char -> char t =
 
 let satisfy : (char -> bool) -> char t =
  fun f state ~ok ~err ->
-  peek_char
-    state
+  peek_char state
     ~ok:(fun c2 ->
       if f c2 then (c2 <$ next) state ~ok ~err else error ~err "[satisfy]" state)
     ~err
@@ -296,17 +265,14 @@ let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
   if at_least < 0 then invalid_arg "at_least"
   else if Option.is_some up_to && Option.get up_to < 0 then invalid_arg "up_to"
   else () ;
-
   (* if at_least fails then backtrack to this value. *)
   let at_least_bt = pos state in
-
   let up_to = ref (Option.value up_to ~default:(-1)) in
   let res = ref 0 in
   let rec loop offset count =
     if !up_to = -1 || count < !up_to then
       let bt = pos state in
-      p
-        state
+      p state
         ~ok:(fun _ ->
           if offset <> state.offset then
             (loop [@tailcall]) state.offset (count + 1)
@@ -314,24 +280,19 @@ let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
         ~err:(fun _ ->
           backtrack state bt ;
           res := count)
-    else res := count
-  in
+    else res := count in
   loop state.offset 0 ;
-
   if !res >= at_least then ok !res
   else (
     backtrack state at_least_bt ;
-    error
-      ~err
+    error ~err
       (Format.sprintf "[skip] unable to parse at_least %d times" at_least)
       state )
 
 let string : string -> string t =
  fun s state ~ok ~err ->
   let len = String.length s in
-  peek_string
-    len
-    state
+  peek_string len state
     ~ok:(fun s2 ->
       if String.equal s s2 then (s <$ skip ~up_to:len next) state ~ok ~err
       else error ~err "[string]" state)
@@ -343,17 +304,14 @@ let skip_while : _ t -> while_:bool t -> int t =
   let skip_count = ref 0 in
   let do_condition () =
     let bt = pos state in
-    while_
-      state
+    while_ state
       ~ok:(fun condition' -> condition := condition')
       ~err:(fun _ -> condition := false) ;
-    backtrack state bt
-  in
+    backtrack state bt in
   do_condition () ;
   while !condition do
     let bt = pos state in
-    (p *> unit)
-      state
+    (p *> unit) state
       ~ok:(fun _ ->
         skip_count := !skip_count + 1 ;
         do_condition ())
@@ -371,25 +329,18 @@ let take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t =
   let sep_by =
     match sep_by with
     | None   -> pure true
-    | Some p -> (
-        optional p
-        >|= function
-        | Some _ -> true
-        | None   -> false )
-  in
+    | Some p -> ( optional p >|= function Some _ -> true | None -> false ) in
   let upto = Option.value up_to ~default:(-1) in
   let take_count = ref 0 in
   let items = ref [] in
   let ok2 (count', items') =
     take_count := count' ;
-    items := items'
-  in
+    items := items' in
   let rec loop count offset acc =
     if upto = -1 || count < upto then
       let bt = pos state in
       let p = map2 (fun v continue -> (v, continue)) p sep_by in
-      p
-        state
+      p state
         ~ok:(fun (a, continue) ->
           if offset <> state.offset && continue then
             (loop [@tailcall]) (count + 1) state.offset (a :: acc)
@@ -399,15 +350,13 @@ let take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t =
         ~err:(fun _ ->
           backtrack state bt ;
           ok2 (count, acc))
-    else ok2 (count, acc)
-  in
+    else ok2 (count, acc) in
   let init_state = pos state in
   loop 0 state.offset [] ;
   if !take_count >= at_least then ok (List.rev !items)
   else (
     backtrack state init_state ;
-    error
-      ~err
+    error ~err
       (Format.sprintf "[take] unable to parse at least %d times" at_least)
       state )
 
@@ -419,23 +368,16 @@ let take_while_cb :
   let eval_condition () =
     let bt = pos state in
     while_ state ~ok:(fun cond' -> cond := cond') ~err:(fun _ -> cond := false) ;
-    backtrack state bt
-  in
+    backtrack state bt in
   let sep_by =
     match sep_by with
     | None   -> pure true
-    | Some p -> (
-        optional p
-        >|= function
-        | Some _ -> true
-        | None   -> false )
-  in
+    | Some p -> ( optional p >|= function Some _ -> true | None -> false ) in
   eval_condition () ;
   while !cond do
     let bt = pos state in
     let p = map2 (fun v continue -> (v, continue)) p sep_by in
-    p
-      state
+    p state
       ~ok:(fun (a, continue) ->
         take_count := !take_count + 1 ;
         on_take_cb a ;
@@ -451,17 +393,8 @@ let take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t =
   let items = ref [] in
   let count = ref 0 in
   let on_take_cb a = items := a :: !items in
-  let sep_by =
-    match sep_by with
-    | None   -> unit
-    | Some p -> p *> unit
-  in
-  take_while_cb
-    p
-    ~sep_by
-    ~while_
-    ~on_take_cb
-    state
+  let sep_by = match sep_by with None -> unit | Some p -> p *> unit in
+  take_while_cb p ~sep_by ~while_ ~on_take_cb state
     ~ok:(fun count' -> count := count')
     ~err ;
   ok (List.rev !items)
@@ -470,54 +403,26 @@ let char_parser name p state ~ok ~err =
   p state ~ok ~err:(fun exn ->
       error ~err (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state)
 
-let is_alpha = function
-  | 'a' .. 'z'
-  | 'A' .. 'Z' ->
-      true
-  | _ -> false
-
-let is_digit = function
-  | '0' .. '9' -> true
-  | _          -> false
-
+let is_alpha = function 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false
+let is_digit = function '0' .. '9' -> true | _ -> false
 let alpha = char_parser "ALPHA" (satisfy is_alpha)
 
 let alpha_num =
   char_parser "ALPHA NUM" (satisfy (function c -> is_alpha c || is_digit c))
 
 let bit =
-  char_parser
-    "BIT"
-    (satisfy (function
-        | '0'
-        | '1' ->
-            true
-        | _ -> false))
+  char_parser "BIT" (satisfy (function '0' | '1' -> true | _ -> false))
 
 let ascii_char =
-  char_parser
-    "US-ASCII"
-    (satisfy (function
-        | '\x00' .. '\x7F' -> true
-        | _                -> false))
+  char_parser "US-ASCII"
+    (satisfy (function '\x00' .. '\x7F' -> true | _ -> false))
 
-let cr =
-  char_parser
-    "CR"
-    (satisfy (function
-        | '\r' -> true
-        | _    -> false))
-
+let cr = char_parser "CR" (satisfy (function '\r' -> true | _ -> false))
 let crlf = string "\r\n" <?> "[crlf]"
 
 let control =
-  char_parser
-    "CONTROL"
-    (satisfy (function
-        | '\x00' .. '\x1F'
-        | '\x7F' ->
-            true
-        | _ -> false))
+  char_parser "CONTROL"
+    (satisfy (function '\x00' .. '\x1F' | '\x7F' -> true | _ -> false))
 
 let digit = char_parser "DIGIT" (satisfy is_digit)
 
@@ -526,81 +431,42 @@ let digits =
   d |> List.to_seq |> String.of_seq
 
 let dquote =
-  char_parser
-    "DQUOTE"
-    (satisfy (function
-        | '"' -> true
-        | _   -> false))
+  char_parser "DQUOTE" (satisfy (function '"' -> true | _ -> false))
 
 let hex_digit =
-  char_parser
-    "HEX DIGIT"
+  char_parser "HEX DIGIT"
     (satisfy (function
-        | c when is_digit c -> true
-        | 'A' .. 'F' -> true
-        | _ -> false))
+      | c when is_digit c -> true
+      | 'A' .. 'F' -> true
+      | _ -> false))
 
-let htab =
-  char_parser
-    "HTAB"
-    (satisfy (function
-        | '\t' -> true
-        | _    -> false))
-
-let lf =
-  char_parser
-    "LF"
-    (satisfy (function
-        | '\n' -> true
-        | _    -> false))
-
+let htab = char_parser "HTAB" (satisfy (function '\t' -> true | _ -> false))
+let lf = char_parser "LF" (satisfy (function '\n' -> true | _ -> false))
 let octet = next
 
 let space =
-  char_parser
-    "SPACE"
-    (satisfy (function
-        | '\x20' -> true
-        | _      -> false))
+  char_parser "SPACE" (satisfy (function '\x20' -> true | _ -> false))
 
 let spaces = take ~at_least:1 space
 
 let vchar =
-  char_parser
-    "VCHAR"
-    (satisfy (function
-        | '\x21' .. '\x7E' -> true
-        | _                -> false))
+  char_parser "VCHAR"
+    (satisfy (function '\x21' .. '\x7E' -> true | _ -> false))
 
 let whitespace =
-  char_parser
-    "WSP"
-    (satisfy (function
-        | '\x20'
-        | '\x09' ->
-            true
-        | _ -> false))
+  char_parser "WSP" (satisfy (function '\x20' | '\x09' -> true | _ -> false))
 
 let line : [`LF | `CRLF] -> string t =
  fun line_delimiter state ~ok ~err ->
   let delimit =
-    match line_delimiter with
-    | `LF   -> lf *> unit
-    | `CRLF -> crlf *> unit
-  in
+    match line_delimiter with `LF -> lf *> unit | `CRLF -> crlf *> unit in
   let buf = Buffer.create 0 in
-  take_while_cb
-    next
-    ~while_:(is_not delimit)
+  take_while_cb next ~while_:(is_not delimit)
     ~on_take_cb:(fun c -> Buffer.add_char buf c)
     state
     ~ok:(fun (_ : int) -> ())
     ~err ;
-
-  ( is_eoi
-  >>= function
-  | true  -> unit
-  | false -> delimit )
+  (is_eoi >>= function true -> unit | false -> delimit)
     state
     ~ok:(fun (_ : unit) -> ())
     ~err ;
