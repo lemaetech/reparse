@@ -24,7 +24,7 @@ open P.Infix
 
 type value =
   | Object of (string * value) list
-  | Array of value list
+  | Array  of value list
   | Number of
       {negative: bool; int: string; frac: string option; exponent: string option}
   | String of string
@@ -33,7 +33,7 @@ type value =
   | Null
 
 let ws =
-  P.skip (P.satisfy (function ' ' | '\t' | '\n' | '\r' -> true | _ -> false))
+  P.skip (P.char_if (function ' ' | '\t' | '\n' | '\r' -> true | _ -> false))
 
 let implode l = List.to_seq l |> String.of_seq
 let struct_char c = ws *> P.char c <* ws
@@ -47,7 +47,7 @@ let number_value =
     P.optional (P.char '-') >|= function Some '-' -> true | _ -> false
   in
   let* int =
-    let digits1_to_9 = P.satisfy (function '1' .. '9' -> true | _ -> false) in
+    let digits1_to_9 = P.char_if (function '1' .. '9' -> true | _ -> false) in
     let num =
       P.map2
         (fun first_ch digits -> sprintf "%c%s" first_ch digits)
@@ -69,7 +69,7 @@ let string =
   let escaped =
     let ch =
       P.char '\\'
-      *> P.satisfy (function
+      *> P.char_if (function
            | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -> true
            | _ -> false)
       >|= sprintf "\\%c" in
@@ -113,3 +113,13 @@ let json_value =
 let parse p s =
   let input = new P.string_input s in
   P.parse input p
+
+(*-------------------------------------------------------------------------
+  * Copyright (c) 2020 Bikal Gurung. All rights reserved.
+  *
+  * This Source Code Form is subject to the terms of the Mozilla Public
+  * License,  v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+  *
+  * %%NAME%% %%VERSION%%
+  *-------------------------------------------------------------------------*)

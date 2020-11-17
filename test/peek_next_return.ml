@@ -24,19 +24,16 @@ let peek_string_5 input () =
 let peek_char_exn input () =
   let p () = ignore (P.parse input P.peek_char) in
   Alcotest.(
-    check_raises
-      "peek_char"
-      (P.Parser
-         {offset = 0; line_number = 0; column_number = 0; msg = "[peek_char]"})
+    check_raises "peek_char"
+      (P.Parser {offset= 0; line_number= 0; column_number= 0; msg= "[peek_char]"})
       p)
 
 let peek_string_exn input () =
   let p () = ignore (P.parse input (P.peek_string 6)) in
   Alcotest.(
-    check_raises
-      "peek_string 6"
+    check_raises "peek_string 6"
       (P.Parser
-         {offset = 0; line_number = 0; column_number = 0; msg = "[peek_string]"})
+         {offset= 0; line_number= 0; column_number= 0; msg= "[peek_string]"})
       p)
 
 let next input () =
@@ -49,9 +46,8 @@ let next_exn input () =
   let p1 = P.next *> P.next *> P.next in
   let p () = ignore (P.parse input p1) in
   Alcotest.(
-    check_raises
-      "next exn"
-      (P.Parser {offset = 2; line_number = 0; column_number = 0; msg = "[next]"})
+    check_raises "next exn"
+      (P.Parser {offset= 2; line_number= 0; column_number= 0; msg= "[next]"})
       p)
 
 let return_int input () =
@@ -80,10 +76,8 @@ let suite =
   ; M.make "many/offset : 0" peek_char_many "hello"
   ; M.make "peek_string 5" peek_string_5 "hello"
   ; M.make "peek_string exn" peek_string_exn "hello"
-  ; M.make "peek_char exn" peek_char_exn ""
-  ; M.make "next" next "hello"
-  ; M.make "next exn" next_exn "hh"
-  ; M.make "return : 5" return_int ""
+  ; M.make "peek_char exn" peek_char_exn ""; M.make "next" next "hello"
+  ; M.make "next exn" next_exn "hh"; M.make "return : 5" return_int ""
   ; M.make "return : \"hello\"" return_string ""
   ; M.make "optional Some" optional "hello"
   ; M.make "optional None" optional_none "world" ]

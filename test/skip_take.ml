@@ -16,13 +16,12 @@ let skip_at_least_fail input () =
   let p = P.map2 make_pair (P.skip ~at_least:5 P.space) P.offset in
   let r () = ignore (P.parse input p) in
   Alcotest.(
-    check_raises
-      "skip ~at_least fails"
+    check_raises "skip ~at_least fails"
       (P.Parser
-         { offset = 0
-         ; line_number = 0
-         ; column_number = 0
-         ; msg = "[skip] unable to parse at_least 5 times" })
+         { offset= 0
+         ; line_number= 0
+         ; column_number= 0
+         ; msg= "[skip] unable to parse at_least 5 times" })
       r)
 
 let skip_upto input () =
@@ -37,21 +36,17 @@ let skip_skip_skip input () =
 
 let skip_while input () =
   let p =
-    P.map2
-      make_pair
+    P.map2 make_pair
       (P.skip_while P.next ~while_:(P.is_not (P.char 'z')))
-      P.peek_char
-  in
+      P.peek_char in
   let r = P.parse input p in
   Alcotest.(check (pair int char) "4, z" (4, 'z') r)
 
 let skip_while2 input () =
   let p =
-    P.map2
-      make_pair
+    P.map2 make_pair
       (P.skip_while (P.char 'a') ~while_:(P.is_not (P.char 'z')))
-      P.peek_char
-  in
+      P.peek_char in
   let r = P.parse input p in
   Alcotest.(check (pair int char) "4, c" (4, 'c') r)
 
@@ -69,13 +64,12 @@ let take_at_least_fail input () =
   let p = P.map2 make_pair (P.take ~at_least:5 (P.char 'a')) P.offset in
   let r () = ignore (P.parse input p) in
   Alcotest.(
-    check_raises
-      "skip ~at_least fails"
+    check_raises "skip ~at_least fails"
       (P.Parser
-         { offset = 0
-         ; line_number = 0
-         ; column_number = 0
-         ; msg = "[take] unable to parse at least 5 times" })
+         { offset= 0
+         ; line_number= 0
+         ; column_number= 0
+         ; msg= "[take] unable to parse at least 5 times" })
       r)
 
 let take_up_to input () =
@@ -90,44 +84,34 @@ let take_sep_by input () =
 
 let take_at_least_up_to_sep_by input () =
   let p =
-    P.map2
-      make_pair
+    P.map2 make_pair
       (P.take ~at_least:3 ~up_to:3 ~sep_by:P.space (P.char 'a'))
-      P.offset
-  in
+      P.offset in
   let r = P.parse input p in
   Alcotest.(check (pair (list char) int) "" (['a'; 'a'; 'a'], 6) r)
 
 let take_while input () =
   let p =
-    P.map2
-      make_pair
+    P.map2 make_pair
       (P.take_while (P.char 'a') ~while_:(P.is_not (P.char 'z')))
-      P.offset
-  in
+      P.offset in
   let r = P.parse input p in
   Alcotest.(check (pair (list char) int) "" (['a'; 'a'; 'a'; 'a'], 4) r)
 
 let take_while_sep input () =
   let p =
-    P.map2
-      make_pair
-      (P.take_while
-         ~sep_by:P.space
-         (P.char 'a')
+    P.map2 make_pair
+      (P.take_while ~sep_by:P.space (P.char 'a')
          ~while_:(P.is_not (P.char 'z')))
-      P.offset
-  in
+      P.offset in
   let r = P.parse input p in
   Alcotest.(check (pair (list char) int) "" (['a'; 'a'; 'a'; 'a'], 8) r)
 
 let take_take_while input () =
   let p =
-    P.map2
-      make_pair
+    P.map2 make_pair
       (P.take (P.take_while (P.char 'a') ~while_:(P.is_not (P.char 'z'))))
-      P.offset
-  in
+      P.offset in
   let r = P.parse input p in
   Alcotest.(
     check (pair (list (list char)) int) "" ([['a'; 'a'; 'a'; 'a']], 4) r)
@@ -135,14 +119,11 @@ let take_take_while input () =
 let take_while_cb input () =
   let buf = Buffer.create 5 in
   let p =
-    P.map2
-      make_pair
-      (P.take_while_cb
-         (P.char 'a')
+    P.map2 make_pair
+      (P.take_while_cb (P.char 'a')
          ~while_:(P.is_not (P.char 'z'))
          ~on_take_cb:(fun c -> Buffer.add_char buf c))
-      P.offset
-  in
+      P.offset in
   let r = P.parse input p in
   Alcotest.(
     check
@@ -154,15 +135,12 @@ let take_while_cb input () =
 let take_while_cb_sep_by input () =
   let buf = Buffer.create 5 in
   let p =
-    P.map2
-      make_pair
-      (P.take_while_cb
-         (P.char 'a')
+    P.map2 make_pair
+      (P.take_while_cb (P.char 'a')
          ~while_:(P.is_not (P.char 'z'))
          ~sep_by:P.space
          ~on_take_cb:(fun c -> Buffer.add_char buf c))
-      P.offset
-  in
+      P.offset in
   let r = P.parse input p in
   Alcotest.(
     check
@@ -174,14 +152,12 @@ let take_while_cb_sep_by input () =
 module M = Make_test
 
 let suite =
-  [ M.make "skip" skip "    a"
-  ; M.make "skip ~at_least:3" skip_at_least "    a"
+  [ M.make "skip" skip "    a"; M.make "skip ~at_least:3" skip_at_least "    a"
   ; M.make "skip ~at_least:5 fails" skip_at_least_fail "    a"
   ; M.make "skip ~up_to:3" skip_upto "     a"
   ; M.make "skip skip skip" skip_skip_skip "     a"
   ; M.make "skip while" skip_while "aaaaz"
-  ; M.make "skip while" skip_while2 "aaaacz"
-  ; M.make "take" take "aaaacz"
+  ; M.make "skip while" skip_while2 "aaaacz"; M.make "take" take "aaaacz"
   ; M.make "take at least" take_at_least "aaaacz"
   ; M.make "take at least fail" take_at_least_fail "aaaacz"
   ; M.make "take up_to" take_up_to "aaaacz"
