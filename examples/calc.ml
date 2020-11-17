@@ -25,11 +25,11 @@ module P = Reparse.Parser
 open P.Infix
 
 type expr =
-  | Int  of int
-  | Add  of expr * expr
-  | Sub  of expr * expr
+  | Int of int
+  | Add of expr * expr
+  | Sub of expr * expr
   | Mult of expr * expr
-  | Div  of expr * expr
+  | Div of expr * expr
 
 let skip_spaces = P.skip P.space
 
@@ -67,11 +67,11 @@ let expr : expr P.t =
       P.any [add; sub; term])
 
 let rec eval : expr -> int = function
-  | Int i         -> i
-  | Add (e1, e2)  -> eval e1 + eval e2
-  | Sub (e1, e2)  -> eval e1 - eval e2
+  | Int i -> i
+  | Add (e1, e2) -> eval e1 + eval e2
+  | Sub (e1, e2) -> eval e1 - eval e2
   | Mult (e1, e2) -> eval e1 * eval e2
-  | Div (e1, e2)  -> eval e1 / eval e2
+  | Div (e1, e2) -> eval e1 / eval e2
 
 let parse : string -> expr =
  fun s ->
