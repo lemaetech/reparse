@@ -464,7 +464,7 @@ val all_unit : 'a t list -> unit t
 val recur : ('a t -> 'a t) -> 'a t
 (** [recur f] returns a recursive parser. Function value [f] accepts a parser
     [p] as its argument and returns a parser [q]. Parser [q] in its definition
-    can refer to parser [p].
+    can refer to [p] and [p] can refer to [q] in its own definition.
 
     It is also known as a fixpoint or y combinator. *)
 
