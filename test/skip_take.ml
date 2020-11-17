@@ -86,7 +86,7 @@ let take_up_to input () =
 let take_sep_by input () =
   let p = P.map2 make_pair (P.take ~sep_by:P.space (P.char 'a')) P.offset in
   let r = P.parse input p in
-  Alcotest.(check (pair (list char) int) "" (['a'; 'a'; 'a'], 6) r)
+  Alcotest.(check (pair (list char) int) "" (['a'; 'a'; 'a'; 'a'], 7) r)
 
 let take_at_least_up_to_sep_by input () =
   let p =

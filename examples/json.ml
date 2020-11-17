@@ -2,7 +2,20 @@
   
   Assumes UTF-8 character encoding. However, it doesn't do any validation.
 
+  Sample top_level inputs;
+
   {v 
+  parse json_value "true";;
+  parse json_value "false";;
+  parse json_value "null";;
+  parse json_value "123";;
+  parse json_value "123.345";;
+  parse json_value "123e123";;
+  parse json_value "123.33E123";;
+  parse json_value {|{"field1": 123,"field2": "value2"}|};;
+  parse json_value {|{"field1":[123,"hello",-123.23], "field2":123} |};;
+  parse json_value {|{"field1":123, "field2":123} |};;
+  parse json_value {|[123,"hello",-123.23, 123.33e13, 123E23] |};;
   v}
  *)
 
@@ -78,17 +91,20 @@ let string_value = string >|= fun s -> String s
 
 let json_value =
   P.fix (fun value ->
+      let value_sep = struct_char ',' in
       let object_value =
         let member =
           let* nm = string <* struct_char ':' in
           let+ v = value in
           (nm, v) in
         let+ object_value =
-          struct_char '{' *> P.take member <* struct_char '}'
+          struct_char '{' *> P.take member ~sep_by:value_sep <* struct_char '}'
         in
         Object object_value in
       let array_value =
-        let+ vals = struct_char '[' *> P.take value <* struct_char ']' in
+        let+ vals =
+          struct_char '[' *> P.take value ~sep_by:value_sep <* struct_char ']'
+        in
         Array vals in
       P.any
         [ object_value; array_value; number_value; string_value; false_value
