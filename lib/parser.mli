@@ -886,9 +886,8 @@ val is_not : 'a t -> bool t
     ]} *)
 
 val is : 'a t -> bool t
-(** [is p] returns a parser which encapsulates [true] is [p] parses
-    successfully, [false] otherwise. {b Note} evaluation of [p] doesn't consume
-    any input.
+(** [is p] a parser which returns [true] if [p] parses successfully, [false]
+    otherwise. {b Note} evaluation of [p] doesn't consume any input.
 
     {4:is_examples Examples}
 
@@ -906,7 +905,7 @@ val is : 'a t -> bool t
     Text parsing. *)
 
 val peek_char : char t
-(** [peek_char t] returns a parser encapsulating a character from input without
+(** [peek_char t] a parser which returns a character from input without
     consuming it.
 
     {4:peek_char_examples Examples}
@@ -928,8 +927,8 @@ val peek_char : char t
     ]} *)
 
 val peek_string : int -> string t
-(** [peek_string n] returns a parser encapsulating a string of length [n] from
-    input. No input is consumed.
+(** [peek_string n] a parser which returns a string of length [n] from input
+    without consuming it.
 
     {4:peek_string_examples Examples}
 
@@ -949,8 +948,7 @@ val peek_string : int -> string t
     ]} *)
 
 val next : char t
-(** [next] Returns a parser which consumes and encapsulates the next character
-    of input.
+(** [next] Returns a parser which consumes the next character from input.
 
     {4:next_examples Examples}
 
@@ -964,7 +962,7 @@ val next : char t
     ]} *)
 
 val char : char -> char t
-(** [char c] returns a parser which accepts a character [c] from input exactly.
+(** [char c] returns a parser which accepts character [c] from input exactly.
 
     {4:char_examples Examples}
 
@@ -980,7 +978,7 @@ val char : char -> char t
 
 val char_if : (char -> bool) -> char t
 (** [char_if f] returns a parser which accepts a character [c] from input if
-    [f c] is true and encapsulates it.
+    [f c] is true.
 
     {4:char_if_examples Examples}
 
