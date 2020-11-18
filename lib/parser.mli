@@ -46,11 +46,10 @@
 type 'a t
 (** Represents a parser which can parse value ['a].
 
-    Use {!val:parse} to evaluate a parser. *)
+    Use {{:#parse} parse functions} to evaluate a parser. *)
 
-(** Parser input interface. It represents a generalization of data input to
-    {!val:parse}. Implement this interface to provide new sources of input to
-    {!val:parse}. *)
+(** Represents a generalization of data input source to a parser. Implement this
+    interface to provide new sources of input to {!val:parse}. *)
 class type input =
   object
     method eof : int -> bool
@@ -68,7 +67,7 @@ class type input =
         @raise End_of_file if [n] is at eof. *)
   end
 
-(** {2 Parse}
+(** {2:parse Parse}
 
     Evaluate a parser. *)
 
@@ -114,10 +113,10 @@ val parse_string : ?track_lnum:bool -> 'a t -> string -> 'a
     @raise Parser when parser encounters error *)
 
 val parse : ?track_lnum:bool -> 'a t -> input -> 'a
-(** [parse] is a generic parse function parameterised over {!type:input} type.
+(** [parse] is a generalised version of {!val:parse_string} over type
+    {!type:input}.
 
-    Use this function when you have a custom implementation of {!type:input}.
-    The behaviour is the same as {!val:parse} *)
+    Use this function when you have a custom implementation of {!type:input}. *)
 
 (** {2 Exception} *)
 
@@ -152,11 +151,11 @@ val pure : 'a -> 'a t
       v1 = 5 && v2 = "hello"
     ]} *)
 
-val return : 'a -> 'a t
-(** [return v] is [pure v]. Synonym of {!val:pure}. *)
-
 val unit : unit t
-(** [unit] is [return ()]. Convenience function to create parser of value [()]. *)
+(** [unit] is a convenience function to create a new parser which always parses
+    to value [()].
+
+    [unit] is [pure ()]. *)
 
 (*(1** {2 Errors} *)
 

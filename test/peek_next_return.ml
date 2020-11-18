@@ -51,12 +51,12 @@ let next_exn parse () =
       (P.Parser {offset= 2; line_number= 0; column_number= 0; msg= "[next]"})
       p)
 
-let return_int parse () =
-  let r = parse (P.return 5) in
+let pure_int parse () =
+  let r = parse (P.pure 5) in
   Alcotest.(check int "5" 5 r)
 
-let return_string parse () =
-  let r = parse (P.return "hello") in
+let pure_string parse () =
+  let r = parse (P.pure "hello") in
   Alcotest.(check string "hello" "hello" r)
 
 let optional parse () =
@@ -78,8 +78,8 @@ let suite =
   ; M.make "peek_string 5" peek_string_5 "hello"
   ; M.make "peek_string exn" peek_string_exn "hello"
   ; M.make "peek_char exn" peek_char_exn ""; M.make "next" next "hello"
-  ; M.make "next exn" next_exn "hh"; M.make "return : 5" return_int ""
-  ; M.make "return : \"hello\"" return_string ""
+  ; M.make "next exn" next_exn "hh"; M.make "pure : 5" pure_int ""
+  ; M.make "pure : \"hello\"" pure_string ""
   ; M.make "optional Some" optional "hello"
   ; M.make "optional None" optional_none "world" ]
   |> List.concat

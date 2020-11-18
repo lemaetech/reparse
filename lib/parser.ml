@@ -28,33 +28,6 @@ class string_input s =
       | exception Invalid_argument _ -> raise End_of_file
   end
 
-(* external unsafe_pread : Unix.file_descr -> bytes -> int -> int -> int -> int *)
-(*   = "caml_pread" *)
-
-(* class file_input fd = *)
-(*   let rec really_read fd buf len fd_offset buf_offset = *)
-(*     if len <= 0 then () *)
-(*     else *)
-(*       match unsafe_pread fd buf len fd_offset buf_offset with *)
-(*       | 0 -> raise End_of_file *)
-(*       | r -> really_read fd buf (len - r) (fd_offset + r) (buf_offset + r) in *)
-(*   object (self) *)
-(*     method nth offset = *)
-(*       let buf = Bytes.create 1 in *)
-(*       match unsafe_pread fd buf 1 offset 0 with *)
-(*       | 0 -> raise End_of_file *)
-(*       | 1 -> Bytes.get buf 0 *)
-(*       | _ -> failwith "IO.Unix_fd.nth" *)
-
-(*     method eof offset = *)
-(*       match self#nth offset with (_ : char) -> false | exception _ -> true *)
-
-(*     method sub ~offset ~len = *)
-(*       let buf = Bytes.create len in *)
-(*       really_read fd buf len offset 0 ; *)
-(*       Bytes.to_string buf *)
-(*   end *)
-
 type state =
   { input: input
   ; track_lnum: bool (* Track line numbers. *)
@@ -102,8 +75,7 @@ let next state ~ok ~err =
   | exception _ -> error ~err "[next]" state
 
 let pure v _state ~ok ~err:_ = ok v
-let return = pure
-let unit = return ()
+let unit = pure ()
 let pos state = (state.offset, state.lnum, state.cnum)
 
 let backtrack state (o, l, c) =
@@ -120,7 +92,7 @@ module Infix = struct
    fun p f st ~ok ~err -> p st ~ok:(fun a -> ok (f a)) ~err
 
   let ( <*> ) p q = p >>= fun f -> q >|= f
-  let ( <$> ) f p = return f <*> p
+  let ( <$> ) f p = pure f <*> p
   let ( <$ ) v p = (fun _ -> v) <$> p
   let ( *> ) p q = p >>= fun _ -> q
   let ( <* ) p q = p >>= fun a -> a <$ q
@@ -147,9 +119,9 @@ open Infix
 let alt = ( <|> )
 let bind = ( >>= )
 let map = ( <$> )
-let map2 f p q = return f <*> p <*> q
-let map3 f p q r = return f <*> p <*> q <*> r
-let map4 f p q r s = return f <*> p <*> q <*> r <*> s
+let map2 f p q = pure f <*> p <*> q
+let map3 f p q r = pure f <*> p <*> q <*> r
+let map4 f p q r s = pure f <*> p <*> q <*> r <*> s
 
 let any : 'a t list -> 'a t =
  fun parsers state ~ok ~err ->
