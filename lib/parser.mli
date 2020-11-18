@@ -125,8 +125,8 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
       ;;
       let p = P.(take next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum) in
       let input = new P.string_input "hello world" in
-      let r1 = P.parse ~track_lnum:true input p in
-      r1 = (1, 12)
+      let v = P.parse ~track_lnum:true input p in
+      v = (1, 12)
     ]}
 
     Default behaviour - doesn't track line, column number.
@@ -138,8 +138,8 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
       ;;
       let p = P.(take next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum) in
       let input = new P.string_input "hello world" in
-      let r2 = P.parse input p in
-      r2 = (0, 0)
+      let v = P.parse input p in
+      v = (0, 0)
     ]}
     @raise Parser when parser encounters error *)
 
