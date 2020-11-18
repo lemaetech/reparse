@@ -1585,7 +1585,7 @@ end
         P.recur (fun term ->
             let mult = binop factor '*' term (fun e1 e2 -> Mult (e1, e2)) in
             let div = binop factor '/' term (fun e1 e2 -> Div (e1, e2)) in
-            mult <|> div <|> factor)
+            mult <|> div <|> factor )
 
       let expr : expr P.t =
         P.recur (fun expr ->
@@ -1593,7 +1593,7 @@ end
             let term = term factor in
             let add = binop term '+' expr (fun e1 e2 -> Add (e1, e2)) in
             let sub = binop term '-' expr (fun e1 e2 -> Sub (e1, e2)) in
-            P.any [add; sub; term])
+            P.any [add; sub; term] )
 
       let rec eval : expr -> int = function
         | Int i         -> i
@@ -1697,7 +1697,7 @@ end
             P.char '\\'
             *> P.char_if (function
                  | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -> true
-                 | _ -> false)
+                 | _ -> false )
             >|= sprintf "\\%c" in
           let hex4digit =
             let+ hex =
@@ -1739,7 +1739,7 @@ end
               Array vals in
             P.any
               [ object_value; array_value; number_value; string_value
-              ; false_value; true_value; null_value ])
+              ; false_value; true_value; null_value ] )
 
       let parse p s =
         let input = new P.string_input s in

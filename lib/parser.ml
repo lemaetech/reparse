@@ -73,7 +73,7 @@ let error ~err msg state =
        { offset= state.offset
        ; line_number= state.lnum
        ; column_number= state.cnum
-       ; msg })
+       ; msg } )
 
 let parse ?(track_lnum = false) input p =
   let lnum, cnum = if track_lnum then (1, 1) else (0, 0) in
@@ -126,13 +126,13 @@ module Infix = struct
     let init_pos = pos state in
     p state ~ok ~err:(fun _e ->
         backtrack state init_pos ;
-        q state ~ok ~err)
+        q state ~ok ~err )
 
   let ( <?> ) : 'a t -> string -> 'a t =
    fun p err_msg state ~ok ~err ->
     let offset = state.offset in
     p state ~ok ~err:(fun e ->
-        if state.offset = offset then error ~err err_msg state else err e)
+        if state.offset = offset then error ~err err_msg state else err e )
 
   let ( let* ) = ( >>= )
   let ( let+ ) = ( >|= )
@@ -159,7 +159,7 @@ let any : 'a t list -> 'a t =
           ~ok:(fun a -> item := Some a)
           ~err:(fun _ ->
             backtrack state init_pos ;
-            (loop [@tailrec]) tl) in
+            (loop [@tailrec]) tl ) in
   loop parsers ;
   match !item with Some a -> ok a | None -> err' ()
 
@@ -173,10 +173,10 @@ let all : 'a t list -> 'a list t =
         p state
           ~ok:(fun a ->
             items := a :: !items ;
-            (loop [@tailrec]) tl)
+            (loop [@tailrec]) tl )
           ~err:(fun _ ->
             backtrack state init_pos ;
-            error ~err "[all] one of the parsers failed" state) in
+            error ~err "[all] one of the parsers failed" state ) in
   loop parsers
 
 let all_unit : 'a t list -> unit t =
@@ -189,7 +189,7 @@ let delay p state ~ok ~err = Lazy.force p state ~ok ~err
 
 let named name p state ~ok ~err =
   p state ~ok ~err:(fun e ->
-      error ~err (Format.sprintf "[%s] %s" name (Printexc.to_string e)) state)
+      error ~err (Format.sprintf "[%s] %s" name (Printexc.to_string e)) state )
 
 let peek_char : char t =
  fun state ~ok ~err ->
@@ -224,12 +224,12 @@ let is_not : 'a t -> bool t =
   p state
     ~ok:(fun _ ->
       backtrack state init_pos ;
-      ok false)
+      ok false )
     ~err:(fun _ ->
       if offset = state.offset then ok true
       else (
         backtrack state init_pos ;
-        ok false ))
+        ok false ) )
 
 let is : 'a t -> bool t =
  fun p state ~ok ~err:_ ->
@@ -238,10 +238,10 @@ let is : 'a t -> bool t =
   p state
     ~ok:(fun _ ->
       if offset = state.offset then ok false else backtrack state init_pos ;
-      ok true)
+      ok true )
     ~err:(fun _ ->
       backtrack state init_pos ;
-      ok false)
+      ok false )
 
 let lnum state ~ok ~err:_ = ok state.lnum
 let cnum state ~ok ~err:_ = ok state.cnum
@@ -252,14 +252,15 @@ let char : char -> char t =
   peek_char state
     ~ok:(fun c2 ->
       if Char.equal c c2 then (c <$ next) state ~ok ~err
-      else error ~err (Format.sprintf "[char] expected '%c'" c) state)
+      else error ~err (Format.sprintf "[char] expected '%c'" c) state )
     ~err
 
 let char_if : (char -> bool) -> char t =
  fun f state ~ok ~err ->
   peek_char state
     ~ok:(fun c2 ->
-      if f c2 then (c2 <$ next) state ~ok ~err else error ~err "[char_if]" state)
+      if f c2 then (c2 <$ next) state ~ok ~err else error ~err "[char_if]" state
+      )
     ~err
 
 let not_followed_by p q = p <* not_ q
@@ -287,10 +288,10 @@ let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
         ~ok:(fun _ ->
           if offset <> state.offset then
             (loop [@tailcall]) state.offset (count + 1)
-          else skip_count := count)
+          else skip_count := count )
         ~err:(fun _ ->
           backtrack state init_pos ;
-          skip_count := count)
+          skip_count := count )
     else skip_count := count in
   loop state.offset 0 ;
   if !skip_count >= at_least then ok !skip_count
@@ -306,7 +307,7 @@ let string : string -> string t =
   peek_string len state
     ~ok:(fun s2 ->
       if String.equal s s2 then (s <$ skip ~up_to:len next) state ~ok ~err
-      else error ~err "[string]" state)
+      else error ~err "[string]" state )
     ~err
 
 let skip_while : _ t -> while_:bool t -> int t =
@@ -325,10 +326,10 @@ let skip_while : _ t -> while_:bool t -> int t =
     (p *> unit) state
       ~ok:(fun _ ->
         skip_count := !skip_count + 1 ;
-        do_condition ())
+        do_condition () )
       ~err:(fun _ ->
         backtrack state init_pos ;
-        condition := false)
+        condition := false )
   done ;
   ok !skip_count
 
@@ -357,10 +358,10 @@ let take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t =
             (loop [@tailcall]) (count + 1) state.offset (a :: acc)
           else if offset <> state.offset && not continue then
             ok2 (count + 1, a :: acc)
-          else ok2 (count, acc))
+          else ok2 (count, acc) )
         ~err:(fun _ ->
           backtrack state init_pos ;
-          ok2 (count, acc))
+          ok2 (count, acc) )
     else ok2 (count, acc) in
   let init_pos = pos state in
   loop 0 state.offset [] ;
@@ -392,10 +393,10 @@ let take_while_cb :
       ~ok:(fun (a, continue) ->
         take_count := !take_count + 1 ;
         on_take_cb a ;
-        if continue then eval_while () else cond := false)
+        if continue then eval_while () else cond := false )
       ~err:(fun _ ->
         backtrack state init_pos ;
-        cond := false)
+        cond := false )
   done ;
   ok !take_count
 
@@ -412,7 +413,7 @@ let take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t =
 
 let named_ch name f state ~ok ~err =
   (char_if f) state ~ok ~err:(fun exn ->
-      error ~err (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state)
+      error ~err (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state )
 
 let is_alpha = function 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false
 let is_digit = function '0' .. '9' -> true | _ -> false
@@ -442,7 +443,7 @@ let hex_digit =
   named_ch "HEX DIGIT" (function
     | c when is_digit c -> true
     | 'A' .. 'F' -> true
-    | _ -> false)
+    | _ -> false )
 
 let line : [`LF | `CRLF] -> string t =
  fun line_delimiter state ~ok ~err ->

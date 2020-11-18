@@ -21,7 +21,7 @@ let skip_at_least_fail input () =
          { offset= 0
          ; line_number= 0
          ; column_number= 0
-         ; msg= "[skip] unable to parse at_least 5 times" })
+         ; msg= "[skip] unable to parse at_least 5 times" } )
       r)
 
 let skip_upto input () =
@@ -69,7 +69,7 @@ let take_at_least_fail input () =
          { offset= 0
          ; line_number= 0
          ; column_number= 0
-         ; msg= "[take] unable to parse at least 5 times" })
+         ; msg= "[take] unable to parse at least 5 times" } )
       r)
 
 let take_up_to input () =
@@ -102,7 +102,7 @@ let take_while_sep input () =
   let p =
     P.map2 make_pair
       (P.take_while ~sep_by:P.space (P.char 'a')
-         ~while_:(P.is_not (P.char 'z')))
+         ~while_:(P.is_not (P.char 'z')) )
       P.offset in
   let r = P.parse input p in
   Alcotest.(check (pair (list char) int) "" (['a'; 'a'; 'a'; 'a'], 8) r)
@@ -122,7 +122,7 @@ let take_while_cb input () =
     P.map2 make_pair
       (P.take_while_cb (P.char 'a')
          ~while_:(P.is_not (P.char 'z'))
-         ~on_take_cb:(fun c -> Buffer.add_char buf c))
+         ~on_take_cb:(fun c -> Buffer.add_char buf c) )
       P.offset in
   let r = P.parse input p in
   Alcotest.(
@@ -139,7 +139,7 @@ let take_while_cb_sep_by input () =
       (P.take_while_cb (P.char 'a')
          ~while_:(P.is_not (P.char 'z'))
          ~sep_by:P.space
-         ~on_take_cb:(fun c -> Buffer.add_char buf c))
+         ~on_take_cb:(fun c -> Buffer.add_char buf c) )
       P.offset in
   let r = P.parse input p in
   Alcotest.(

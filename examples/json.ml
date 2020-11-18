@@ -71,7 +71,7 @@ let string =
       P.char '\\'
       *> P.char_if (function
            | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -> true
-           | _ -> false)
+           | _ -> false )
       >|= sprintf "\\%c" in
     let hex4digit =
       let+ hex =
@@ -108,7 +108,7 @@ let json_value =
         Array vals in
       P.any
         [ object_value; array_value; number_value; string_value; false_value
-        ; true_value; null_value ])
+        ; true_value; null_value ] )
 
 let parse p s =
   let input = new P.string_input s in

@@ -14,7 +14,7 @@ let any_fail input () =
          { offset= 0
          ; line_number= 0
          ; column_number= 0
-         ; msg= "[any] all parsers failed" })
+         ; msg= "[any] all parsers failed" } )
       r)
 
 let all input () =
@@ -31,7 +31,7 @@ let all_fail input () =
          { offset= 0
          ; line_number= 0
          ; column_number= 0
-         ; msg= "[all] one of the parsers failed" })
+         ; msg= "[all] one of the parsers failed" } )
       r)
 
 let all_unit input () =
@@ -48,7 +48,7 @@ let all_unit_fail input () =
          { offset= 0
          ; line_number= 0
          ; column_number= 0
-         ; msg= "[all_unit] one of the parsers failed" })
+         ; msg= "[all_unit] one of the parsers failed" } )
       r)
 
 module M = Make_test

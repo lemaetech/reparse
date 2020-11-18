@@ -56,7 +56,7 @@ let term : expr P.t -> expr P.t =
   P.recur (fun term ->
       let mult = binop factor '*' term (fun e1 e2 -> Mult (e1, e2)) in
       let div = binop factor '/' term (fun e1 e2 -> Div (e1, e2)) in
-      mult <|> div <|> factor)
+      mult <|> div <|> factor )
 
 let expr : expr P.t =
   P.recur (fun expr ->
@@ -64,7 +64,7 @@ let expr : expr P.t =
       let term = term factor in
       let add = binop term '+' expr (fun e1 e2 -> Add (e1, e2)) in
       let sub = binop term '-' expr (fun e1 e2 -> Sub (e1, e2)) in
-      P.any [add; sub; term])
+      P.any [add; sub; term] )
 
 let rec eval : expr -> int = function
   | Int i         -> i
