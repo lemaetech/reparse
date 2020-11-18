@@ -73,19 +73,14 @@ let rec eval : expr -> int = function
   | Mult (e1, e2) -> eval e1 * eval e2
   | Div (e1, e2)  -> eval e1 / eval e2
 
-let parse : string -> expr =
- fun s ->
-  let input = new P.string_input s in
-  P.parse input expr
-
 (* Test AST *)
 let r =
-  let actual = parse "1*2-4+3" in
+  let actual = P.parse_string expr "1*2-4+3" in
   let expected = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
   Bool.equal (expected = actual) true
 
 (* Run the evaluator. *)
-let exp_result = eval (parse "12+1*10") |> Int.equal 22
+let exp_result = eval (P.parse_string expr "12+1*10") |> Int.equal 22
 
 (*-------------------------------------------------------------------------
  * Copyright (c) 2020 Bikal Gurung. All rights reserved.

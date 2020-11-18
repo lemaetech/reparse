@@ -24,5 +24,17 @@
   (ocaml
    (>= 4.10.0))
   dune
+  (alcotest :with-test)))
+
+(package
+ (name reparse-unix)
+ (synopsis "Recursive descent parsing library for ocaml")
+ (description
+   "reparse is an easy to learn and use parser combinator library. It is designed to aid authoring recursive descent style parsers.")
+ (depends
+  (ocaml
+   (>= 4.10.0))
+  dune
+  reparse
   base-unix
   (alcotest :with-test)))

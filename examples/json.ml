@@ -5,17 +5,17 @@
   Sample top_level inputs;
 
   {v 
-  parse json_value "true";;
-  parse json_value "false";;
-  parse json_value "null";;
-  parse json_value "123";;
-  parse json_value "123.345";;
-  parse json_value "123e123";;
-  parse json_value "123.33E123";;
-  parse json_value {|{"field1": 123,"field2": "value2"}|};;
-  parse json_value {|{"field1":[123,"hello",-123.23], "field2":123} |};;
-  parse json_value {|{"field1":123, "field2":123} |};;
-  parse json_value {|[123,"hello",-123.23, 123.33e13, 123E23] |};;
+  parse "true";;
+  parse "false";;
+  parse "null";;
+  parse "123";;
+  parse "123.345";;
+  parse "123e123";;
+  parse "123.33E123";;
+  parse {|{"field1": 123,"field2": "value2"}|};;
+  parse {|{"field1":[123,"hello",-123.23], "field2":123} |};;
+  parse {|{"field1":123, "field2":123} |};;
+  parse {|[123,"hello",-123.23, 123.33e13, 123E23] |};;
   v}
  *)
 
@@ -110,9 +110,7 @@ let json_value =
         [ object_value; array_value; number_value; string_value; false_value
         ; true_value; null_value ] )
 
-let parse p s =
-  let input = new P.string_input s in
-  P.parse input p
+let parse s = P.parse_string json_value s
 
 (*-------------------------------------------------------------------------
   * Copyright (c) 2020 Bikal Gurung. All rights reserved.

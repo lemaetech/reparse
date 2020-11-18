@@ -1,7 +1,3 @@
 (library
  (name reparse)
- (public_name reparse)
- (libraries unix)
- (foreign_stubs
-  (language c)
-  (names pread)))
+ (public_name reparse))
