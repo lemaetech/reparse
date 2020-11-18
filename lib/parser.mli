@@ -17,12 +17,11 @@
     definition. A parser {!type:t} is defined by composing together one or more
     parsers or {!type:t}s via usage of parser operators.
 
-    An instance of {!type:t} represents an un-evaluated parser. {!val:parse}
-    function is used to evaluate a {!type:t}.
+    An instance of {!type:t} represents an un-evaluated parser. Use {!val:parse}
+    function to evaluate it.
 
     {!type:input} represents a generalization of data input to {!val:parse}.
-    Implement the interface to create new input types. Two types of concrete
-    input types are provided - string and file.
+    Implement the interface to create new input types.
 
     Parser operators - or functions - are broadly organized into following
     categories:
@@ -42,21 +41,16 @@
 
     See {{:#examples} examples} of use.*)
 
-(** {2 Parser type} *)
+(** {2 Types} *)
 
 type 'a t
 (** Represents a parser which can parse value ['a].
 
     Use {!val:parse} to evaluate a parser. *)
 
-(** {2 Parser input types} *)
-
 (** Parser input interface. It represents a generalization of data input to
     {!val:parse}. Implement this interface to provide new sources of input to
-    {!val:parse}.
-
-    See {!class:string_input} or {!class:file_input} for examples of
-    implementation. *)
+    {!val:parse}. *)
 class type input =
   object
     method eof : int -> bool
@@ -74,37 +68,13 @@ class type input =
         @raise End_of_file if [n] is at eof. *)
   end
 
-class string_input : string -> input
-(** Represents a string as a parser input.
-
-    {4:string_input_examples Examples}
-
-    {[
-      module P = Reparse.Parser
-
-      let str_input = new P.string_input "hello world"
-    ]} *)
-
-class file_input : Unix.file_descr -> input
-(** Represents a unix file descriptor as a parser input.
-
-    {4:file_input_examples Examples}
-
-    {[
-      module P = Reparse.Parser
-      ;;
-
-      let fd = Unix.openfile fname [Unix.O_RDWR; Unix.O_CREAT] 0o640 in
-      let file_input = new P.file_input fd
-    ]} *)
-
 (** {2 Parse}
 
     Evaluate a parser. *)
 
-val parse : ?track_lnum:bool -> input -> 'a t -> 'a
-(** [parse ~track_lnum i p] evaluates [p] to value [v] while consuming input
-    instance [i].
+val parse_string : ?track_lnum:bool -> 'a t -> string -> 'a
+(** [parse_string ~track_lnum p s] evaluates [p] to value [v] while consuming
+    string instance [s].
 
     If [track_num] is [true] then the parser tracks both the {e line} and the
     {e column} numbers. It is set to [false] by default.
@@ -123,9 +93,9 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
       open P.Infix
 
       ;;
+      let s = "hello world" in
       let p = P.(take next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum) in
-      let input = new P.string_input "hello world" in
-      let v = P.parse ~track_lnum:true input p in
+      let v = P.parse_string ~track_lnum:true p s in
       v = (1, 12)
     ]}
 
@@ -136,12 +106,18 @@ val parse : ?track_lnum:bool -> input -> 'a t -> 'a
       open P.Infix
 
       ;;
+      let s = "hello world" in
       let p = P.(take next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum) in
-      let input = new P.string_input "hello world" in
-      let v = P.parse input p in
+      let v = P.parse_string p s in
       v = (0, 0)
     ]}
     @raise Parser when parser encounters error *)
+
+val parse : ?track_lnum:bool -> 'a t -> input -> 'a
+(** [parse] is a generic parse function parameterised over {!type:input} type.
+
+    Use this function when you have a custom implementation of {!type:input}.
+    The behaviour is the same as {!val:parse} *)
 
 (** {2 Exception} *)
 

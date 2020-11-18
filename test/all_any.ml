@@ -1,13 +1,13 @@
 module P = Reparse.Parser
 
-let any input () =
+let any parse () =
   let p = P.any [P.char 'a'; P.char 'b'; P.char 'c'] in
-  let r = P.parse input p in
+  let r = parse p in
   Alcotest.(check char "c" 'c' r)
 
-let any_fail input () =
+let any_fail parse () =
   let p = P.any [P.char 'a'; P.char 'b'; P.char 'c'] in
-  let r () = ignore (P.parse input p) in
+  let r () = ignore (parse p) in
   Alcotest.(
     check_raises "any"
       (P.Parser
@@ -17,14 +17,14 @@ let any_fail input () =
          ; msg= "[any] all parsers failed" } )
       r)
 
-let all input () =
+let all parse () =
   let p = P.all [P.char 'a'; P.char 'b'; P.char 'c'] in
-  let r = P.parse input p in
+  let r = parse p in
   Alcotest.(check (list char) "list" ['a'; 'b'; 'c'] r)
 
-let all_fail input () =
+let all_fail parse () =
   let p = P.all [P.char 'a'; P.char 'b'; P.char 'c'] in
-  let r () = ignore (P.parse input p) in
+  let r () = ignore (parse p) in
   Alcotest.(
     check_raises "all fail"
       (P.Parser
@@ -34,14 +34,14 @@ let all_fail input () =
          ; msg= "[all] one of the parsers failed" } )
       r)
 
-let all_unit input () =
+let all_unit parse () =
   let p = P.all_unit [P.char 'a'; P.char 'b'; P.char 'c'] in
-  let r = P.parse input p in
+  let r = parse p in
   Alcotest.(check unit "()" () r)
 
-let all_unit_fail input () =
+let all_unit_fail parse () =
   let p = P.all_unit [P.char 'a'; P.char 'b'; P.char 'c'] in
-  let r () = ignore (P.parse input p) in
+  let r () = ignore (parse p) in
   Alcotest.(
     check_raises "all fail"
       (P.Parser
