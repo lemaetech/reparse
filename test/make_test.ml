@@ -9,6 +9,6 @@ let make test_name test data =
     let fd = Unix.openfile fname [Unix.O_RDWR; Unix.O_CREAT] 0o640 in
     let _w = Unix.write_substring fd data 0 (String.length data) in
     fd in
-  let fd_input = new Reparse_unix.File_input.t fd in
+  let file_input = Reparse_unix.File_input.create fd in
   [ ("[S] - " ^ test_name, `Quick, test (parse_string data))
-  ; ("[F] - " ^ test_name, `Quick, test (parse fd_input)) ]
+  ; ("[F] - " ^ test_name, `Quick, test (parse file_input)) ]

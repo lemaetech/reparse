@@ -24,3 +24,5 @@ class t fd =
       really_read fd buf len offset 0 ;
       Bytes.to_string buf
   end
+
+let create fd = new t fd
