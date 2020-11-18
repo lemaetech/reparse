@@ -188,7 +188,7 @@ val fail : string -> 'a t
 (** {2 Bind} *)
 
 val bind : 'a t -> ('a -> 'b t) -> 'b t
-(** [bind p f] returns a new parser encapsulating value [b] where,
+(** [bind p f] returns a new parser [b] where,
 
     - [a] is the parsed value of [p]
     - [b] is [f a]
@@ -199,7 +199,7 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
       module P = Reparse.Parser
 
       ;;
-      let f a = P.return (a ^ " world") in
+      let f a = P.pure (a ^ " world") in
       let p = P.string "hello" in
       let p = P.bind p f in
       let input = new P.string_input "hello" in
@@ -212,8 +212,8 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
 (** {2 Map}
 
     Mappers transform from one parser value to another. [map] functions
-    [map2, map3, map4] are defined in terms of {!val:bind}s. So a given
-    [map]{i n} usage can be defined equivalently in terms of {!val:bind}s. *)
+    [map2, map3, map4] are defined in terms of {!val:bind}s. So a given mapper
+    function usage can be defined equivalently in terms of {!val:bind}s. *)
 
 val map : ('a -> 'b) -> 'a t -> 'b t
 (** [map f p] returns a new parser encapsulating value [b] where,
@@ -230,21 +230,21 @@ val map : ('a -> 'b) -> 'a t -> 'b t
       let f a = a ^ " world" in
       let p = P.string "hello" in
       let p = P.map f p in
-      let input = new P.string_input "hello" in
-      let b = P.parse input p in
+      let b = P.parse p "hello" in
       b = "hello world"
     ]}
 
-    Sine [map] is defined in terms of [bind], the above usage of [map] is
+    Since [map] is defined in terms of [bind], the above usage of [map] is
     equivalent to the [bind] usage below,
 
     {[
       module P = Reparse.Parser
 
       ;;
-      let p = P.bind (P.string "hello") (fun a -> P.return (a ^ " world")) in
-      let input = new P.string_input "hello" in
-      let r = P.parse input p in
+      let f a = P.pure (a ^ " world") in
+      let p = P.string "hello" in
+      let p = P.bind p f in
+      let r = P.parse_string p "hello" in
       r = "hello world"
     ]}
 
@@ -253,9 +253,9 @@ val map : ('a -> 'b) -> 'a t -> 'b t
 val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
 (** [map2 f p q] returns a new parser encapsulating value [c] where,
 
-    - [c] is [f a b].
-    - [a, b] are the parsed values of parsers [p] and [q] respectively.
     - [p] and [q] are evaluated sequentially in order as given.
+    - [a, b] are the parsed values of parsers [p] and [q] respectively.
+    - [c] is [f a b].
 
     {4:map2_examples Examples}
 
@@ -263,10 +263,12 @@ val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
       module P = Reparse.Parser
 
       ;;
-      let p = P.(map2 (fun a b -> a + b) (return 1) (return 2)) in
-      let input = new P.string_input "" in
-      let r = P.parse input p in
-      r = 3
+      let f a b = a + b in
+      let p = P.pure 1 in
+      let q = P.pure 2 in
+      let p = P.map2 f p q in
+      let v = P.parse_string p "" in
+      v = 3
     ]}
 
     The above usage of [map2] is equivalent to below,
@@ -276,18 +278,17 @@ val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
       open P.Infix
 
       ;;
-      let p = P.pure 1 >>= fun a -> P.pure 2 >>= fun b -> P.return (a + b) in
-      let input = new P.string_input "" in
-      let r = P.parse input p in
-      r = 3
+      let p = P.pure 1 >>= fun a -> P.pure 2 >>= fun b -> P.pure (a + b) in
+      let v = P.parse_string p "" in
+      v = 3
     ]} *)
 
 val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
 (** [map3 f p q r] returns a new parser encapsulating value [d] where,
 
-    - [d] is [f a b c].
-    - [a, b, c] are the parsed values of parsers [p], [q] and [r] respectively.
     - [p], [q], [r] are evaluated sequentially in order as given.
+    - [a, b, c] are the parsed values of parsers [p], [q] and [r] respectively.
+    - [d] is [f a b c].
 
     {4:map3_examples Examples}
 
@@ -295,20 +296,22 @@ val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
       module P = Reparse.Parser
 
       ;;
-      let p =
-        P.(map3 (fun a b c -> a + b + c) (return 1) (return 2) (return 3)) in
-      let input = new P.string_input "" in
-      let r = P.parse input p in
-      r = 6
+      let f a b c = a + b + c in
+      let p = P.pure 1 in
+      let q = P.pure 2 in
+      let r = P.pure 3 in
+      let p = P.map3 f p q r in
+      let v = P.parse_string p "" in
+      v = 6
     ]} *)
 
 val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
 (** [map4 f p q r s] returns a new parser encapsulating value [e] where,
 
-    - [e] is [f a b c d].
+    - [p], [q], [r] and [s] are evaluated sequentially in order as given.
     - [a, b, c, d] are the parsed values of parsers [p], [q], [r] and [s]
       respectively.
-    - [p], [q], [r] and [s] are evaluated sequentially in order as given.
+    - [e] is [f a b c d].
 
     {4:map4_examples Examples}
 
@@ -316,14 +319,14 @@ val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
       module P = Reparse.Parser
 
       ;;
-      let p =
-        P.(
-          map4
-            (fun a b c d -> a + b + c + d)
-            (return 1) (return 2) (return 3) (return 4)) in
-      let input = new P.string_input "" in
-      let r = P.parse input p in
-      r = 10
+      let f a b c d = a + b + c + d in
+      let p = P.pure 1 in
+      let q = P.pure 2 in
+      let r = P.pure 3 in
+      let s = P.pure 4 in
+      let p = P.map4 f p q r s in
+      let v = P.parse_string p "" in
+      v = 10
     ]} *)
 
 val delay : 'a t Lazy.t -> 'a t
@@ -337,9 +340,8 @@ val delay : 'a t Lazy.t -> 'a t
 
       ;;
       let p = P.(delay (lazy (char 'z')) <|> delay (lazy (char 'a'))) in
-      let input = new P.string_input "abc" in
-      let r = P.parse input p in
-      r = 'a'
+      let v = P.parse_string p "abc" in
+      v = 'a'
     ]} *)
 
 val named : string -> 'a t -> 'a t
@@ -356,13 +358,12 @@ val named : string -> 'a t -> 'a t
 
       ;;
       let p = P.(char 'a' |> named "parse_c") in
-      let input = new P.string_input "zzd" in
-      let r =
+      let v =
         try
-          let _ = P.parse input p in
+          let _ = P.parse_string p "zzd" in
           assert false
         with e -> e in
-      r
+      v
       = P.Parser
           { offset= 0
           ; line_number= 0
@@ -393,34 +394,30 @@ val any : 'a t list -> 'a t
 
       ;;
       let p = P.(any [char 'z'; char 'x'; char 'a']) in
-      let input = new P.string_input "zabc" in
-      let r = P.parse input p in
-      r = 'z'
+      let v = P.parse_string p "zabc" in
+      v = 'z'
 
       ;;
       let p = P.(any [char 'z'; char 'x'; char 'a']) in
-      let input = new P.string_input "xabc" in
-      let r = P.parse input p in
-      r = 'x'
+      let v = P.parse_string p "xabc" in
+      v = 'x'
 
       ;;
       let p = P.(any [char 'z'; char 'x'; char 'a']) in
-      let input = new P.string_input "abc" in
-      let r = P.parse input p in
-      r = 'a'
+      let v = P.parse_string p "abc" in
+      v = 'a'
     ]}
 
     Parser fails when none of the parsers in [l] are successful.
 
     {[
       let p = P.(any [char 'z'; char 'x'; char 'a']) in
-      let input = new P.string_input "yyy" in
-      let r =
+      let v =
         try
-          let _ = P.parse input p in
+          let _ = P.parse_string p "yyy" in
           false
         with _ -> true in
-      r = true
+      v = true
     ]} *)
 
 val alt : 'a t -> 'a t -> 'a t
@@ -448,9 +445,8 @@ val all : 'a t list -> 'a list t
 
       ;;
       let p = P.(all [char 'a'; char 'b'; char 'c']) in
-      let input = new P.string_input "abc" in
-      let r = P.parse input p in
-      r = ['a'; 'b'; 'c']
+      let v = P.parse_string p "abc" in
+      v = ['a'; 'b'; 'c']
     ]}
 
     One of the specified parsers - [char 'c'] fails.
@@ -460,13 +456,12 @@ val all : 'a t list -> 'a list t
 
       ;;
       let p = P.(all [char 'a'; char 'b'; char 'c']) in
-      let input = new P.string_input "abd" in
-      let r =
+      let v =
         try
-          let _ = P.parse input p in
+          let _ = P.parse_string p "abd" in
           false
         with _ -> true in
-      r = true
+      v = true
     ]} *)
 
 val all_unit : 'a t list -> unit t
@@ -481,9 +476,8 @@ val all_unit : 'a t list -> unit t
 
       ;;
       let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
-      let input = new P.string_input "abc" in
-      let r = P.parse input p in
-      r = ()
+      let v = P.parse_string p "abc" in
+      v = ()
     ]}
 
     One of the specified parsers - [char 'c'] - fails.
@@ -493,13 +487,12 @@ val all_unit : 'a t list -> unit t
 
       ;;
       let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
-      let input = new P.string_input "abd" in
-      let r =
+      let v =
         try
-          let _ = P.parse input p in
+          let _ = P.parse_string p "abd" in
           false
         with _ -> true in
-      r = true
+      v = true
     ]} *)
 
 (** {1 Repetition} *)
@@ -537,9 +530,9 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "     " in
-      let r = P.(parse input (skip space)) in
-      r = 5
+      let p = P.(skip space) in
+      let v = P.parse_string p "     " in
+      v = 5
     ]} *)
 
 val skip_while : _ t -> while_:bool t -> int t
@@ -561,10 +554,9 @@ val skip_while : _ t -> while_:bool t -> int t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "     " in
       let p = P.(skip_while next ~while_:(is space)) in
-      let r = P.parse input p in
-      r = 5
+      let v = P.parse_string p "     " in
+      v = 5
     ]} *)
 
 (** {2 Take}
@@ -600,10 +592,9 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "aaaaa" in
       let p = P.(take (char 'a')) in
-      let r = P.parse input p in
-      r = ['a'; 'a'; 'a'; 'a'; 'a']
+      let v = P.parse_string p "aaaaa" in
+      v = ['a'; 'a'; 'a'; 'a'; 'a']
     ]}
 
     Specify [~sep_by].
@@ -612,10 +603,9 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "a,a,a,a,a" in
       let p = P.(take ~sep_by:(char ',') (char 'a')) in
-      let r = P.parse input p in
-      r = ['a'; 'a'; 'a'; 'a']
+      let v = P.parse_string p "a,a,a,a,a" in
+      v = ['a'; 'a'; 'a'; 'a'; 'a']
     ]}
 
     Specify lower bound argument [at_least].
@@ -624,11 +614,9 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "a,a,a,a,a" in
-      (* lower bound restriction met *)
       let p = P.(take ~at_least:3 ~sep_by:(char ',') (char 'a')) in
-      let r = P.parse input p in
-      r = ['a'; 'a'; 'a'; 'a']
+      let v = P.parse_string p "a,a,a,a,a" in
+      v = ['a'; 'a'; 'a'; 'a'; 'a']
     ]}
 
     Lower bound not met results in error.
@@ -637,14 +625,13 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "a,a,a,a,a" in
       let p = P.(take ~at_least:5 ~sep_by:(char ',') (char 'a')) in
-      let r =
+      let v =
         try
-          let _ = P.parse input p in
+          let _ = P.parse_string p "a,a,a,a" in
           false
         with _ -> true in
-      r = true
+      v = true
     ]}
 
     Specify upper bound [up_to].
@@ -653,10 +640,9 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "a,a,a,a,a" in
       let p = P.(take ~up_to:3 ~sep_by:(char ',') (char 'a')) in
-      let r = P.parse input p in
-      r = ['a'; 'a'; 'a']
+      let v = P.parse_string p "a,a,a,a,a" in
+      v = ['a'; 'a'; 'a']
     ]} *)
 
 val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
@@ -685,10 +671,9 @@ val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "aab" in
       let p = P.(take_while ~while_:(is_not (char 'b')) (char 'a')) in
-      let r = P.parse input p in
-      r = ['a'; 'a']
+      let v = P.parse_string p "aab" in
+      v = ['a'; 'a']
     ]}
 
     Specify [sep_by].
@@ -697,12 +682,11 @@ val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "a,a,ab" in
       let p =
         P.(take_while ~sep_by:(char ',') ~while_:(is_not (char 'b')) (char 'a'))
       in
-      let r = P.parse input p in
-      r = ['a'; 'a']
+      let v = P.parse_string p "a,a,ab" in
+      v = ['a'; 'a'; 'a']
     ]} *)
 
 val take_while_cb :
@@ -738,15 +722,14 @@ val take_while_cb :
       open P.Infix
 
       ;;
-      let input = new P.string_input "aaab" in
       let buf = Buffer.create 0 in
       let on_take_cb a = Buffer.add_char buf a in
       let p =
         P.(take_while_cb (char 'a') ~while_:(is_not (char 'b')) ~on_take_cb)
       in
-      let r = P.parse input p in
+      let v = P.parse_string p "aaab" in
       let s = Buffer.contents buf in
-      r = 3 && s = "aaa"
+      v = 3 && s = "aaa"
     ]} *)
 
 (** {1 Optional}
@@ -764,16 +747,14 @@ val optional : 'a t -> 'a option t
       open P.Infix
 
       ;;
-      let input = new P.string_input "ab" in
       let p = P.(optional (char 'a')) in
-      let r = P.parse input p in
-      r = Some 'a'
+      let v = P.parse_string p "ab" in
+      v = Some 'a'
 
       ;;
-      let input = new P.string_input "ab" in
       let p = P.(optional (char 'z')) in
-      let r = P.parse input p in
-      r = None
+      let v = P.parse_string p "ab" in
+      v = None
     ]}*)
 
 (** {1 Query Input state} *)
@@ -788,14 +769,12 @@ val is_eoi : bool t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "" in
-      let r = P.(parse input is_eoi) in
-      r = true
+      let v = P.(parse_string is_eoi "") in
+      v = true
 
       ;;
-      let input = new P.string_input "a" in
-      let r = P.(parse input is_eoi) in
-      r = false
+      let v = P.(parse_string is_eoi "a") in
+      v = false
     ]} *)
 
 val eoi : unit t
@@ -807,18 +786,16 @@ val eoi : unit t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "" in
-      let r = P.(parse input eoi) in
-      r = ()
+      let v = P.(parse_string eoi "") in
+      v = ()
 
       ;;
-      let input = new P.string_input "a" in
-      let r =
+      let v =
         try
-          let _ = P.(parse input eoi) in
+          let _ = P.(parse_string eoi "a") in
           false
         with _ -> true in
-      r = true
+      v = true
     ]} *)
 
 val lnum : int t
@@ -832,10 +809,9 @@ val lnum : int t
       open P.Infix
 
       ;;
-      let input = new P.string_input "bcb" in
       let p = P.(next *> lnum) in
-      let r = P.parse ~track_lnum:true input p in
-      r = 1
+      let v = P.parse_string ~track_lnum:true p "bcb" in
+      v = 1
     ]} *)
 
 val cnum : int t
@@ -848,10 +824,9 @@ val cnum : int t
       open P.Infix
 
       ;;
-      let input = new P.string_input "bcb" in
       let p = P.(next *> cnum) in
-      let r = P.parse ~track_lnum:true input p in
-      r = 2
+      let v = P.parse_string ~track_lnum:true p "bcb" in
+      v = 2
     ]} *)
 
 val offset : int t
@@ -864,10 +839,9 @@ val offset : int t
       open P.Infix
 
       ;;
-      let input = new P.string_input "bcb" in
       let p = P.(next *> offset) in
-      let r = P.parse ~track_lnum:true input p in
-      r = 1
+      let v = P.parse_string ~track_lnum:true p "bcb" in
+      v = 1
     ]} *)
 
 (** {1 Boolean}
@@ -884,10 +858,9 @@ val not_ : 'a t -> unit t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "bbb" in
       let p = P.(not_ (char 'a')) in
-      let r = P.parse input p in
-      r = ()
+      let v = P.parse_string p "bbb" in
+      v = ()
     ]} *)
 
 val not_followed_by : 'a t -> 'b t -> 'a t
@@ -900,10 +873,9 @@ val not_followed_by : 'a t -> 'b t -> 'a t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "ab" in
       let p = P.(not_followed_by (char 'a') (char 'a')) in
-      let r = P.parse input p in
-      r = 'a'
+      let v = P.parse_string p "ab" in
+      v = 'a'
     ]}*)
 
 val is_not : 'a t -> bool t
@@ -916,9 +888,9 @@ val is_not : 'a t -> bool t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "bbb" in
-      let r = P.(parse input (is_not (char 'a'))) in
-      r = true
+      let p = P.(is_not (char 'a')) in
+      let v = P.parse_string p "bbb" in
+      v = true
     ]} *)
 
 val is : 'a t -> bool t
@@ -931,9 +903,9 @@ val is : 'a t -> bool t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "bcb" in
-      let r = P.(parse input (is (char 'b'))) in
-      r = true
+      let p = P.(is (char 'b')) in
+      let v = P.parse_string p "bcb" in
+      v = true
     ]} *)
 
 (** {1 Text}
@@ -947,18 +919,22 @@ val peek_char : char t
 
     {[
       module P = Reparse.Parser
+
       ;;
-
-      let input = new P.string_input "hello" in
       let p = P.peek_char in
-      let r = P.parse input p in
-      r = 'h'
+      let v = P.parse_string p "hello" in
+      v = 'h'
+    ]}
 
-      let input = new P.string_input "hello" in
-      (* Input offset value remains the same. *)
+    Input is not consumed.
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
       let p = P.(peek_char *> offset) in
-      let r = P.parse input p in
-      r = 0
+      let v = P.parse_string p "hello" in
+      v = 0
     ]} *)
 
 val peek_string : int -> string t
@@ -971,14 +947,20 @@ val peek_string : int -> string t
       open P.Infix
 
       ;;
-      let input = new P.string_input "hello" in
-      let r = P.(parse input (peek_string 5)) in
-      r = "hello"
+      let p = P.peek_string 5 in
+      let v = P.parse_string p "hello" in
+      v = "hello"
+    ]}
+
+    Input is not consumed.
+
+    {[
+      module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "hello" in
-      let r = P.(parse input (peek_string 5 *> offset)) in
-      r = 0
+      let p = P.(peek_string 5 *> offset) in
+      let v = P.parse_string p "hello" in
+      v = 0
     ]} *)
 
 val next : char t
@@ -991,9 +973,8 @@ val next : char t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "hello" in
-      let r = P.(parse input next) in
-      r = 'h'
+      let v = P.(parse_string next "hello") in
+      v = 'h'
     ]} *)
 
 val char : char -> char t
@@ -1005,10 +986,9 @@ val char : char -> char t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "hello" in
       let p = P.char 'h' in
-      let r = P.parse input p in
-      r = 'h'
+      let v = P.parse_string p "hello" in
+      v = 'h'
     ]} *)
 
 val char_if : (char -> bool) -> char t
@@ -1020,10 +1000,9 @@ val char_if : (char -> bool) -> char t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "abc" in
       let p = P.char_if (function 'a' -> true | _ -> false) in
-      let r = P.parse input p in
-      r = 'a'
+      let v = P.parse_string p "abc" in
+      v = 'a'
     ]} *)
 
 val string : string -> string t
@@ -1035,10 +1014,9 @@ val string : string -> string t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "hello world" in
       let p = P.string "hello" in
-      let r = P.parse input p in
-      r = "hello"
+      let v = P.parse_string p "hello world" in
+      v = "hello"
     ]} *)
 
 val line : [`LF | `CRLF] -> string t
@@ -1053,9 +1031,9 @@ val line : [`LF | `CRLF] -> string t
       module P = Reparse.Parser
 
       ;;
-      let input = new P.string_input "line1\r\nline2" in
-      let l = P.(parse input (line `CRLF)) in
-      l = "line1"
+      let p = P.line `CRLF in
+      let v = P.parse_string p "line1\r\nline2" in
+      v = "line1"
     ]} *)
 
 (** {1:rfc5234 RFC 5234}
@@ -1074,9 +1052,9 @@ val alpha : char t
       open P.Infix
 
       ;;
-      let input = new P.string_input "abcdABCD" in
-      let r = P.(parse input (take alpha)) in
-      r = ['a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D']
+      let p = P.(take alpha) in
+      let v = P.parse_string p "abcdABCD" in
+      v = ['a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D']
     ]} *)
 
 val alpha_num : char t
@@ -1089,9 +1067,9 @@ val alpha_num : char t
       open P.Infix
 
       ;;
-      let input = new P.string_input "ab123ABCD" in
-      let r = P.(parse input (take alpha_num)) in
-      r = ['a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D']
+      let p = P.(take alpha_num) in
+      let v = P.parse_string p "ab123ABCD" in
+      v = ['a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D']
     ]} *)
 
 val bit : char t
@@ -1101,12 +1079,11 @@ val bit : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "0110 ab" in
-      let r = P.(parse input (take bit)) in
-      r = ['0'; '1'; '1'; '0']
+      let p = P.(take bit) in
+      let v = P.parse_string p "0110 ab" in
+      v = ['0'; '1'; '1'; '0']
     ]} *)
 
 val ascii_char : char t
@@ -1116,12 +1093,11 @@ val ascii_char : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "0110 abc '" in
-      let r = P.(parse input (take ascii_char)) in
-      r = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']
+      let p = P.(take ascii_char) in
+      let v = P.parse_string p "0110 abc '" in
+      v = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']
     ]} *)
 
 val cr : char t
@@ -1131,12 +1107,10 @@ val cr : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "\rab" in
-      let r = P.(parse input cr) in
-      r = '\r'
+      let v = P.(parse_string cr "\rab") in
+      v = '\r'
     ]} *)
 
 val crlf : string t
@@ -1146,12 +1120,10 @@ val crlf : string t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "\r\n abc" in
-      let r = P.(parse input crlf) in
-      r = "\r\n"
+      let v = P.(parse_string crlf "\r\n abc") in
+      v = "\r\n"
     ]} *)
 
 val control : char t
@@ -1161,12 +1133,10 @@ val control : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "\x00" in
-      let r = P.(parse input control) in
-      r = '\x00'
+      let v = P.(parse_string control "\x00") in
+      v = '\x00'
     ]} *)
 
 val digit : char t
@@ -1176,12 +1146,11 @@ val digit : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "0123456789a" in
-      let r = P.(parse input (take digit)) in
-      r = ['0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9']
+      let p = P.(take digit) in
+      let v = P.parse_string p "0123456789a" in
+      v = ['0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9']
     ]} *)
 
 val digits : string t
@@ -1191,12 +1160,10 @@ val digits : string t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "1234 +" in
-      let r = P.(parse input digits) in
-      r = "1234"
+      let v = P.(parse_string digits "1234 +") in
+      v = "1234"
     ]} *)
 
 val dquote : char t
@@ -1206,12 +1173,10 @@ val dquote : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "\"hello " in
-      let r = P.(parse input dquote) in
-      r = '"'
+      let v = P.(parse_string dquote "\"hello ") in
+      v = '"'
     ]} *)
 
 val hex_digit : char t
@@ -1221,12 +1186,11 @@ val hex_digit : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "0ABCDEFa" in
-      let r = P.(parse input (take hex_digit)) in
-      r = ['0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F']
+      let p = P.(take hex_digit) in
+      let v = P.parse_string p "0ABCDEFa" in
+      v = ['0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F']
     ]} *)
 
 val htab : char t
@@ -1236,12 +1200,10 @@ val htab : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "\t" in
-      let r = P.(parse input htab) in
-      r = '\t'
+      let v = P.(parse_string htab "\t") in
+      v = '\t'
     ]} *)
 
 val lf : char t
@@ -1251,12 +1213,10 @@ val lf : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "\n" in
-      let r = P.(parse input lf) in
-      r = '\n'
+      let v = P.(parse_string lf "\n") in
+      v = '\n'
     ]} *)
 
 val octet : char t
@@ -1267,12 +1227,11 @@ val octet : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "0110 abc '" in
-      let r = P.(parse input (take octet)) in
-      r = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']
+      let p = P.(take octet) in
+      let v = P.parse_string p "0110 abc '" in
+      v = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']
     ]} *)
 
 val space : char t
@@ -1282,12 +1241,10 @@ val space : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input " abc '" in
-      let r = P.(parse input space) in
-      r = ' '
+      let v = P.(parse_string space " abc '") in
+      v = ' '
     ]} *)
 
 val spaces : char list t
@@ -1297,12 +1254,10 @@ val spaces : char list t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "   abc" in
-      let r = P.(parse input spaces) in
-      r = [' '; ' '; ' ']
+      let v = P.(parse_string spaces "   abc") in
+      v = [' '; ' '; ' ']
     ]} *)
 
 val vchar : char t
@@ -1312,12 +1267,11 @@ val vchar : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "0110abc\x00" in
-      let r = P.(parse input (take vchar)) in
-      r = ['0'; '1'; '1'; '0'; 'a'; 'b'; 'c']
+      let p = P.(take vchar) in
+      let v = P.parse_string p "0110abc\x00" in
+      v = ['0'; '1'; '1'; '0'; 'a'; 'b'; 'c']
     ]} *)
 
 val whitespace : char t
@@ -1327,12 +1281,11 @@ val whitespace : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
 
       ;;
-      let input = new P.string_input "\t \t " in
-      let r = P.(parse input (take whitespace)) in
-      r = ['\t'; ' '; '\t'; ' ']
+      let p = P.(take whitespace) in
+      let v = P.parse_string p "\t \t " in
+      v = ['\t'; ' '; '\t'; ' ']
     ]} *)
 
 (** {1:infix Infix & Let}
@@ -1345,8 +1298,10 @@ val whitespace : char t
 
 module Infix : sig
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-  (** [p >>= f] parses [p] to value [a], creates value [b] = [f a] and then
-      returns a new parser encapsulating [b].
+  (** [p >>= f] returns a new parser b where,
+
+      - [a] is the parsed value of [p]
+      - [b] is [f a]
 
       Also known as [bind] operation.
 
@@ -1357,15 +1312,18 @@ module Infix : sig
         open P.Infix
 
         ;;
-        let p = P.(char 'h' >>= fun c -> return (Char.code c)) in
-        let input = new P.string_input "hello" in
-        let r = P.parse input p in
-        r = 104
+        let f a = P.pure (Char.code a) in
+        let p = P.char 'h' in
+        let p = p >>= f in
+        let v = P.parse_string p "hello" in
+        v = 104
       ]} *)
 
   val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
-  (** [p >|= f] parses [p] to value [a], creates value [b] = [f a] and then
-      returns a new parser encapsulating [b].
+  (** [p >|= f] returns a new parser encapsulating value [b] where,
+
+      - [a] is the parsed value of [p].
+      - [b] is [f a].
 
       Also known as [map] operation.
 
@@ -1376,15 +1334,20 @@ module Infix : sig
         open P.Infix
 
         ;;
-        let p = P.(char 'h' >|= fun c -> Char.code c) in
-        let input = new P.string_input "hello" in
-        let r = P.parse input p in
-        r = 104
+        let f a = Char.code a in
+        let p = P.char 'h' in
+        let p = p >|= f in
+        let v = P.parse_string p "hello" in
+        v = 104
       ]} *)
 
   val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
-  (** [pf <*> q] parses [pf] to value [f], parses [q] to value [a], creates
-      value [b] = [f a] and then returns a new parser encapsulating [b].
+  (** [pf <*> q] returns a new parser encapsulating value [b] where
+
+      - [pf] and [q] are evaluated sequentially in order as given.
+      - [f] is the parsed value of [pf]
+      - [a] is the parsed value of [q]
+      - [b] is [f a]
 
       Also known as [Applicative] operation.
 
@@ -1395,10 +1358,12 @@ module Infix : sig
         open P.Infix
 
         ;;
-        let p = P.(return (fun a -> a + 2) <*> return 2) in
-        let input = new P.string_input "hello" in
-        let r = P.parse input p in
-        r = 4
+        let f a = a + 2 in
+        let pf = P.pure f in
+        let q = P.pure 2 in
+        let p = pf <*> q in
+        let v = P.parse_string p "hello" in
+        v = 4
       ]} *)
 
   val ( <$ ) : 'b -> 'a t -> 'b t
@@ -1411,15 +1376,18 @@ module Infix : sig
         open P.Infix
 
         ;;
-        let p = P.("hello" <$ char 'h') in
-        let input = new P.string_input "hello" in
-        let r = P.parse input p in
-        r = "hello"
+        let v = "hello" in
+        let p = P.char 'h' in
+        let p = v <$ p in
+        let v2 = P.parse_string p "hello" in
+        v2 = "hello"
       ]} *)
 
   val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
-  (** [f <$> p] parses [p] to value [a], creates value [b] = [f a] and returns a
-      new parser encapsulating [b].
+  (** [f <$> p] returns a parser encapsulating value [b] where,
+
+      - [a] is the parsed value of [p]
+      - [b] is [f a]
 
       This is the infix version of {!val:map}.
 
@@ -1430,17 +1398,21 @@ module Infix : sig
         open P.Infix
 
         ;;
-        let p = P.((fun a -> a ^ " world") <$> string "hello") in
-        let input = new P.string_input "hello" in
-        let r = P.parse input p in
-        r = "hello world"
+        let f a = a ^ " world" in
+        let p = P.string "hello" in
+        let p = f <$> p in
+        let v = P.parse_string p "hello" in
+        v = "hello world"
       ]} *)
 
   val ( *> ) : _ t -> 'a t -> 'a t
-  (** [p *> q] parses [p] and discards its parsed value, parses [q] to value [a]
-      and then returns a new parser encapsulating [a].
+  (** [p *> q] returns a parser encapsulating value [a] where,
 
-      Also known as discard_left.
+      - [p], [q] are evaluated sequentially in order as given.
+      - [a] is parsed value of [q].
+      - The parsed value of [p] is discarded.
+
+      Also known as [discard left].
 
       {4:infix_discard_left_examples Examples}
 
@@ -1449,15 +1421,19 @@ module Infix : sig
         open P.Infix
 
         ;;
-        let p = P.(string "world" *> P.return "hello") in
-        let input = new P.string_input "world" in
-        let r = P.parse input p in
-        r = "hello"
+        let p = P.string "world" in
+        let q = P.pure "hello" in
+        let p = p *> q in
+        let v = P.parse_string p "world" in
+        v = "hello"
       ]} *)
 
   val ( <* ) : 'a t -> _ t -> 'a t
-  (** [p <* q] parses [p] to value [a], parses [q] and discards its parsed value
-      and then returns a new parser encapsulating [a].
+  (** [p <* q] returns a parser encapsulating value [a] where,
+
+      - [p], [q] are evaluated sequentially in order as given.
+      - [a] is parsed value of [p].
+      - The parsed value of [q] is discarded.
 
       Also know as discard_right.
 
@@ -1468,50 +1444,63 @@ module Infix : sig
         open P.Infix
 
         ;;
-        let p = P.(string "world" <* P.return "hello") in
-        let input = new P.string_input "world" in
-        let r = P.parse input p in
-        r = "world"
+        let p = P.string "world" in
+        let q = P.pure "hello" in
+        let p = p <* q in
+        let v = P.parse_string p "world" in
+        v = "world"
       ]} *)
 
   val ( <|> ) : 'a t -> 'a t -> 'a t
-  (** [p <|> q] parses [p] to value [a], parses [q] to value [b]. If [p] is a
-      success returns a new parser encapsulating [a]. Otherwise if [q] is
-      success returns a parser encapsulating [b].
+  (** [p <|> q] returns a parser encapsulating value [a] where,
 
-      If both - [p] and [q] - fails, then the parser fails.
+      - [p],[q] are evaluated sequentially in order as given.
+      - [a] is the parsed value of [p] if [p] is successful
+      - [a] is the parsed value of [q] if [p] is a failure and [q] is a success.
+      - If both - [p] and [q] - fails, then the parser fails.
 
       {4:infix_alternate_examples Examples}
+
+      [p] fails and [q] succeeds, therefore we return [q]'s parsed value ['w']
 
       {[
         module P = Reparse.Parser
         open P.Infix
 
         ;;
-        let p = P.(char 'h' <|> char 'w') in
-        let input = new P.string_input "world" in
-        let r = P.parse input p in
-        r = 'w'
+        let p = P.char 'h' in
+        let q = P.char 'w' in
+        let p = p <|> q in
+        let v = P.parse_string p "world" in
+        v = 'w'
+      ]}
 
-        ;;
-        let p = P.(char 'h' <|> char 'w') in
-        let input = new P.string_input "hello" in
-        let r = P.parse input p in
-        r = 'h'
+      [p] succeeds therefore we return its parsed value ['h']
 
-        ;;
-        let p = P.(char 'h' <|> char 'w') in
-        let input = new P.string_input "" in
-        let r =
+      {[
+        let p = P.char 'h' in
+        let q = P.char 'w' in
+        let p = p <|> q in
+        let v = P.parse_string p "hello" in
+        v = 'h'
+      ]}
+
+      The parser fails if both [p] and [q] fails.
+
+      {[
+        let p = P.char 'h' in
+        let q = P.char 'w' in
+        let p = p <|> q in
+        let v =
           try
-            let _ = P.parse input p in
+            let _ = P.parse_string p "" in
             false
           with _ -> true in
-        r = true
+        v = true
       ]} *)
 
   val ( <?> ) : 'a t -> string -> 'a t
-  (** [p <?> err_mg] parses [p] to value [a] and returns a new parser
+  (** [p <?> err_msg] parses [p] to value [a] and returns a new parser
       encapsulating [a]. If [p] is a failure, then it fails with error message
       [err_msg].
 
@@ -1525,18 +1514,19 @@ module Infix : sig
         open P.Infix
 
         ;;
-        let input = new P.string_input "" in
-        let p = P.next <?> "[error]" in
-        let r =
+        let p = P.char 'h' <|> P.char 'w' in
+        let err_msg = "[error]" in
+        let p = p <?> err_msg in
+        let v =
           try
-            let _ = P.parse input p in
+            let _ = P.parse_string p "" in
             false
           with
           | P.Parser
               {offset= 0; line_number= 0; column_number= 0; msg= "[error]"} ->
               true
           | _ -> false in
-        r = true
+        v = true
       ]} *)
 
   val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
@@ -1549,13 +1539,12 @@ module Infix : sig
         open P.Infix
 
         ;;
-        let input = new P.string_input "" in
         let p =
-          let* a = P.return 5 in
+          let* a = P.pure 5 in
           let total = a + 5 in
-          P.return total in
-        let r = P.parse input p in
-        r = 10
+          P.pure total in
+        let v = P.parse_string p "" in
+        v = 10
       ]} *)
 
   val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
@@ -1568,13 +1557,12 @@ module Infix : sig
         open P.Infix
 
         ;;
-        let input = new P.string_input "" in
         let p =
-          let+ a = P.return 5 in
+          let+ a = P.pure 5 in
           let total = a + 5 in
           total in
-        let r = P.parse input p in
-        r = 10
+        let v = P.parse_string p "" in
+        v = 10
       ]} *)
 end
 
@@ -1647,19 +1635,14 @@ end
         | Mult (e1, e2) -> eval e1 * eval e2
         | Div (e1, e2)  -> eval e1 / eval e2
 
-      let parse : string -> expr =
-       fun s ->
-        let input = new P.string_input s in
-        P.parse input expr
-
       (* Test AST *)
       let r =
-        let actual = parse "1*2-4+3" in
+        let actual = P.parse_string expr "1*2-4+3" in
         let expected = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
         Bool.equal (expected = actual) true
 
       (* Run the evaluator. *)
-      let exp_result = eval (parse "12+1*10") |> Int.equal 22
+      let exp_result = eval (P.parse_string expr "12+1*10") |> Int.equal 22
     ]} *)
 
 (** {2 Json} *)
@@ -1786,7 +1769,5 @@ end
               [ object_value; array_value; number_value; string_value
               ; false_value; true_value; null_value ] )
 
-      let parse p s =
-        let input = new P.string_input s in
-        P.parse input p
+      let parse s = P.parse_string json_value s
     ]} *)
