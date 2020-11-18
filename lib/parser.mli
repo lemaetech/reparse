@@ -15,12 +15,17 @@
 
     At the core is a type {!type:t} which represents a constructed parser
     definition. A parser {!type:t} is defined by composing together one or more
-    parsers or {!type:t}s.
+    parsers or {!type:t}s via usage of parser operators.
 
-    An instance of {!type:t} represents an un-evaluated parser. In order to
-    evaluate it, we need to feed it to {!val:parse} function along with an
-    {!type:input} instance. Parser operators/functions are broadly organized
-    into following categories:
+    An instance of {!type:t} represents an un-evaluated parser. {!val:parse}
+    function is used to evaluate a {!type:t}.
+
+    {!type:input} represents a generalization of data input to {!val:parse}.
+    Implement the interface to create new input types. Two types of concrete
+    input types are provided - string and file.
+
+    Parser operators - or functions - are broadly organized into following
+    categories:
 
     - Pure
     - Concatentation
@@ -42,11 +47,16 @@
 type 'a t
 (** Represents a parser which can parse value ['a].
 
-    Use {!val:parse} to execute a parser. *)
+    Use {!val:parse} to evaluate a parser. *)
 
 (** {2 Parser input types} *)
 
-(** Parser input interface. *)
+(** Parser input interface. It represents a generalization of data input to
+    {!val:parse}. Implement this interface to provide new sources of input to
+    {!val:parse}.
+
+    See {!class:string_input} or {!class:file_input} for examples of
+    implementation. *)
 class type input =
   object
     method eof : int -> bool
@@ -93,8 +103,8 @@ class file_input : Unix.file_descr -> input
     Evaluate a parser. *)
 
 val parse : ?track_lnum:bool -> input -> 'a t -> 'a
-(** [parse ~track_lnum input p] returns value [v] as a result of evaluating
-    parser [p] with [input].
+(** [parse ~track_lnum i p] evaluates [p] to value [v] while consuming input
+    instance [i].
 
     If [track_num] is [true] then the parser tracks both the {e line} and the
     {e column} numbers. It is set to [false] by default.
@@ -161,23 +171,23 @@ val pure : 'a -> 'a t
 
       ;;
       let input = new P.string_input "" in
-      let r1 = P.(parse input (pure 5)) in
-      let r2 = P.(parse input (pure "hello")) in
-      r1 = 5 && r2 = "hello"
+      let v1 = P.(parse input (pure 5)) in
+      let v2 = P.(parse input (pure "hello")) in
+      v1 = 5 && v2 = "hello"
     ]} *)
 
 val return : 'a -> 'a t
-(** [return v] is [pure v]. *)
+(** [return v] is [pure v]. Synonym of {!val:pure}. *)
 
 val unit : unit t
-(** [unit] is [return ()]. *)
+(** [unit] is [return ()]. Convenience function to create parser of value [()]. *)
 
 (*(1** {2 Errors} *)
 
 (*    Handle, generate exceptions and failures. *1) *)
 
 val fail : string -> 'a t
-(** [fail err_msg] fails a parse with [err_msg].
+(** [fail err_msg] returns a parser that always fails with [err_msg].
 
     {4:fail_examples Examples}
 
@@ -198,23 +208,43 @@ val fail : string -> 'a t
 
 (** {1 Concatenation}
 
-    Join two or more parsers to create a new parser. *)
+    Define parsers by joining two or more parsers. *)
 
 (** {2 Bind} *)
 
 val bind : 'a t -> ('a -> 'b t) -> 'b t
-(** [bind p f] is [p >>= f]
+(** [bind p f] returns a new parser encapsulating value [b] where,
 
-    See {!val:Infix.(>>=)} *)
+    - [a] is the parsed value of [p]
+    - [b] is [f a]
+
+    {4:bind_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let f a = P.return (a ^ " world") in
+      let p = P.string "hello" in
+      let p = P.bind p f in
+      let input = new P.string_input "hello" in
+      let b = P.parse input p in
+      b = "hello world"
+    ]}
+
+    See {!Infix.(>>=)}. [p >>= f] is the infix equivalent of [bind p f]. *)
 
 (** {2 Map}
 
-    Mappers transform from one parser value to another. *)
+    Mappers transform from one parser value to another. [map] functions
+    [map2, map3, map4] are defined in terms of {!val:bind}s. So a given
+    [map]{i n} usage can be defined equivalently in terms of {!val:bind}s. *)
 
 val map : ('a -> 'b) -> 'a t -> 'b t
-(** [map f p] is [f <$> p].
+(** [map f p] returns a new parser encapsulating value [b] where,
 
-    {e see} {!Infix.(<$>)} for infix version.
+    - [a] is the parsed value of [p].
+    - [b] is [f a].
 
     {4:map_examples Examples}
 
@@ -222,15 +252,35 @@ val map : ('a -> 'b) -> 'a t -> 'b t
       module P = Reparse.Parser
 
       ;;
-      let p = P.map (fun a -> a ^ " world") (P.string "hello") in
+      let f a = a ^ " world" in
+      let p = P.string "hello" in
+      let p = P.map f p in
+      let input = new P.string_input "hello" in
+      let b = P.parse input p in
+      b = "hello world"
+    ]}
+
+    Sine [map] is defined in terms of [bind], the above usage of [map] is
+    equivalent to the [bind] usage below,
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let p = P.bind (P.string "hello") (fun a -> P.return (a ^ " world")) in
       let input = new P.string_input "hello" in
       let r = P.parse input p in
       r = "hello world"
-    ]} *)
+    ]}
+
+    See {!Infix.(<$>)}. [f <$> p] is infix equivalent of [map f p]. *)
 
 val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
-(** [map2 f p q] returns the value of applying [f a b]. [a, b] are the parsed
-    values of parsers [p] and [q] respectively.
+(** [map2 f p q] returns a new parser encapsulating value [c] where,
+
+    - [c] is [f a b].
+    - [a, b] are the parsed values of parsers [p] and [q] respectively.
+    - [p] and [q] are evaluated sequentially in order as given.
 
     {4:map2_examples Examples}
 
@@ -242,11 +292,27 @@ val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
       let input = new P.string_input "" in
       let r = P.parse input p in
       r = 3
+    ]}
+
+    The above usage of [map2] is equivalent to below,
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let p = P.pure 1 >>= fun a -> P.pure 2 >>= fun b -> P.return (a + b) in
+      let input = new P.string_input "" in
+      let r = P.parse input p in
+      r = 3
     ]} *)
 
 val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
-(** [map3 f p q r] returns the value of applying [f a b c]. [a, b, c] are the
-    parsed values of parsers [p], [q] and [r] respectively.
+(** [map3 f p q r] returns a new parser encapsulating value [d] where,
+
+    - [d] is [f a b c].
+    - [a, b, c] are the parsed values of parsers [p], [q] and [r] respectively.
+    - [p], [q], [r] are evaluated sequentially in order as given.
 
     {4:map3_examples Examples}
 
@@ -262,8 +328,12 @@ val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
     ]} *)
 
 val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
-(** [map4 f p q r s] returns the value of applying [f a b c d]. [a, b, c, d] are
-    the parsed values of parsers [p], [q], [r] and [s] respectively.
+(** [map4 f p q r s] returns a new parser encapsulating value [e] where,
+
+    - [e] is [f a b c d].
+    - [a, b, c, d] are the parsed values of parsers [p], [q], [r] and [s]
+      respectively.
+    - [p], [q], [r] and [s] are evaluated sequentially in order as given.
 
     {4:map4_examples Examples}
 
