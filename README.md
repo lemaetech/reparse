@@ -2,6 +2,8 @@
 
 Reparse is a monadic, recursive descent based, comprehensive, parser construction library for ocaml.
 
+[Reparse Documentation](http://lemaetech.co.uk/reparse/)
+
 ## Getting Started
 
 ```sh
@@ -17,24 +19,9 @@ Add `reparse` to dune,
   (libraries reparse))
 ```
 
-## Documentation
-
-[Reparse API Documentation](http://lemaetech.co.uk/reparse/)
-
 ## Example - Calculator
 
 A **calculator** is the `hello world` of parsers. Here is an implementation in `Reparse` which supports `+,-,*` and `/` operations.
-
-The expression grammar is defined by the following BNF grammar:
-
-```ebnf
-<expr>   ::= <term>   "+" <expr>
-           | <term>
-<term>   ::= <factor> "*" <term>
-           | <factor>
-<factor> ::= "(" <expr> ")"
-           | integer
-```
 
 ```ocaml
 module P = Reparse.Parser
@@ -99,6 +86,17 @@ let r =
 let exp_result =
   let v = eval (P.parse_string expr "12+1*10") in
   Int.equal 22 v
+```
+
+The expression grammar is defined by the following BNF grammar:
+
+```ebnf
+<expr>   ::= <term>   "+" <expr>
+           | <term>
+<term>   ::= <factor> "*" <term>
+           | <factor>
+<factor> ::= "(" <expr> ")"
+           | integer
 ```
 
 ## More Examples

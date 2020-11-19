@@ -5,3 +5,7 @@
  (foreign_stubs
   (language c)
   (names pread)))
+
+(documentation
+ (package reparse-unix)
+ (mld_files index))

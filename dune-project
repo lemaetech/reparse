@@ -23,7 +23,6 @@
  (depends
   (ocaml
    (>= 4.10.0))
-  dune
   (alcotest :with-test)))
 
 (package
@@ -33,6 +32,5 @@
  (depends
   (ocaml
    (>= 4.10.0))
-  dune
   reparse
   base-unix))

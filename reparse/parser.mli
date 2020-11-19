@@ -39,7 +39,7 @@
 
     An {{:#infix} Infix} module contains infix and let syntax support functions.
 
-    See {{:#examples} examples} of use.*)
+    See {{:#examples} examples} of use. *)
 
 (** {2 Types} *)
 
@@ -66,6 +66,14 @@ class type input =
 
         @raise End_of_file if [n] is at eof. *)
   end
+
+(** {2:executing_samples Executing Samples} *)
+
+(** Include the [reparse] package in [utop].
+
+    Copy and paste the sample in utop and type [;;] to run it.
+
+    {v #require "reparse";; v} *)
 
 (** {2:parse Parse}
 
@@ -1288,14 +1296,13 @@ val whitespace : char t
       v = ['\t'; ' '; '\t'; ' ']
     ]} *)
 
-(** {1:infix Infix & Let}
+(** {1:infix Infix} *)
 
-    Infix and let syntax support operators.
+(** Provides functions to support infix and let syntax operators.
 
     Open the module to use it:
 
     {[ open Reparse.Parser.Infix ]} *)
-
 module Infix : sig
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   (** [p >>= f] returns a new parser b where,

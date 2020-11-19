@@ -9,8 +9,8 @@ license: "MPL-2.0"
 homepage: "https://github.com/lemaetech/reparse"
 bug-reports: "https://github.com/lemaetech/reparse/issues"
 depends: [
-  "ocaml" {>= "4.10.0"}
   "dune" {>= "2.7"}
+  "ocaml" {>= "4.10.0"}
   "reparse"
   "base-unix"
   "odoc" {with-doc}

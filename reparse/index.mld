@@ -2,9 +2,9 @@
 
 Reparse is a monadic, recursive descent based, comprehensive, parser construction library for ocaml.
 
-{1:api API}
+{1:api API Documentation}
 
-Just one ocaml module - {!module:Reparse.Parser}
+{!module:Reparse.Parser}
 
 {1 Why Use Reparse?}
 
@@ -29,7 +29,7 @@ add [reparse] to [dune],
   (libraries reparse))
 v}
 
-{1 Hello World?}
+{1 Hello World Calculator?}
 
 A {e calculator} is the [hello world] of parsers. Here is an implementation in [Reparse] which supports [+,-,*] and [/] operations.
 
