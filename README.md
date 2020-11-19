@@ -36,32 +36,29 @@ type expr =
 
 let skip_spaces = P.skip P.space
 
-let binop : 'a P.t -> char -> 'b P.t -> ('a -> 'b -> 'c) -> 'c P.t =
- fun exp1 op exp2 f ->
+let binop exp1 op exp2 f =
   P.map3
     (fun e1 _ e2 -> f e1 e2)
     exp1
     (skip_spaces *> P.char op <* skip_spaces)
     exp2
 
-let integer : expr P.t =
+let integer =
   let+ d = P.digits in
   Int (int_of_string d)
 
-let factor : expr P.t -> expr P.t =
- fun expr ->
+let factor expr =
   P.any
     [ P.char '(' *> skip_spaces *> expr <* skip_spaces <* P.char ')'
     ; skip_spaces *> integer <* skip_spaces ]
 
-let term : expr P.t -> expr P.t =
- fun factor ->
+let term factor =
   P.recur (fun term ->
       let mult = binop factor '*' term (fun e1 e2 -> Mult (e1, e2)) in
       let div = binop factor '/' term (fun e1 e2 -> Div (e1, e2)) in
       mult <|> div <|> factor )
 
-let expr : expr P.t =
+let expr =
   P.recur (fun expr ->
       let factor = factor expr in
       let term = term factor in
@@ -69,7 +66,7 @@ let expr : expr P.t =
       let sub = binop term '-' expr (fun e1 e2 -> Sub (e1, e2)) in
       P.any [add; sub; term] )
 
-let rec eval : expr -> int = function
+let rec eval = function
   | Int i         -> i
   | Add (e1, e2)  -> eval e1 + eval e2
   | Sub (e1, e2)  -> eval e1 - eval e2
