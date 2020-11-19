@@ -1,71 +1,20 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"><head><title>index (reparse.index)</title><link rel="stylesheet" href="../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 1.5.2"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body><div class="content"><header><nav><a href="../index.html">Up</a> – reparse</nav><h1 id="reparse"><a href="#reparse" class="anchor"></a>Reparse</h1><p>Reparse is a monadic, recursive descent based, comprehensive, parser construction library for ocaml.</p><nav class="toc"><ul><li><a href="#api">API</a></li><li><a href="#why-use-reparse?">Why Use Reparse?</a></li><li><a href="#getting-started">Getting Started</a></li><li><a href="#hello-world?">Hello World?</a></li><li><a href="#more-examples?">More Examples?</a></li></ul></nav></header><h2 id="api"><a href="#api" class="anchor"></a>API</h2><p>Just one ocaml module - <a href="Reparse/Parser/index.html"><code>Reparse.Parser</code></a></p><h2 id="why-use-reparse?"><a href="#why-use-reparse?" class="anchor"></a>Why Use Reparse?</h2><ul><li>Develop parsers in ocaml, i.e. one doesn't have to learn yet another parser generator specific DSL and its idiosyncrasies.</li><li>Easily create and re-use third-pary developed reparse parsers. <code>Reparse</code> parsers can be easily composed with other third-pary reparse parsers.</li><li>Interactively develop parsers using tools you may already be familiar, such as <code>utop</code>, <code>ocaml toplevel</code>.</li><li>Test your parsers using ocaml test libraries and tools such as <code>alcotest</code>, <code>ounit2</code> and the like.</li></ul><p>In <i>summary</i>, <code>Reparse</code> allows you to leverage your existing ocaml knowledge and skillset to develop parsers.</p><h2 id="getting-started"><a href="#getting-started" class="anchor"></a>Getting Started</h2><pre><code class="ml">opam install reparse</code></pre><p>add <code>reparse</code> to <code>dune</code>,</p><pre>(executable # or library
-  (name hello_world)
-  (public_name hello_world)
-  (libraries reparse))</pre><h2 id="hello-world?"><a href="#hello-world?" class="anchor"></a>Hello World?</h2><p>A <em>calculator</em> is the <code>hello world</code> of parsers. Here is an implementation in <code>Reparse</code>. The calculator supports <code>+,-,*</code> and <code>/</code> operations.</p><p>The expression grammar is defined by the following BNF grammar:</p><pre>&lt;expr&gt;   ::= &lt;term&gt;   &quot;+&quot; &lt;expr&gt; 
-           | &lt;term&gt;
-&lt;term&gt;   ::= &lt;factor&gt; &quot;*&quot; &lt;term&gt; 
-           | &lt;factor&gt;
-&lt;factor&gt; ::= &quot;(&quot; &lt;expr&gt; &quot;)&quot; 
-           | integer</pre><pre><code class="ml">module P = Reparse.Parser
-open P.Infix
-
-type expr =
-  | Int  of int
-  | Add  of expr * expr
-  | Sub  of expr * expr
-  | Mult of expr * expr
-  | Div  of expr * expr
-
-let skip_spaces = P.skip P.space
-
-let binop : 'a P.t -&gt; char -&gt; 'b P.t -&gt; ('a -&gt; 'b -&gt; 'c) -&gt; 'c P.t =
- fun exp1 op exp2 f -&gt;
-  P.map3
-    (fun e1 _ e2 -&gt; f e1 e2)
-    exp1
-    (skip_spaces *&gt; P.char op &lt;* skip_spaces)
-    exp2
-
-let integer : expr P.t =
-  let+ d = P.digits in
-  Int (int_of_string d)
-
-let factor : expr P.t -&gt; expr P.t =
- fun expr -&gt;
-  P.any
-    [ P.char '(' *&gt; skip_spaces *&gt; expr &lt;* skip_spaces &lt;* P.char ')'
-    ; skip_spaces *&gt; integer &lt;* skip_spaces ]
-
-let term : expr P.t -&gt; expr P.t =
- fun factor -&gt;
-  P.recur (fun term -&gt;
-      let mult = binop factor '*' term (fun e1 e2 -&gt; Mult (e1, e2)) in
-      let div = binop factor '/' term (fun e1 e2 -&gt; Div (e1, e2)) in
-      mult &lt;|&gt; div &lt;|&gt; factor )
-
-let expr : expr P.t =
-  P.recur (fun expr -&gt;
-      let factor = factor expr in
-      let term = term factor in
-      let add = binop term '+' expr (fun e1 e2 -&gt; Add (e1, e2)) in
-      let sub = binop term '-' expr (fun e1 e2 -&gt; Sub (e1, e2)) in
-      P.any [add; sub; term] )
-
-let rec eval : expr -&gt; int = function
-  | Int i         -&gt; i
-  | Add (e1, e2)  -&gt; eval e1 + eval e2
-  | Sub (e1, e2)  -&gt; eval e1 - eval e2
-  | Mult (e1, e2) -&gt; eval e1 * eval e2
-  | Div (e1, e2)  -&gt; eval e1 / eval e2
-
-(* Test AST *)
-let r =
-  let actual = P.parse_string expr &quot;1*2-4+3&quot; in
-  let expected = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
-  Bool.equal (expected = actual) true
-
-(* Run and test the evaluator. *)
-let exp_result =
-  let v = eval (P.parse_string expr &quot;12+1*10&quot;) in
-  Int.equal 22 v</code></pre><h2 id="more-examples?"><a href="#more-examples?" class="anchor"></a>More Examples?</h2><p>How about a RFC 8259 compliant <a href="https://github.com/lemaetech/reparse/blob/master/examples/json.ml">JSON parser</a></p></div></body></html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>index</title>
+    <link rel="stylesheet" href="./odoc.css"/>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  </head>
+  <body>
+    <main class="content">
+      <div class="by-name">
+      <h2>OCaml package documentation</h2>
+      <ol>
+      <li><a href="reparse/index.html">reparse</a> <span class="version">1.0.2</span></li>
+      <li><a href="reparse-unix/index.html">reparse-unix</a> <span class="version">1.0.2</span></li>
+      </ol>
+      </div>
+    </main>
+  </body>
+</html>
