@@ -23,7 +23,7 @@ Add `reparse` to dune,
 
 ## Example - Calculator
 
-A {e calculator} is the [hello world] of parsers. Here is an implementation in [Reparse]. The calculator supports [+,-,*] and [/] operations.
+A **calculator** is the `hello world` of parsers. Here is an implementation in `Reparse`. The calculator supports `+,-,*` and `/` operations.
 
 The expression grammar is defined by the following BNF grammar:
 
