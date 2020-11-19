@@ -79,8 +79,10 @@ let r =
   let expected = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
   Bool.equal (expected = actual) true
 
-(* Run the evaluator. *)
-let exp_result = eval (P.parse_string expr "12+1*10") |> Int.equal 22
+(* Run and test the evaluator. *)
+let exp_result =
+  let v = eval (P.parse_string expr "12+1*10") in
+  Int.equal 22 v
 
 (*-------------------------------------------------------------------------
  * Copyright (c) 2020 Bikal Gurung. All rights reserved.

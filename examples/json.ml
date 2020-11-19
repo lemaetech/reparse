@@ -32,15 +32,18 @@ type value =
   | True
   | Null
 
+(*---- utils and aliases ----*)
+let sprintf = Printf.sprintf
+let implode l = List.to_seq l |> String.of_seq
+
+(*---- Parser definitions ---------*)
 let ws =
   P.skip (P.char_if (function ' ' | '\t' | '\n' | '\r' -> true | _ -> false))
 
-let implode l = List.to_seq l |> String.of_seq
 let struct_char c = ws *> P.char c <* ws
 let null_value = ws *> P.string "null" *> ws *> P.pure Null
 let false_value = ws *> P.string "false" *> ws *> P.pure False
 let true_value = ws *> P.string "true" *> ws *> P.pure True
-let sprintf = Printf.sprintf
 
 let number_value =
   let* negative =

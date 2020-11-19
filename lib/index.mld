@@ -1,42 +1,49 @@
-## Reparse
+{0 Reparse}
 
 Reparse is a monadic, recursive descent based, comprehensive, parser construction library for ocaml.
 
-## Getting Started
+{1:api API}
 
-```sh
-$ opam install reparse
-```
+Just one ocaml module - {!module:Reparse.Parser}
 
-Add `reparse` to dune,
+{1 Why Use Reparse?}
 
-```
+- Develop parsers in ocaml, i.e. one doesn't have to learn yet another parser generator specific DSL and its idiosyncrasies.
+- Easily create and re-use third-pary developed reparse parsers. [Reparse] parsers can be easily composed with other third-pary reparse parsers.
+- Interactively develop parsers using tools you may already be familiar, such as [utop], [ocaml toplevel]. 
+- Test your parsers using ocaml test libraries and tools such as [alcotest], [ounit2] and the like. 
+
+In {i summary}, [Reparse] allows you to leverage your existing ocaml knowledge and skillset to develop parsers. 
+
+{1 Getting Started}
+
+{[
+  opam install reparse
+]}
+
+add [reparse] to [dune],
+{v
 (executable # or library
   (name hello_world)
   (public_name hello_world)
   (libraries reparse))
-```
+v}
 
-## Documentation
-
-[Reparse API Documentation](http://lemaetech.co.uk/reparse/)
-
-## Example - Calculator
+{1 Hello World?}
 
 A {e calculator} is the [hello world] of parsers. Here is an implementation in [Reparse]. The calculator supports [+,-,*] and [/] operations.
 
 The expression grammar is defined by the following BNF grammar:
 
-```ebnf
-<expr>   ::= <term>   "+" <expr>
+{v
+<expr>   ::= <term>   "+" <expr> 
            | <term>
-<term>   ::= <factor> "*" <term>
+<term>   ::= <factor> "*" <term> 
            | <factor>
-<factor> ::= "(" <expr> ")"
+<factor> ::= "(" <expr> ")" 
            | integer
-```
-
-```ocaml
+v}
+{[
   module P = Reparse.Parser
   open P.Infix
 
@@ -99,9 +106,8 @@ The expression grammar is defined by the following BNF grammar:
   let exp_result =
     let v = eval (P.parse_string expr "12+1*10") in
     Int.equal 22 v
-```
+]} 
 
-## More Examples
+{1 More Examples?}
+How about a RFC 8259 compliant {{:https://github.com/lemaetech/reparse/blob/master/examples/json.ml} JSON parser}
 
-- [HTTP Multipart](https://github.com/lemaetech/http-mutlipart-formdata/blob/master/lib/multipart.ml)
-- [RFC 8259 JSON parser](https://github.com/lemaetech/reparse/blob/master/examples/json.ml)
