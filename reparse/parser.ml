@@ -218,12 +218,8 @@ let eoi : unit t =
 
 let not_ : 'a t -> unit t =
  fun p state ~ok ~err ->
-  let offset = state.offset in
   let error' () = error ~err "[failing] expected failure to succeed" state in
-  p
-    state
-    ~ok:(fun _ -> error' ())
-    ~err:(fun _ -> if offset = state.offset then ok () else error' ())
+  p state ~ok:(fun _ -> error' ()) ~err:(fun _ -> ok ())
 ;;
 
 let is_not : 'a t -> bool t =
