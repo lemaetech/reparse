@@ -14,7 +14,7 @@ let char_exn parse () =
          { offset= 0
          ; line_number= 0
          ; column_number= 0
-         ; msg= "[char] expected 'h'" } )
+         ; msg= "[char] expected 'h'" })
       r)
 
 let string parse () =
@@ -27,7 +27,8 @@ let string_exn parse () =
   let r () = ignore (parse p) in
   Alcotest.(
     check_raises "string"
-      (P.Parser {offset= 0; line_number= 0; column_number= 0; msg= "[string]"})
+      (P.Parser
+         {offset= 0; line_number= 0; column_number= 0; msg= "[string] hello"})
       r)
 
 let is_char = function 'a' | 'b' | 'c' -> true | _ -> false

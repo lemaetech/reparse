@@ -1,3 +1,5 @@
+## v2.0.0 2020-11-09 UK
+
 ## v1.2.0 2020-09-13 UK
 
 - Remove Result and underlying monad
