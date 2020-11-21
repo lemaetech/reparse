@@ -241,12 +241,11 @@ let is_not : 'a t -> bool t =
 
 let is : 'a t -> bool t =
  fun p state ~ok ~err:_ ->
-  let offset = state.offset in
   let init_pos = pos state in
   p
     state
     ~ok:(fun _ ->
-      if offset = state.offset then ok false else backtrack state init_pos;
+      backtrack state init_pos;
       ok true)
     ~err:(fun _ ->
       backtrack state init_pos;
