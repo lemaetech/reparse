@@ -228,7 +228,6 @@ let not_ : 'a t -> unit t =
 
 let is_not : 'a t -> bool t =
  fun p state ~ok ~err:_ ->
-  let offset = state.offset in
   let init_pos = pos state in
   p
     state
@@ -236,11 +235,8 @@ let is_not : 'a t -> bool t =
       backtrack state init_pos;
       ok false)
     ~err:(fun _ ->
-      if offset = state.offset
-      then ok true
-      else (
-        backtrack state init_pos;
-        ok false))
+      backtrack state init_pos;
+      ok true)
 ;;
 
 let is : 'a t -> bool t =
