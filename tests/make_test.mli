@@ -1,5 +1,5 @@
-val make :
-     string
+val make
+  :  string
   -> (('a Reparse.Parser.t -> 'a) -> 'b)
   -> string
-  -> (string * [> `Quick] * 'b) list
+  -> (string * [> `Quick ] * 'b) list

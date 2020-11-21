@@ -43,28 +43,28 @@
 
 (** {2 Types} *)
 
-type 'a t
 (** Represents a parser which can parse value ['a].
 
     Use {{:#parse} parse functions} to evaluate a parser. *)
+type 'a t
 
 (** Represents a generalization of data input source to a parser. Implement this
     interface to provide new sources of input to {!val:parse}. *)
 class type input =
   object
-    method eof : int -> bool
     (** [i#eof offset] returns [true] if [offset] position in [i] represents the
         end of input. *)
+    method eof : int -> bool
 
-    method sub : offset:int -> len:int -> string
     (** [i#sub t ~offset ~len] reads and returns a string of length [len] at
         position [offset] from input [i]. May return a string of length less
         than [len]. *)
+    method sub : offset:int -> len:int -> string
 
-    method nth : int -> char
     (** [i#nth n] returns the [n]th char from input [i].
 
         @raise End_of_file if [n] is at eof. *)
+    method nth : int -> char
   end
 
 (** {2:executing_samples Executing Samples} *)
@@ -79,7 +79,6 @@ class type input =
 
     Evaluate a parser. *)
 
-val parse_string : ?track_lnum:bool -> 'a t -> string -> 'a
 (** [parse_string ~track_lnum p s] evaluates [p] to value [v] while consuming
     string instance [s].
 
@@ -119,17 +118,16 @@ val parse_string : ?track_lnum:bool -> 'a t -> string -> 'a
       v = (0, 0)
     ]}
     @raise Parser when parser encounters error *)
+val parse_string : ?track_lnum:bool -> 'a t -> string -> 'a
 
-val parse : ?track_lnum:bool -> 'a t -> input -> 'a
 (** [parse] is a generalised version of {!val:parse_string} over type
     {!type:input}.
 
     Use this function when you have a custom implementation of {!type:input}. *)
+val parse : ?track_lnum:bool -> 'a t -> input -> 'a
 
 (** {2 Exception} *)
 
-exception
-  Parser of {offset: int; line_number: int; column_number: int; msg: string}
 (** Raised by parsers which are unable to parse successfully.
 
     [offset] is the current index position of input at the time of failure.
@@ -139,12 +137,18 @@ exception
     [column_number] is column number at the time of failure.
 
     [msg] contains an error description. *)
+exception
+  Parser of
+    { offset : int
+    ; line_number : int
+    ; column_number : int
+    ; msg : string
+    }
 
 (** {1 Pure}
 
     Create parsers from values. *)
 
-val pure : 'a -> 'a t
 (** [pure v] always parses value [v].
 
     {4:pure_examples Examples}
@@ -158,18 +162,18 @@ val pure : 'a -> 'a t
       let v2 = P.(parse input (pure "hello")) in
       v1 = 5 && v2 = "hello"
     ]} *)
+val pure : 'a -> 'a t
 
-val unit : unit t
 (** [unit] is a convenience function to create a new parser which always parses
     to value [()].
 
     [unit] is [pure ()]. *)
+val unit : unit t
 
 (*(1** {2 Errors} *)
 
 (*    Handle, generate exceptions and failures. *1) *)
 
-val fail : string -> 'a t
 (** [fail err_msg] returns a parser that always fails with [err_msg].
 
     {4:fail_examples Examples}
@@ -188,6 +192,7 @@ val fail : string -> 'a t
       = P.Parser
           {offset= 0; line_number= 0; column_number= 0; msg= "hello error"}
     ]} *)
+val fail : string -> 'a t
 
 (** {1 Concatenation}
 
@@ -195,7 +200,6 @@ val fail : string -> 'a t
 
 (** {2 Bind} *)
 
-val bind : 'a t -> ('a -> 'b t) -> 'b t
 (** [bind p f] returns a new parser [b] where,
 
     - [a] is the parsed value of [p]
@@ -216,6 +220,7 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
     ]}
 
     See {!Infix.(>>=)}. [p >>= f] is the infix equivalent of [bind p f]. *)
+val bind : 'a t -> ('a -> 'b t) -> 'b t
 
 (** {2 Map}
 
@@ -223,7 +228,6 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
     [map2, map3, map4] are defined in terms of {!val:bind}s. So a given mapper
     function usage can be defined equivalently in terms of {!val:bind}s. *)
 
-val map : ('a -> 'b) -> 'a t -> 'b t
 (** [map f p] returns a new parser encapsulating value [b] where,
 
     - [a] is the parsed value of [p].
@@ -257,8 +261,8 @@ val map : ('a -> 'b) -> 'a t -> 'b t
     ]}
 
     See {!Infix.(<$>)}. [f <$> p] is infix equivalent of [map f p]. *)
+val map : ('a -> 'b) -> 'a t -> 'b t
 
-val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
 (** [map2 f p q] returns a new parser encapsulating value [c] where,
 
     - [p] and [q] are evaluated sequentially in order as given.
@@ -290,8 +294,8 @@ val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
       let v = P.parse_string p "" in
       v = 3
     ]} *)
+val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
 
-val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
 (** [map3 f p q r] returns a new parser encapsulating value [d] where,
 
     - [p], [q], [r] are evaluated sequentially in order as given.
@@ -312,8 +316,8 @@ val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
       let v = P.parse_string p "" in
       v = 6
     ]} *)
+val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
 
-val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
 (** [map4 f p q r s] returns a new parser encapsulating value [e] where,
 
     - [p], [q], [r] and [s] are evaluated sequentially in order as given.
@@ -336,8 +340,8 @@ val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
       let v = P.parse_string p "" in
       v = 10
     ]} *)
+val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
 
-val delay : 'a t Lazy.t -> 'a t
 (** [delay p] returns a parser which lazily parses [p].
 
     {4:delay_examples Examples}
@@ -351,8 +355,8 @@ val delay : 'a t Lazy.t -> 'a t
       let v = P.parse_string p "abc" in
       v = 'a'
     ]} *)
+val delay : 'a t Lazy.t -> 'a t
 
-val named : string -> 'a t -> 'a t
 (** [named name p] uses [name] as part of an error message when constructing
     exception {!exception:Parser} if parse of [p] fails.
 
@@ -380,12 +384,12 @@ val named : string -> 'a t -> 'a t
               "[parse_c] Reparse.Parser.Parser(0, 0, 0, \"[char] expected \
                'a'\")" }
     ]} *)
+val named : string -> 'a t -> 'a t
 
 (** {1 Alternation}
 
     One or the other. *)
 
-val any : 'a t list -> 'a t
 (** [any l] parses the value of the first successful parser in list [l].
 
     Specified parsers in [l] are evaluated sequentially from left to right. A
@@ -427,17 +431,17 @@ val any : 'a t list -> 'a t
         with _ -> true in
       v = true
     ]} *)
+val any : 'a t list -> 'a t
 
-val alt : 'a t -> 'a t -> 'a t
 (** [alt p q] is [p <|> q].
 
     See {!val:Infix.(<|>)} *)
+val alt : 'a t -> 'a t -> 'a t
 
 (** {1 Grouping}
 
     Group parsers. *)
 
-val all : 'a t list -> 'a list t
 (** [all l] parses all parsers in [l] and returns the parsed values.
 
     The parser only succeeds if and only if all of the parsers in [l] succeed.
@@ -471,8 +475,8 @@ val all : 'a t list -> 'a list t
         with _ -> true in
       v = true
     ]} *)
+val all : 'a t list -> 'a list t
 
-val all_unit : 'a t list -> unit t
 (** [all_unit l] parses all parsers in [l] while discarding the parsed values.
 
     {4:all_unit_examples Examples}
@@ -502,23 +506,23 @@ val all_unit : 'a t list -> unit t
         with _ -> true in
       v = true
     ]} *)
+val all_unit : 'a t list -> unit t
 
 (** {1 Repetition} *)
 
 (** {2 Recur} *)
 
-val recur : ('a t -> 'a t) -> 'a t
 (** [recur f] returns a recursive parser. Function value [f] accepts a parser
     [p] as its argument and returns a parser [q]. Parser [q] in its definition
     can refer to [p] and [p] can refer to [q] in its own definition.
 
     Such parsers are also known as a fixpoint or y combinator. *)
+val recur : ('a t -> 'a t) -> 'a t
 
 (** {2 Skip}
 
     Discards parsed values. *)
 
-val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 (** [skip ~at_least ~up_to p] repeatedly parses [p] and discards its value.
 
     The lower and upper bound of repetition is specified by arguments [at_least]
@@ -542,8 +546,8 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
       let v = P.parse_string p "     " in
       v = 5
     ]} *)
+val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 
-val skip_while : _ t -> while_:bool t -> int t
 (** [skip_while p ~while_] repeatedly parses [p] and discards its value if
     parser [while_] parses to value [true].
 
@@ -566,12 +570,12 @@ val skip_while : _ t -> while_:bool t -> int t
       let v = P.parse_string p "     " in
       v = 5
     ]} *)
+val skip_while : _ t -> while_:bool t -> int t
 
 (** {2 Take}
 
     Collects parsed values *)
 
-val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
 (** [take ~at_least ~up_to ~sep_by p] repeatedly parses [p] and returns the
     parsed values.
 
@@ -652,8 +656,8 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       let v = P.parse_string p "a,a,a,a,a" in
       v = ['a'; 'a'; 'a']
     ]} *)
+val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
 
-val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 (** [take_while ~sep_by p ~while_ p] repeatedly parses [p] and returns its
     value.
 
@@ -696,9 +700,8 @@ val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
       let v = P.parse_string p "a,a,ab" in
       v = ['a'; 'a'; 'a']
     ]} *)
+val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 
-val take_while_cb :
-  ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> int t
 (** [take_while_on ~sep_by ~while_ ~on_take p] repeatedly parses [p] and calls
     callback [on_take_cb] with the parsed value.
 
@@ -739,12 +742,17 @@ val take_while_cb :
       let s = Buffer.contents buf in
       v = 3 && s = "aaa"
     ]} *)
+val take_while_cb
+  :  ?sep_by:_ t
+  -> while_:bool t
+  -> on_take_cb:('a -> unit)
+  -> 'a t
+  -> int t
 
 (** {1 Optional}
 
     Don't fail when parsing is not successful.*)
 
-val optional : 'a t -> 'a option t
 (** [optional p] parses [Some a] if successful and [None] otherwise. [a] is the
     parsed value of [p].
 
@@ -764,10 +772,10 @@ val optional : 'a t -> 'a option t
       let v = P.parse_string p "ab" in
       v = None
     ]}*)
+val optional : 'a t -> 'a option t
 
 (** {1 Query Input state} *)
 
-val is_eoi : bool t
 (** [is_eoi] parses to [true] if parser has reached end of input, [false]
     otherwise.
 
@@ -784,8 +792,8 @@ val is_eoi : bool t
       let v = P.(parse_string is_eoi "a") in
       v = false
     ]} *)
+val is_eoi : bool t
 
-val eoi : unit t
 (** [eoi] parses end of input. Fails if parser is not at end of input.
 
     {4:eoi_examples Examples}
@@ -805,8 +813,8 @@ val eoi : unit t
         with _ -> true in
       v = true
     ]} *)
+val eoi : unit t
 
-val lnum : int t
 (** [lnum] parses the current line number of input. line number count start form
     [1].
 
@@ -821,8 +829,8 @@ val lnum : int t
       let v = P.parse_string ~track_lnum:true p "bcb" in
       v = 1
     ]} *)
+val lnum : int t
 
-val cnum : int t
 (** [cnum] parses the current column number. column number count start from [1].
 
     {4:cnum_examples Examples}
@@ -836,8 +844,8 @@ val cnum : int t
       let v = P.parse_string ~track_lnum:true p "bcb" in
       v = 2
     ]} *)
+val cnum : int t
 
-val offset : int t
 (** [offset] parses the current input offset. offset count start from [0].
 
     {4:offset_examples Examples}
@@ -851,12 +859,12 @@ val offset : int t
       let v = P.parse_string ~track_lnum:true p "bcb" in
       v = 1
     ]} *)
+val offset : int t
 
 (** {1 Boolean}
 
     [true], [false], is, is not. *)
 
-val not_ : 'a t -> unit t
 (** [not_ p] parses value [()] if and only if [p] fails to parse, otherwise the
     parse fails.
 
@@ -870,8 +878,8 @@ val not_ : 'a t -> unit t
       let v = P.parse_string p "bbb" in
       v = ()
     ]} *)
+val not_ : 'a t -> unit t
 
-val not_followed_by : 'a t -> 'b t -> 'a t
 (** [not_followed_by p q] parses value of [p] only if immediate and subsequent
     parse of [q] is a failure. Parser [q] doesn't consumes any input.
 
@@ -885,8 +893,8 @@ val not_followed_by : 'a t -> 'b t -> 'a t
       let v = P.parse_string p "ab" in
       v = 'a'
     ]}*)
+val not_followed_by : 'a t -> 'b t -> 'a t
 
-val is_not : 'a t -> bool t
 (** [is_not p] parses value [true] if [p] fails to parse and [false] otherwise.
     {b Note} evaluating [p] doesn't consume any input.
 
@@ -900,8 +908,8 @@ val is_not : 'a t -> bool t
       let v = P.parse_string p "bbb" in
       v = true
     ]} *)
+val is_not : 'a t -> bool t
 
-val is : 'a t -> bool t
 (** [is p] parses [true] if [p] is successful, [false] otherwise. {b Note}
     evaluation of [p] doesn't consume any input.
 
@@ -915,12 +923,12 @@ val is : 'a t -> bool t
       let v = P.parse_string p "bcb" in
       v = true
     ]} *)
+val is : 'a t -> bool t
 
 (** {1 Text}
 
     Text parsing. *)
 
-val peek_char : char t
 (** [peek_char t] parses the next character from input without consuming it.
 
     {4:peek_char_examples Examples}
@@ -944,8 +952,8 @@ val peek_char : char t
       let v = P.parse_string p "hello" in
       v = 0
     ]} *)
+val peek_char : char t
 
-val peek_string : int -> string t
 (** [peek_string n] parse a string of length [n] without consuming it.
 
     {4:peek_string_examples Examples}
@@ -970,8 +978,8 @@ val peek_string : int -> string t
       let v = P.parse_string p "hello" in
       v = 0
     ]} *)
+val peek_string : int -> string t
 
-val next : char t
 (** [next] parses the next character from input. Fails if input has reached end
     of input.
 
@@ -984,8 +992,8 @@ val next : char t
       let v = P.(parse_string next "hello") in
       v = 'h'
     ]} *)
+val next : char t
 
-val char : char -> char t
 (** [char c] parses character [c] exactly.
 
     {4:char_examples Examples}
@@ -998,8 +1006,8 @@ val char : char -> char t
       let v = P.parse_string p "hello" in
       v = 'h'
     ]} *)
+val char : char -> char t
 
-val char_if : (char -> bool) -> char t
 (** [char_if f] parses a character [c] if [f c] is [true].
 
     {4:char_if_examples Examples}
@@ -1012,8 +1020,8 @@ val char_if : (char -> bool) -> char t
       let v = P.parse_string p "abc" in
       v = 'a'
     ]} *)
+val char_if : (char -> bool) -> char t
 
-val string : string -> string t
 (** [string s] parses a string [s] exactly.
 
     {4:string_examples Examples}
@@ -1026,8 +1034,8 @@ val string : string -> string t
       let v = P.parse_string p "hello world" in
       v = "hello"
     ]} *)
+val string : string -> string t
 
-val line : [`LF | `CRLF] -> string t
 (** [line c] parses a line of text from input.
 
     Line delimiter [c] can be either [`LF] or [`CRLF]. This corresponds to [\n]
@@ -1043,6 +1051,7 @@ val line : [`LF | `CRLF] -> string t
       let v = P.parse_string p "line1\r\nline2" in
       v = "line1"
     ]} *)
+val line : [ `LF | `CRLF ] -> string t
 
 (** {1:rfc5234 RFC 5234}
 
@@ -1050,7 +1059,6 @@ val line : [`LF | `CRLF] -> string t
 
     @see <https://tools.ietf.org/html/rfc5234#appendix-B> *)
 
-val alpha : char t
 (** [alpha] parses a character in range [A- Z] or [a-z].
 
     {4:alpha_examples Examples}
@@ -1064,8 +1072,8 @@ val alpha : char t
       let v = P.parse_string p "abcdABCD" in
       v = ['a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D']
     ]} *)
+val alpha : char t
 
-val alpha_num : char t
 (** [alpha_num] parses a character in range [A-Z] or [a-z] or [0-9].
 
     {4:alpha_num_examples Examples}
@@ -1079,8 +1087,8 @@ val alpha_num : char t
       let v = P.parse_string p "ab123ABCD" in
       v = ['a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D']
     ]} *)
+val alpha_num : char t
 
-val bit : char t
 (** [bit] parses a character which is either ['0'] or ['1'].
 
     {4:bit_examples Examples}
@@ -1093,8 +1101,8 @@ val bit : char t
       let v = P.parse_string p "0110 ab" in
       v = ['0'; '1'; '1'; '0']
     ]} *)
+val bit : char t
 
-val ascii_char : char t
 (** [ascii_char] parses any US-ASCII character.
 
     {4:ascii_char_examples Examples}
@@ -1107,8 +1115,8 @@ val ascii_char : char t
       let v = P.parse_string p "0110 abc '" in
       v = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']
     ]} *)
+val ascii_char : char t
 
-val cr : char t
 (** [cr] parses character ['\r'].
 
     {4:cr_examples Examples}
@@ -1120,8 +1128,8 @@ val cr : char t
       let v = P.(parse_string cr "\rab") in
       v = '\r'
     ]} *)
+val cr : char t
 
-val crlf : string t
 (** [crlf] parses string ["\r\n"].
 
     {4:crlf_examples Examples}
@@ -1133,8 +1141,8 @@ val crlf : string t
       let v = P.(parse_string crlf "\r\n abc") in
       v = "\r\n"
     ]} *)
+val crlf : string t
 
-val control : char t
 (** [control] parses characters in range [0x00 - 0x1F] or character [0x7F].
 
     {4:control_examples Examples}
@@ -1146,8 +1154,8 @@ val control : char t
       let v = P.(parse_string control "\x00") in
       v = '\x00'
     ]} *)
+val control : char t
 
-val digit : char t
 (** [digit] parses one of the digit characters, [0 .. 9].
 
     {4:digit_examples Examples}
@@ -1160,8 +1168,8 @@ val digit : char t
       let v = P.parse_string p "0123456789a" in
       v = ['0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9']
     ]} *)
+val digit : char t
 
-val digits : string t
 (** [digits] parses one or more digit characters, [0 .. 9].
 
     {4:digits_examples Examples}
@@ -1173,8 +1181,8 @@ val digits : string t
       let v = P.(parse_string digits "1234 +") in
       v = "1234"
     ]} *)
+val digits : string t
 
-val dquote : char t
 (** [dquote] parses double quote character ['"'].
 
     {4:dquote_examples Examples}
@@ -1186,8 +1194,8 @@ val dquote : char t
       let v = P.(parse_string dquote "\"hello ") in
       v = '"'
     ]} *)
+val dquote : char t
 
-val hex_digit : char t
 (** [hex_digit] parses any of the hexadecimal digits - [0..9, A, B, C, D, E, F].
 
     {4:hex_digit_examples Examples}
@@ -1200,8 +1208,8 @@ val hex_digit : char t
       let v = P.parse_string p "0ABCDEFa" in
       v = ['0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F']
     ]} *)
+val hex_digit : char t
 
-val htab : char t
 (** [htab] parses a horizontal tab character ['\t'].
 
     {4:htab_examples Examples}
@@ -1213,8 +1221,8 @@ val htab : char t
       let v = P.(parse_string htab "\t") in
       v = '\t'
     ]} *)
+val htab : char t
 
-val lf : char t
 (** [lf] parses a linefeed ['\n'] character.
 
     {4:lf_examples Examples}
@@ -1226,8 +1234,8 @@ val lf : char t
       let v = P.(parse_string lf "\n") in
       v = '\n'
     ]} *)
+val lf : char t
 
-val octet : char t
 (** [octect] parses any character in the range [\x00 - \xFF]. Synonym for
     {!val:next}
 
@@ -1241,8 +1249,8 @@ val octet : char t
       let v = P.parse_string p "0110 abc '" in
       v = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']
     ]} *)
+val octet : char t
 
-val space : char t
 (** [space] parses a space character.
 
     {4:space_examples Examples}
@@ -1254,8 +1262,8 @@ val space : char t
       let v = P.(parse_string space " abc '") in
       v = ' '
     ]} *)
+val space : char t
 
-val spaces : char list t
 (** [spaces] parses one or more spaces.
 
     {4:spaces_examples Examples}
@@ -1267,8 +1275,8 @@ val spaces : char list t
       let v = P.(parse_string spaces "   abc") in
       v = [' '; ' '; ' ']
     ]} *)
+val spaces : char list t
 
-val vchar : char t
 (** [vchar] parses any of the visible - printable - characters.
 
     {4:vchar_examples Examples}
@@ -1281,8 +1289,8 @@ val vchar : char t
       let v = P.parse_string p "0110abc\x00" in
       v = ['0'; '1'; '1'; '0'; 'a'; 'b'; 'c']
     ]} *)
+val vchar : char t
 
-val whitespace : char t
 (** [whitespace] parses a space [' '] or horizontal tab ['\t'] character.
 
     {4:whitespace_examples Examples}
@@ -1295,6 +1303,7 @@ val whitespace : char t
       let v = P.parse_string p "\t \t " in
       v = ['\t'; ' '; '\t'; ' ']
     ]} *)
+val whitespace : char t
 
 (** {1:infix Infix} *)
 
@@ -1304,7 +1313,6 @@ val whitespace : char t
 
     {[ open Reparse.Parser.Infix ]} *)
 module Infix : sig
-  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   (** [p >>= f] returns a new parser b where,
 
       - [a] is the parsed value of [p]
@@ -1325,8 +1333,8 @@ module Infix : sig
         let v = P.parse_string p "hello" in
         v = 104
       ]} *)
+  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 
-  val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
   (** [p >|= f] returns a new parser encapsulating value [b] where,
 
       - [a] is the parsed value of [p].
@@ -1347,8 +1355,8 @@ module Infix : sig
         let v = P.parse_string p "hello" in
         v = 104
       ]} *)
+  val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
 
-  val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
   (** [pf <*> q] returns a new parser encapsulating value [b] where
 
       - [pf] and [q] are evaluated sequentially in order as given.
@@ -1372,8 +1380,8 @@ module Infix : sig
         let v = P.parse_string p "hello" in
         v = 4
       ]} *)
+  val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
 
-  val ( <$ ) : 'b -> 'a t -> 'b t
   (** [v <$ p] replaces the parse value of [p] with [v].
 
       {4:infix_replace_examples Examples}
@@ -1389,8 +1397,8 @@ module Infix : sig
         let v2 = P.parse_string p "hello" in
         v2 = "hello"
       ]} *)
+  val ( <$ ) : 'b -> 'a t -> 'b t
 
-  val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
   (** [f <$> p] returns a parser encapsulating value [b] where,
 
       - [a] is the parsed value of [p]
@@ -1411,8 +1419,8 @@ module Infix : sig
         let v = P.parse_string p "hello" in
         v = "hello world"
       ]} *)
+  val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
 
-  val ( *> ) : _ t -> 'a t -> 'a t
   (** [p *> q] returns a parser encapsulating value [a] where,
 
       - [p], [q] are evaluated sequentially in order as given.
@@ -1434,8 +1442,8 @@ module Infix : sig
         let v = P.parse_string p "world" in
         v = "hello"
       ]} *)
+  val ( *> ) : _ t -> 'a t -> 'a t
 
-  val ( <* ) : 'a t -> _ t -> 'a t
   (** [p <* q] returns a parser encapsulating value [a] where,
 
       - [p], [q] are evaluated sequentially in order as given.
@@ -1457,8 +1465,8 @@ module Infix : sig
         let v = P.parse_string p "world" in
         v = "world"
       ]} *)
+  val ( <* ) : 'a t -> _ t -> 'a t
 
-  val ( <|> ) : 'a t -> 'a t -> 'a t
   (** [p <|> q] returns a parser encapsulating value [a] where,
 
       - [p],[q] are evaluated sequentially in order as given.
@@ -1505,8 +1513,8 @@ module Infix : sig
           with _ -> true in
         v = true
       ]} *)
+  val ( <|> ) : 'a t -> 'a t -> 'a t
 
-  val ( <?> ) : 'a t -> string -> 'a t
   (** [p <?> err_msg] parses [p] to value [a] and returns a new parser
       encapsulating [a]. If [p] is a failure, then it fails with error message
       [err_msg].
@@ -1535,8 +1543,8 @@ module Infix : sig
           | _ -> false in
         v = true
       ]} *)
+  val ( <?> ) : 'a t -> string -> 'a t
 
-  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
   (** [let*] is a let syntax binding for {!val:(>>=)}
 
       {4:infix_let_bind_examples Examples}
@@ -1553,8 +1561,8 @@ module Infix : sig
         let v = P.parse_string p "" in
         v = 10
       ]} *)
+  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
 
-  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
   (** [let*] is a let syntax binding for {!val:(>|=)}
 
       {4:infix_let_map_examples Examples}
@@ -1571,6 +1579,7 @@ module Infix : sig
         let v = P.parse_string p "" in
         v = 10
       ]} *)
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
 end
 
 (** {1:examples Examples} *)

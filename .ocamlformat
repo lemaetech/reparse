@@ -1,9 +1,1 @@
-profile = compact
-parse-docstrings = true
-doc-comments = after-when-possible
-break-infix = fit-or-vertical
-break-fun-decl = fit-or-vertical
-align-cases = true
-align-constructors-decl = true
-align-variants-decl = true
-break-sequences = true
+profile = janestreet
