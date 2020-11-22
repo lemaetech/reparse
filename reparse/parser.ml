@@ -316,13 +316,18 @@ let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
     error ~err (Format.sprintf "[skip] unable to parse at_least %d times" at_least) state)
 ;;
 
-let string : string -> string t =
- fun s state ~ok ~err ->
+let string : ?case_sensitive:bool -> string -> string t =
+ fun ?(case_sensitive = true) s state ~ok ~err ->
   let len = String.length s in
   peek_string
     len
     state
     ~ok:(fun s2 ->
+      let s, s2 =
+        if case_sensitive
+        then s, s2
+        else String.uppercase_ascii s, String.uppercase_ascii s2
+      in
       if String.equal s s2
       then (s <$ skip ~up_to:len next) state ~ok ~err
       else error ~err ("[string] " ^ s) state)

@@ -323,7 +323,7 @@ v = 'h'</code></pre></dd></dl><dl><dt class="spec value" id="val-char_if"><a hre
 ;;
 let p = P.char_if (function 'a' -&gt; true | _ -&gt; false) in
 let v = P.parse_string p &quot;abc&quot; in
-v = 'a'</code></pre></dd></dl><dl><dt class="spec value" id="val-string"><a href="#val-string" class="anchor"></a><code><span class="keyword">val</span> string : string <span>&#45;&gt;</span> <span>string <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>string s</code> parses a string <code>s</code> exactly.</p><h5 id="string_examples"><a href="#string_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = 'a'</code></pre></dd></dl><dl><dt class="spec value" id="val-string"><a href="#val-string" class="anchor"></a><code><span class="keyword">val</span> string : <span>?&#8288;case_sensitive:bool</span> <span>&#45;&gt;</span> string <span>&#45;&gt;</span> <span>string <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>string ~case_sensitive s</code> parses a string <code>s</code> exactly.</p><p>If <code>case_sensitive</code> is <code>false</code> then comparison is done without character case consideration. Default value is <code>true</code>.</p><h5 id="string_examples"><a href="#string_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.string &quot;hello&quot; in

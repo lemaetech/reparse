@@ -1022,7 +1022,10 @@ val char : char -> char t
     ]} *)
 val char_if : (char -> bool) -> char t
 
-(** [string s] parses a string [s] exactly.
+(** [string ~case_sensitive s] parses a string [s] exactly. 
+
+    If [case_sensitive] is [false] then comparison is done without 
+    character case consideration. Default value is [true].
 
     {4:string_examples Examples}
 
@@ -1034,7 +1037,7 @@ val char_if : (char -> bool) -> char t
       let v = P.parse_string p "hello world" in
       v = "hello"
     ]} *)
-val string : string -> string t
+val string : ?case_sensitive:bool -> string -> string t
 
 (** [line c] parses a line of text from input.
 
