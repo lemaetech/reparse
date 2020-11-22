@@ -4,14 +4,14 @@ open P.Infix
 
 ;;
 let s = &quot;hello world&quot; in
-let p = P.(take next *&gt; map2 (fun lnum cnum -&gt; (lnum, cnum)) lnum cnum) in
+let p = P.(take next *&gt; map2 (fun lnum cnum -&gt; lnum, cnum) lnum cnum) in
 let v = P.parse_string ~track_lnum:true p s in
 v = (1, 12)</code></pre><p>Default behaviour - doesn't track line, column number.</p><pre><code class="ml">module P = Reparse.Parser
 open P.Infix
 
 ;;
 let s = &quot;hello world&quot; in
-let p = P.(take next *&gt; map2 (fun lnum cnum -&gt; (lnum, cnum)) lnum cnum) in
+let p = P.(take next *&gt; map2 (fun lnum cnum -&gt; lnum, cnum) lnum cnum) in
 let v = P.parse_string p s in
 v = (0, 0)</code></pre><dl><dt>raises Parser</dt><dd><p>when parser encounters error</p></dd></dl></dd></dl><dl><dt class="spec value" id="val-parse"><a href="#val-parse" class="anchor"></a><code><span class="keyword">val</span> parse : <span>?&#8288;track_lnum:bool</span> <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <a href="class-type-input/index.html">input</a> <span>&#45;&gt;</span> <span class="type-var">'a</span></code></dt><dd><p><code>parse</code> is a generalised version of <a href="index.html#val-parse_string"><code>parse_string</code></a> over type <a href="class-type-input/index.html"><code>input</code></a>.</p><p>Use this function when you have a custom implementation of <a href="class-type-input/index.html"><code>input</code></a>.</p></dd></dl></section><section><header><h3 id="exception"><a href="#exception" class="anchor"></a>Exception</h3></header><dl><dt class="spec exception" id="exception-Parser"><a href="#exception-Parser" class="anchor"></a><code><span class="keyword">exception</span> </code><code><span class="exception">Parser</span> <span class="keyword">of</span> </code><code>{</code><table class="record"><tr id=".offset" class="anchored"><td class="def field"><a href="#.offset" class="anchor"></a><code>offset : int;</code></td></tr><tr id=".line_number" class="anchored"><td class="def field"><a href="#.line_number" class="anchor"></a><code>line_number : int;</code></td></tr><tr id=".column_number" class="anchored"><td class="def field"><a href="#.column_number" class="anchor"></a><code>column_number : int;</code></td></tr><tr id=".msg" class="anchored"><td class="def field"><a href="#.msg" class="anchor"></a><code>msg : string;</code></td></tr></table><code>}</code></dt><dd><p>Raised by parsers which are unable to parse successfully.</p><p><code>offset</code> is the current index position of input at the time of failure.</p><p><code>line_number</code> is line number at the time of failure.</p><p><code>column_number</code> is column number at the time of failure.</p><p><code>msg</code> contains an error description.</p></dd></dl></section></section><section><header><h2 id="pure"><a href="#pure" class="anchor"></a>Pure</h2><p>Create parsers from values.</p></header><dl><dt class="spec value" id="val-pure"><a href="#val-pure" class="anchor"></a><code><span class="keyword">val</span> pure : <span class="type-var">'a</span> <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>pure v</code> always parses value <code>v</code>.</p><h5 id="pure_examples"><a href="#pure_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
@@ -27,10 +27,10 @@ let r =
   try
     let _ = P.(parse input (fail &quot;hello error&quot;)) in
     assert false
-  with e -&gt; e in
-r
-= P.Parser
-    {offset= 0; line_number= 0; column_number= 0; msg= &quot;hello error&quot;}</code></pre></dd></dl></section><section><header><h2 id="concatenation"><a href="#concatenation" class="anchor"></a>Concatenation</h2><p>Define parsers by joining two or more parsers.</p></header><section><header><h3 id="bind"><a href="#bind" class="anchor"></a>Bind</h3></header><dl><dt class="spec value" id="val-bind"><a href="#val-bind" class="anchor"></a><code><span class="keyword">val</span> bind : <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span>(<span class="type-var">'a</span> <span>&#45;&gt;</span> <span><span class="type-var">'b</span> <a href="index.html#type-t">t</a></span>)</span> <span>&#45;&gt;</span> <span><span class="type-var">'b</span> <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>bind p f</code> returns a new parser <code>b</code> where,</p><ul><li><code>a</code> is the parsed value of <code>p</code></li><li><code>b</code> is <code>f a</code></li></ul><h5 id="bind_examples"><a href="#bind_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+  with
+  | e -&gt; e
+in
+r = P.Parser { offset = 0; line_number = 0; column_number = 0; msg = &quot;hello error&quot; }</code></pre></dd></dl></section><section><header><h2 id="concatenation"><a href="#concatenation" class="anchor"></a>Concatenation</h2><p>Define parsers by joining two or more parsers.</p></header><section><header><h3 id="bind"><a href="#bind" class="anchor"></a>Bind</h3></header><dl><dt class="spec value" id="val-bind"><a href="#val-bind" class="anchor"></a><code><span class="keyword">val</span> bind : <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span>(<span class="type-var">'a</span> <span>&#45;&gt;</span> <span><span class="type-var">'b</span> <a href="index.html#type-t">t</a></span>)</span> <span>&#45;&gt;</span> <span><span class="type-var">'b</span> <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>bind p f</code> returns a new parser <code>b</code> where,</p><ul><li><code>a</code> is the parsed value of <code>p</code></li><li><code>b</code> is <code>f a</code></li></ul><h5 id="bind_examples"><a href="#bind_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let f a = P.pure (a ^ &quot; world&quot;) in
@@ -100,63 +100,70 @@ let v =
   try
     let _ = P.parse_string p &quot;zzd&quot; in
     assert false
-  with e -&gt; e in
+  with
+  | e -&gt; e
+in
 v
 = P.Parser
-    { offset= 0
-    ; line_number= 0
-    ; column_number= 0
-    ; msg=
-        &quot;[parse_c] Reparse.Parser.Parser(0, 0, 0, \&quot;[char] expected \
-         'a'\&quot;)&quot; }</code></pre></dd></dl></section></section><section><header><h2 id="alternation"><a href="#alternation" class="anchor"></a>Alternation</h2><p>One or the other.</p></header><dl><dt class="spec value" id="val-any"><a href="#val-any" class="anchor"></a><code><span class="keyword">val</span> any : <span><span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> list</span> <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>any l</code> parses the value of the first successful parser in list <code>l</code>.</p><p>Specified parsers in <code>l</code> are evaluated sequentially from left to right. A failed parser doesn't consume any input, i.e. <code>offset</code> is unaffected.</p><p>The parser fails if none of the parsers in <code>l</code> are evaluated successfully.</p><h5 id="any_examples"><a href="#any_examples" class="anchor"></a>Examples</h5><p>First successful parser result is returned</p><pre><code class="ml">module P = Reparse.Parser
+    { offset = 0
+    ; line_number = 0
+    ; column_number = 0
+    ; msg = &quot;[parse_c] Reparse.Parser.Parser(0, 0, 0, \&quot;[char] expected 'a'\&quot;)&quot;
+    }</code></pre></dd></dl></section></section><section><header><h2 id="alternation"><a href="#alternation" class="anchor"></a>Alternation</h2><p>One or the other.</p></header><dl><dt class="spec value" id="val-any"><a href="#val-any" class="anchor"></a><code><span class="keyword">val</span> any : <span><span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> list</span> <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>any l</code> parses the value of the first successful parser in list <code>l</code>.</p><p>Specified parsers in <code>l</code> are evaluated sequentially from left to right. A failed parser doesn't consume any input, i.e. <code>offset</code> is unaffected.</p><p>The parser fails if none of the parsers in <code>l</code> are evaluated successfully.</p><h5 id="any_examples"><a href="#any_examples" class="anchor"></a>Examples</h5><p>First successful parser result is returned</p><pre><code class="ml">module P = Reparse.Parser
 
 ;;
-let p = P.(any [char 'z'; char 'x'; char 'a']) in
+let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
 let v = P.parse_string p &quot;zabc&quot; in
 v = 'z'
 
 ;;
-let p = P.(any [char 'z'; char 'x'; char 'a']) in
+let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
 let v = P.parse_string p &quot;xabc&quot; in
 v = 'x'
 
 ;;
-let p = P.(any [char 'z'; char 'x'; char 'a']) in
+let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
 let v = P.parse_string p &quot;abc&quot; in
-v = 'a'</code></pre><p>Parser fails when none of the parsers in <code>l</code> are successful.</p><pre><code class="ml">let p = P.(any [char 'z'; char 'x'; char 'a']) in
+v = 'a'</code></pre><p>Parser fails when none of the parsers in <code>l</code> are successful.</p><pre><code class="ml">let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
 let v =
   try
     let _ = P.parse_string p &quot;yyy&quot; in
     false
-  with _ -&gt; true in
+  with
+  | _ -&gt; true
+in
 v = true</code></pre></dd></dl><dl><dt class="spec value" id="val-alt"><a href="#val-alt" class="anchor"></a><code><span class="keyword">val</span> alt : <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>alt p q</code> is <code>p &lt;|&gt; q</code>.</p><p>See <a href="Infix/index.html#val-(&lt;|&gt;)"><code>Infix.(&lt;|&gt;)</code></a></p></dd></dl></section><section><header><h2 id="grouping"><a href="#grouping" class="anchor"></a>Grouping</h2><p>Group parsers.</p></header><dl><dt class="spec value" id="val-all"><a href="#val-all" class="anchor"></a><code><span class="keyword">val</span> all : <span><span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> list</span> <span>&#45;&gt;</span> <span><span><span class="type-var">'a</span> list</span> <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>all l</code> parses all parsers in <code>l</code> and returns the parsed values.</p><p>The parser only succeeds if and only if all of the parsers in <code>l</code> succeed.</p><p>Parsers in <code>l</code> are evaluated sequentially - from left to right.</p><h5 id="all_examples"><a href="#all_examples" class="anchor"></a>Examples</h5><p>All specified parsers succeed.</p><pre><code class="ml">module P = Reparse.Parser
 
 ;;
-let p = P.(all [char 'a'; char 'b'; char 'c']) in
+let p = P.(all [ char 'a'; char 'b'; char 'c' ]) in
 let v = P.parse_string p &quot;abc&quot; in
-v = ['a'; 'b'; 'c']</code></pre><p>One of the specified parsers - <code>char 'c'</code> fails.</p><pre><code class="ml">module P = Reparse.Parser
+v = [ 'a'; 'b'; 'c' ]</code></pre><p>One of the specified parsers - <code>char 'c'</code> fails.</p><pre><code class="ml">module P = Reparse.Parser
 
 ;;
-let p = P.(all [char 'a'; char 'b'; char 'c']) in
+let p = P.(all [ char 'a'; char 'b'; char 'c' ]) in
 let v =
   try
     let _ = P.parse_string p &quot;abd&quot; in
     false
-  with _ -&gt; true in
+  with
+  | _ -&gt; true
+in
 v = true</code></pre></dd></dl><dl><dt class="spec value" id="val-all_unit"><a href="#val-all_unit" class="anchor"></a><code><span class="keyword">val</span> all_unit : <span><span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> list</span> <span>&#45;&gt;</span> <span>unit <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>all_unit l</code> parses all parsers in <code>l</code> while discarding the parsed values.</p><h5 id="all_unit_examples"><a href="#all_unit_examples" class="anchor"></a>Examples</h5><p>All specified parsers succeed.</p><pre><code class="ml">module P = Reparse.Parser
 
 ;;
-let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
+let p = P.(all_unit [ char 'a'; char 'b'; char 'c' ]) in
 let v = P.parse_string p &quot;abc&quot; in
 v = ()</code></pre><p>One of the specified parsers - <code>char 'c'</code> - fails.</p><pre><code class="ml">module P = Reparse.Parser
 
 ;;
-let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
+let p = P.(all_unit [ char 'a'; char 'b'; char 'c' ]) in
 let v =
   try
     let _ = P.parse_string p &quot;abd&quot; in
     false
-  with _ -&gt; true in
+  with
+  | _ -&gt; true
+in
 v = true</code></pre></dd></dl></section><section><header><h2 id="repetition"><a href="#repetition" class="anchor"></a>Repetition</h2></header><section><header><h3 id="recur"><a href="#recur" class="anchor"></a>Recur</h3></header><dl><dt class="spec value" id="val-recur"><a href="#val-recur" class="anchor"></a><code><span class="keyword">val</span> recur : <span>(<span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span>)</span> <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>recur f</code> returns a recursive parser. Function value <code>f</code> accepts a parser <code>p</code> as its argument and returns a parser <code>q</code>. Parser <code>q</code> in its definition can refer to <code>p</code> and <code>p</code> can refer to <code>q</code> in its own definition.</p><p>Such parsers are also known as a fixpoint or y combinator.</p></dd></dl></section><section><header><h3 id="skip"><a href="#skip" class="anchor"></a>Skip</h3><p>Discards parsed values.</p></header><dl><dt class="spec value" id="val-skip"><a href="#val-skip" class="anchor"></a><code><span class="keyword">val</span> skip : <span>?&#8288;at_least:int</span> <span>&#45;&gt;</span> <span>?&#8288;up_to:int</span> <span>&#45;&gt;</span> <span><span class="type-var">_</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span>int <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>skip ~at_least ~up_to p</code> repeatedly parses <code>p</code> and discards its value.</p><p>The lower and upper bound of repetition is specified by arguments <code>at_least</code> and <code>up_to</code> respectively. The default value of <code>at_least</code> is 0. The default value of <code>up_to</code> is unspecified, i.e. there is no upper limit.</p><p>The repetition ends when one of the following occurs:</p><ul><li><code>p</code> evaluates to failure</li><li><code>up_to</code> upper bound value is reached</li></ul><p>The parser encapsulates the count of times <code>p</code> was evaluated successfully.</p><h5 id="skip_examples"><a href="#skip_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
@@ -172,17 +179,17 @@ v = 5</code></pre></dd></dl></section><section><header><h3 id="take"><a href="#t
 ;;
 let p = P.(take (char 'a')) in
 let v = P.parse_string p &quot;aaaaa&quot; in
-v = ['a'; 'a'; 'a'; 'a'; 'a']</code></pre><p>Specify <code>~sep_by</code>.</p><pre><code class="ml">module P = Reparse.Parser
+v = [ 'a'; 'a'; 'a'; 'a'; 'a' ]</code></pre><p>Specify <code>~sep_by</code>.</p><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.(take ~sep_by:(char ',') (char 'a')) in
 let v = P.parse_string p &quot;a,a,a,a,a&quot; in
-v = ['a'; 'a'; 'a'; 'a'; 'a']</code></pre><p>Specify lower bound argument <code>at_least</code>.</p><pre><code class="ml">module P = Reparse.Parser
+v = [ 'a'; 'a'; 'a'; 'a'; 'a' ]</code></pre><p>Specify lower bound argument <code>at_least</code>.</p><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.(take ~at_least:3 ~sep_by:(char ',') (char 'a')) in
 let v = P.parse_string p &quot;a,a,a,a,a&quot; in
-v = ['a'; 'a'; 'a'; 'a'; 'a']</code></pre><p>Lower bound not met results in error.</p><pre><code class="ml">module P = Reparse.Parser
+v = [ 'a'; 'a'; 'a'; 'a'; 'a' ]</code></pre><p>Lower bound not met results in error.</p><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.(take ~at_least:5 ~sep_by:(char ',') (char 'a')) in
@@ -190,33 +197,31 @@ let v =
   try
     let _ = P.parse_string p &quot;a,a,a,a&quot; in
     false
-  with _ -&gt; true in
+  with
+  | _ -&gt; true
+in
 v = true</code></pre><p>Specify upper bound <code>up_to</code>.</p><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.(take ~up_to:3 ~sep_by:(char ',') (char 'a')) in
 let v = P.parse_string p &quot;a,a,a,a,a&quot; in
-v = ['a'; 'a'; 'a']</code></pre></dd></dl><dl><dt class="spec value" id="val-take_while"><a href="#val-take_while" class="anchor"></a><code><span class="keyword">val</span> take_while : <span>?&#8288;sep_by:<span><span class="type-var">_</span> <a href="index.html#type-t">t</a></span></span> <span>&#45;&gt;</span> <span>while_:<span>bool <a href="index.html#type-t">t</a></span></span> <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span><span><span class="type-var">'a</span> list</span> <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>take_while ~sep_by p ~while_ p</code> repeatedly parses <code>p</code> and returns its value.</p><p><code>p</code> is evaluated if and only if <code>while_</code> evaluates to <code>true</code>.</p><p>If <code>sep_by</code> is specified then the evaluation of <code>p</code> must be followed by a successful evaluation of <code>sep_by</code>. The parsed value of <code>sep_by</code> is discarded.</p><p>The repetition ends when one of the following occurs:</p><ul><li><code>p</code> evaluates to failure</li><li><code>while_</code> returns <code>false</code></li><li><code>sep_by</code> evaluates to failure</li></ul><p><b>Note</b> <code>while_</code> does not consume input.</p><h5 id="take_while_examples"><a href="#take_while_examples" class="anchor"></a>Examples</h5><p>Default behaviour.</p><pre><code class="ml">module P = Reparse.Parser
+v = [ 'a'; 'a'; 'a' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-take_while"><a href="#val-take_while" class="anchor"></a><code><span class="keyword">val</span> take_while : <span>?&#8288;sep_by:<span><span class="type-var">_</span> <a href="index.html#type-t">t</a></span></span> <span>&#45;&gt;</span> <span>while_:<span>bool <a href="index.html#type-t">t</a></span></span> <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span><span><span class="type-var">'a</span> list</span> <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>take_while ~sep_by p ~while_ p</code> repeatedly parses <code>p</code> and returns its value.</p><p><code>p</code> is evaluated if and only if <code>while_</code> evaluates to <code>true</code>.</p><p>If <code>sep_by</code> is specified then the evaluation of <code>p</code> must be followed by a successful evaluation of <code>sep_by</code>. The parsed value of <code>sep_by</code> is discarded.</p><p>The repetition ends when one of the following occurs:</p><ul><li><code>p</code> evaluates to failure</li><li><code>while_</code> returns <code>false</code></li><li><code>sep_by</code> evaluates to failure</li></ul><p><b>Note</b> <code>while_</code> does not consume input.</p><h5 id="take_while_examples"><a href="#take_while_examples" class="anchor"></a>Examples</h5><p>Default behaviour.</p><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.(take_while ~while_:(is_not (char 'b')) (char 'a')) in
 let v = P.parse_string p &quot;aab&quot; in
-v = ['a'; 'a']</code></pre><p>Specify <code>sep_by</code>.</p><pre><code class="ml">module P = Reparse.Parser
+v = [ 'a'; 'a' ]</code></pre><p>Specify <code>sep_by</code>.</p><pre><code class="ml">module P = Reparse.Parser
 
 ;;
-let p =
-  P.(take_while ~sep_by:(char ',') ~while_:(is_not (char 'b')) (char 'a'))
-in
+let p = P.(take_while ~sep_by:(char ',') ~while_:(is_not (char 'b')) (char 'a')) in
 let v = P.parse_string p &quot;a,a,ab&quot; in
-v = ['a'; 'a'; 'a']</code></pre></dd></dl><dl><dt class="spec value" id="val-take_while_cb"><a href="#val-take_while_cb" class="anchor"></a><code><span class="keyword">val</span> take_while_cb : <span>?&#8288;sep_by:<span><span class="type-var">_</span> <a href="index.html#type-t">t</a></span></span> <span>&#45;&gt;</span> <span>while_:<span>bool <a href="index.html#type-t">t</a></span></span> <span>&#45;&gt;</span> <span>on_take_cb:<span>(<span class="type-var">'a</span> <span>&#45;&gt;</span> unit)</span></span> <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span>int <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>take_while_on ~sep_by ~while_ ~on_take p</code> repeatedly parses <code>p</code> and calls callback <code>on_take_cb</code> with the parsed value.</p><p><code>p</code> is evaluated if and only if <code>while_</code> evaluates to <code>true</code>.</p><p>If <code>sep_by</code> is specified then the evaluation of <code>p</code> must be followed by a successful evaluation of <code>sep_by</code>. The parsed value of <code>sep_by</code> is discarded.</p><p><code>p</code> is evaluated repeatedly. The repetition ends when one of the following occurs:</p><p><code>on_take_cb</code> is the callback function that is called every time <code>p</code> is evaluated.</p><ul><li><code>p</code> evaluates to failure</li><li><code>while_</code> returns <code>false</code></li><li><code>sep_by</code> evaluates to failure</li></ul><p><code>take_while_cb</code> is the general version of <a href="index.html#val-take_while"><code>take_while</code></a>. It allows to specify how the value <code>a</code> is to be collected.</p><p><b>Note</b> <code>while_</code> does not consume input.</p><h5 id="take_while_cb_examples"><a href="#take_while_cb_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = [ 'a'; 'a'; 'a' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-take_while_cb"><a href="#val-take_while_cb" class="anchor"></a><code><span class="keyword">val</span> take_while_cb : <span>?&#8288;sep_by:<span><span class="type-var">_</span> <a href="index.html#type-t">t</a></span></span> <span>&#45;&gt;</span> <span>while_:<span>bool <a href="index.html#type-t">t</a></span></span> <span>&#45;&gt;</span> <span>on_take_cb:<span>(<span class="type-var">'a</span> <span>&#45;&gt;</span> unit)</span></span> <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span>int <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>take_while_on ~sep_by ~while_ ~on_take p</code> repeatedly parses <code>p</code> and calls callback <code>on_take_cb</code> with the parsed value.</p><p><code>p</code> is evaluated if and only if <code>while_</code> evaluates to <code>true</code>.</p><p>If <code>sep_by</code> is specified then the evaluation of <code>p</code> must be followed by a successful evaluation of <code>sep_by</code>. The parsed value of <code>sep_by</code> is discarded.</p><p><code>p</code> is evaluated repeatedly. The repetition ends when one of the following occurs:</p><p><code>on_take_cb</code> is the callback function that is called every time <code>p</code> is evaluated.</p><ul><li><code>p</code> evaluates to failure</li><li><code>while_</code> returns <code>false</code></li><li><code>sep_by</code> evaluates to failure</li></ul><p><code>take_while_cb</code> is the general version of <a href="index.html#val-take_while"><code>take_while</code></a>. It allows to specify how the value <code>a</code> is to be collected.</p><p><b>Note</b> <code>while_</code> does not consume input.</p><h5 id="take_while_cb_examples"><a href="#take_while_cb_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 open P.Infix
 
 ;;
 let buf = Buffer.create 0 in
 let on_take_cb a = Buffer.add_char buf a in
-let p =
-  P.(take_while_cb (char 'a') ~while_:(is_not (char 'b')) ~on_take_cb)
-in
+let p = P.(take_while_cb (char 'a') ~while_:(is_not (char 'b')) ~on_take_cb) in
 let v = P.parse_string p &quot;aaab&quot; in
 let s = Buffer.contents buf in
 v = 3 &amp;&amp; s = &quot;aaa&quot;</code></pre></dd></dl></section></section><section><header><h2 id="optional"><a href="#optional" class="anchor"></a>Optional</h2><p>Don't fail when parsing is not successful.</p></header><dl><dt class="spec value" id="val-optional"><a href="#val-optional" class="anchor"></a><code><span class="keyword">val</span> optional : <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span><span><span class="type-var">'a</span> option</span> <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>optional p</code> parses <code>Some a</code> if successful and <code>None</code> otherwise. <code>a</code> is the parsed value of <code>p</code>.</p><h5 id="optional_examples"><a href="#optional_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
@@ -249,7 +254,9 @@ let v =
   try
     let _ = P.(parse_string eoi &quot;a&quot;) in
     false
-  with _ -&gt; true in
+  with
+  | _ -&gt; true
+in
 v = true</code></pre></dd></dl><dl><dt class="spec value" id="val-lnum"><a href="#val-lnum" class="anchor"></a><code><span class="keyword">val</span> lnum : <span>int <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>lnum</code> parses the current line number of input. line number count start form <code>1</code>.</p><h5 id="lnum_examples"><a href="#lnum_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 open P.Infix
 
@@ -321,7 +328,11 @@ let v = P.parse_string p &quot;hello&quot; in
 v = 'h'</code></pre></dd></dl><dl><dt class="spec value" id="val-char_if"><a href="#val-char_if" class="anchor"></a><code><span class="keyword">val</span> char_if : <span>(char <span>&#45;&gt;</span> bool)</span> <span>&#45;&gt;</span> <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>char_if f</code> parses a character <code>c</code> if <code>f c</code> is <code>true</code>.</p><h5 id="char_if_examples"><a href="#char_if_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
-let p = P.char_if (function 'a' -&gt; true | _ -&gt; false) in
+let p =
+  P.char_if (function
+      | 'a' -&gt; true
+      | _ -&gt; false)
+in
 let v = P.parse_string p &quot;abc&quot; in
 v = 'a'</code></pre></dd></dl><dl><dt class="spec value" id="val-string"><a href="#val-string" class="anchor"></a><code><span class="keyword">val</span> string : <span>?&#8288;case_sensitive:bool</span> <span>&#45;&gt;</span> string <span>&#45;&gt;</span> <span>string <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>string ~case_sensitive s</code> parses a string <code>s</code> exactly.</p><p>If <code>case_sensitive</code> is <code>false</code> then comparison is done without character case consideration. Default value is <code>true</code>.</p><h5 id="string_examples"><a href="#string_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
@@ -339,23 +350,23 @@ open P.Infix
 ;;
 let p = P.(take alpha) in
 let v = P.parse_string p &quot;abcdABCD&quot; in
-v = ['a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D']</code></pre></dd></dl><dl><dt class="spec value" id="val-alpha_num"><a href="#val-alpha_num" class="anchor"></a><code><span class="keyword">val</span> alpha_num : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>alpha_num</code> parses a character in range <code>A-Z</code> or <code>a-z</code> or <code>0-9</code>.</p><h5 id="alpha_num_examples"><a href="#alpha_num_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = [ 'a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-alpha_num"><a href="#val-alpha_num" class="anchor"></a><code><span class="keyword">val</span> alpha_num : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>alpha_num</code> parses a character in range <code>A-Z</code> or <code>a-z</code> or <code>0-9</code>.</p><h5 id="alpha_num_examples"><a href="#alpha_num_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 open P.Infix
 
 ;;
 let p = P.(take alpha_num) in
 let v = P.parse_string p &quot;ab123ABCD&quot; in
-v = ['a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D']</code></pre></dd></dl><dl><dt class="spec value" id="val-bit"><a href="#val-bit" class="anchor"></a><code><span class="keyword">val</span> bit : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>bit</code> parses a character which is either <code>'0'</code> or <code>'1'</code>.</p><h5 id="bit_examples"><a href="#bit_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = [ 'a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-bit"><a href="#val-bit" class="anchor"></a><code><span class="keyword">val</span> bit : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>bit</code> parses a character which is either <code>'0'</code> or <code>'1'</code>.</p><h5 id="bit_examples"><a href="#bit_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.(take bit) in
 let v = P.parse_string p &quot;0110 ab&quot; in
-v = ['0'; '1'; '1'; '0']</code></pre></dd></dl><dl><dt class="spec value" id="val-ascii_char"><a href="#val-ascii_char" class="anchor"></a><code><span class="keyword">val</span> ascii_char : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>ascii_char</code> parses any US-ASCII character.</p><h5 id="ascii_char_examples"><a href="#ascii_char_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = [ '0'; '1'; '1'; '0' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-ascii_char"><a href="#val-ascii_char" class="anchor"></a><code><span class="keyword">val</span> ascii_char : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>ascii_char</code> parses any US-ASCII character.</p><h5 id="ascii_char_examples"><a href="#ascii_char_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.(take ascii_char) in
 let v = P.parse_string p &quot;0110 abc '&quot; in
-v = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']</code></pre></dd></dl><dl><dt class="spec value" id="val-cr"><a href="#val-cr" class="anchor"></a><code><span class="keyword">val</span> cr : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>cr</code> parses character <code>'\r'</code>.</p><h5 id="cr_examples"><a href="#cr_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = [ '0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-cr"><a href="#val-cr" class="anchor"></a><code><span class="keyword">val</span> cr : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>cr</code> parses character <code>'\r'</code>.</p><h5 id="cr_examples"><a href="#cr_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let v = P.(parse_string cr &quot;\rab&quot;) in
@@ -372,7 +383,7 @@ v = '\x00'</code></pre></dd></dl><dl><dt class="spec value" id="val-digit"><a hr
 ;;
 let p = P.(take digit) in
 let v = P.parse_string p &quot;0123456789a&quot; in
-v = ['0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9']</code></pre></dd></dl><dl><dt class="spec value" id="val-digits"><a href="#val-digits" class="anchor"></a><code><span class="keyword">val</span> digits : <span>string <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>digits</code> parses one or more digit characters, <code>0 .. 9</code>.</p><h5 id="digits_examples"><a href="#digits_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = [ '0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-digits"><a href="#val-digits" class="anchor"></a><code><span class="keyword">val</span> digits : <span>string <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>digits</code> parses one or more digit characters, <code>0 .. 9</code>.</p><h5 id="digits_examples"><a href="#digits_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let v = P.(parse_string digits &quot;1234 +&quot;) in
@@ -385,7 +396,7 @@ v = '&quot;'</code></pre></dd></dl><dl><dt class="spec value" id="val-hex_digit"
 ;;
 let p = P.(take hex_digit) in
 let v = P.parse_string p &quot;0ABCDEFa&quot; in
-v = ['0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F']</code></pre></dd></dl><dl><dt class="spec value" id="val-htab"><a href="#val-htab" class="anchor"></a><code><span class="keyword">val</span> htab : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>htab</code> parses a horizontal tab character <code>'\t'</code>.</p><h5 id="htab_examples"><a href="#htab_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = [ '0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-htab"><a href="#val-htab" class="anchor"></a><code><span class="keyword">val</span> htab : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>htab</code> parses a horizontal tab character <code>'\t'</code>.</p><h5 id="htab_examples"><a href="#htab_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let v = P.(parse_string htab &quot;\t&quot;) in
@@ -398,7 +409,7 @@ v = '\n'</code></pre></dd></dl><dl><dt class="spec value" id="val-octet"><a href
 ;;
 let p = P.(take octet) in
 let v = P.parse_string p &quot;0110 abc '&quot; in
-v = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']</code></pre></dd></dl><dl><dt class="spec value" id="val-space"><a href="#val-space" class="anchor"></a><code><span class="keyword">val</span> space : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>space</code> parses a space character.</p><h5 id="space_examples"><a href="#space_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = [ '0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-space"><a href="#val-space" class="anchor"></a><code><span class="keyword">val</span> space : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>space</code> parses a space character.</p><h5 id="space_examples"><a href="#space_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let v = P.(parse_string space &quot; abc '&quot;) in
@@ -406,81 +417,89 @@ v = ' '</code></pre></dd></dl><dl><dt class="spec value" id="val-spaces"><a href
 
 ;;
 let v = P.(parse_string spaces &quot;   abc&quot;) in
-v = [' '; ' '; ' ']</code></pre></dd></dl><dl><dt class="spec value" id="val-vchar"><a href="#val-vchar" class="anchor"></a><code><span class="keyword">val</span> vchar : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>vchar</code> parses any of the visible - printable - characters.</p><h5 id="vchar_examples"><a href="#vchar_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = [ ' '; ' '; ' ' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-vchar"><a href="#val-vchar" class="anchor"></a><code><span class="keyword">val</span> vchar : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>vchar</code> parses any of the visible - printable - characters.</p><h5 id="vchar_examples"><a href="#vchar_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.(take vchar) in
 let v = P.parse_string p &quot;0110abc\x00&quot; in
-v = ['0'; '1'; '1'; '0'; 'a'; 'b'; 'c']</code></pre></dd></dl><dl><dt class="spec value" id="val-whitespace"><a href="#val-whitespace" class="anchor"></a><code><span class="keyword">val</span> whitespace : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>whitespace</code> parses a space <code>' '</code> or horizontal tab <code>'\t'</code> character.</p><h5 id="whitespace_examples"><a href="#whitespace_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = [ '0'; '1'; '1'; '0'; 'a'; 'b'; 'c' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-whitespace"><a href="#val-whitespace" class="anchor"></a><code><span class="keyword">val</span> whitespace : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>whitespace</code> parses a space <code>' '</code> or horizontal tab <code>'\t'</code> character.</p><h5 id="whitespace_examples"><a href="#whitespace_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.(take whitespace) in
 let v = P.parse_string p &quot;\t \t &quot; in
-v = ['\t'; ' '; '\t'; ' ']</code></pre></dd></dl></section><section><header><h2 id="infix"><a href="#infix" class="anchor"></a>Infix</h2></header><dl><dt class="spec module" id="module-Infix"><a href="#module-Infix" class="anchor"></a><code><span class="keyword">module</span> <a href="Infix/index.html">Infix</a> : <span class="keyword">sig</span> ... <span class="keyword">end</span></code></dt><dd><p>Provides functions to support infix and let syntax operators.</p></dd></dl></section><section><header><h2 id="examples"><a href="#examples" class="anchor"></a>Examples</h2></header><section><header><h3 id="calculator"><a href="#calculator" class="anchor"></a>Calculator</h3></header><aside><p>An example calculator that supports <code>+,-,*</code> and <code>/</code> calculations.</p><p>The expression grammar is defined by the following BNF grammar:</p><pre>&lt;expr&gt;   ::= &lt;term&gt;   &quot;+&quot; &lt;expr&gt; 
+v = [ '\t'; ' '; '\t'; ' ' ]</code></pre></dd></dl></section><section><header><h2 id="infix"><a href="#infix" class="anchor"></a>Infix</h2></header><dl><dt class="spec module" id="module-Infix"><a href="#module-Infix" class="anchor"></a><code><span class="keyword">module</span> <a href="Infix/index.html">Infix</a> : <span class="keyword">sig</span> ... <span class="keyword">end</span></code></dt><dd><p>Provides functions to support infix and let syntax operators.</p></dd></dl></section><section><header><h2 id="examples"><a href="#examples" class="anchor"></a>Examples</h2></header><section><header><h3 id="calculator"><a href="#calculator" class="anchor"></a>Calculator</h3></header><aside><p>An example calculator that supports <code>+,-,*</code> and <code>/</code> calculations.</p><p>The expression grammar is defined by the following BNF grammar:</p><pre>&lt;expr&gt;   ::= &lt;term&gt;   &quot;+&quot; &lt;expr&gt; 
            | &lt;term&gt;
 &lt;term&gt;   ::= &lt;factor&gt; &quot;*&quot; &lt;term&gt; 
            | &lt;factor&gt;
 &lt;factor&gt; ::= &quot;(&quot; &lt;expr&gt; &quot;)&quot; 
-           | integer</pre><pre><code class="ml">module P = Reparse.Parser
-open P.Infix
+           | integer</pre><pre><code class="ml"> module P = Reparse.Parser
+ open P.Infix
 
-type expr =
-  | Int  of int
-  | Add  of expr * expr
-  | Sub  of expr * expr
-  | Mult of expr * expr
-  | Div  of expr * expr
+ type expr =
+   | Int of int
+   | Add of expr * expr
+   | Sub of expr * expr
+   | Mult of expr * expr
+   | Div of expr * expr
 
-let skip_spaces = P.skip P.space
+ let skip_spaces = P.skip P.space
 
-let binop : 'a P.t -&gt; char -&gt; 'b P.t -&gt; ('a -&gt; 'b -&gt; 'c) -&gt; 'c P.t =
- fun exp1 op exp2 f -&gt;
-  P.map3
-    (fun e1 _ e2 -&gt; f e1 e2)
-    exp1
-    (skip_spaces *&gt; P.char op &lt;* skip_spaces)
-    exp2
+ let binop : 'a P.t -&gt; char -&gt; 'b P.t -&gt; ('a -&gt; 'b -&gt; 'c) -&gt; 'c P.t =
+  fun exp1 op exp2 f -&gt;
+   P.map3
+     (fun e1 _ e2 -&gt; f e1 e2)
+     exp1
+     (skip_spaces *&gt; P.char op &lt;* skip_spaces)
+     exp2
+;;
 
-let integer : expr P.t =
-  let+ d = P.digits in
-  Int (int_of_string d)
+ let integer : expr P.t =
+   let+ d = P.digits in
+   Int (int_of_string d)
+ ;;
 
-let factor : expr P.t -&gt; expr P.t =
- fun expr -&gt;
-  P.any
-    [ P.char '(' *&gt; skip_spaces *&gt; expr &lt;* skip_spaces &lt;* P.char ')'
-    ; skip_spaces *&gt; integer &lt;* skip_spaces ]
+ let factor : expr P.t -&gt; expr P.t =
+  fun expr -&gt;
+   P.any
+     [ P.char '(' *&gt; skip_spaces *&gt; expr &lt;* skip_spaces &lt;* P.char ')'
+     ; skip_spaces *&gt; integer &lt;* skip_spaces
+     ]
+;;
 
-let term : expr P.t -&gt; expr P.t =
- fun factor -&gt;
-  P.recur (fun term -&gt;
-      let mult = binop factor '*' term (fun e1 e2 -&gt; Mult (e1, e2)) in
-      let div = binop factor '/' term (fun e1 e2 -&gt; Div (e1, e2)) in
-      mult &lt;|&gt; div &lt;|&gt; factor )
+ let term : expr P.t -&gt; expr P.t =
+  fun factor -&gt;
+   P.recur (fun term -&gt;
+       let mult = binop factor '*' term (fun e1 e2 -&gt; Mult (e1, e2)) in
+       let div = binop factor '/' term (fun e1 e2 -&gt; Div (e1, e2)) in
+       mult &lt;|&gt; div &lt;|&gt; factor)
+;;
 
-let expr : expr P.t =
-  P.recur (fun expr -&gt;
-      let factor = factor expr in
-      let term = term factor in
-      let add = binop term '+' expr (fun e1 e2 -&gt; Add (e1, e2)) in
-      let sub = binop term '-' expr (fun e1 e2 -&gt; Sub (e1, e2)) in
-      P.any [add; sub; term] )
+ let expr : expr P.t =
+   P.recur (fun expr -&gt;
+       let factor = factor expr in
+       let term = term factor in
+       let add = binop term '+' expr (fun e1 e2 -&gt; Add (e1, e2)) in
+       let sub = binop term '-' expr (fun e1 e2 -&gt; Sub (e1, e2)) in
+       P.any [ add; sub; term ])
+ ;;
 
-let rec eval : expr -&gt; int = function
-  | Int i         -&gt; i
-  | Add (e1, e2)  -&gt; eval e1 + eval e2
-  | Sub (e1, e2)  -&gt; eval e1 - eval e2
-  | Mult (e1, e2) -&gt; eval e1 * eval e2
-  | Div (e1, e2)  -&gt; eval e1 / eval e2
+ let rec eval : expr -&gt; int = function
+   | Int i -&gt; i
+   | Add (e1, e2) -&gt; eval e1 + eval e2
+   | Sub (e1, e2) -&gt; eval e1 - eval e2
+   | Mult (e1, e2) -&gt; eval e1 * eval e2
+   | Div (e1, e2) -&gt; eval e1 / eval e2
+ ;;
 
-(* Test AST *)
-let r =
-  let actual = P.parse_string expr &quot;1*2-4+3&quot; in
-  let expected = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
-  Bool.equal (expected = actual) true
+ (* Test AST *)
+ let r =
+   let actual = P.parse_string expr &quot;1*2-4+3&quot; in
+   let expected = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
+   Bool.equal (expected = actual) true
+ ;;
 
-(* Run the evaluator. *)
-let exp_result = eval (P.parse_string expr &quot;12+1*10&quot;) |&gt; Int.equal 22</code></pre></aside></section><section><header><h3 id="json"><a href="#json" class="anchor"></a>Json</h3></header><aside><p>Implements JSON parser as defined in https://tools.ietf.org/html/rfc8259.</p><p>Assumes UTF-8 character encoding. However, it doesn't do any validation.</p><p>Sample top_level inputs;</p><pre>  parse json_value &quot;true&quot;;;
+ (* Run the evaluator. *)
+ let exp_result = eval (P.parse_string expr &quot;12+1*10&quot;) |&gt; Int.equal 22</code></pre></aside></section><section><header><h3 id="json"><a href="#json" class="anchor"></a>Json</h3></header><aside><p>Implements JSON parser as defined in https://tools.ietf.org/html/rfc8259.</p><p>Assumes UTF-8 character encoding. However, it doesn't do any validation.</p><p>Sample top_level inputs;</p><pre>  parse json_value &quot;true&quot;;;
   parse json_value &quot;false&quot;;;
   parse json_value &quot;null&quot;;;
   parse json_value &quot;123&quot;;;
@@ -495,12 +514,13 @@ open P.Infix
 
 type value =
   | Object of (string * value) list
-  | Array  of value list
+  | Array of value list
   | Number of
-      { negative: bool
-      ; int: string
-      ; frac: string option
-      ; exponent: string option }
+      { negative : bool
+      ; int : string
+      ; frac : string option
+      ; exponent : string option
+      }
   | String of string
   | False
   | True
@@ -508,7 +528,10 @@ type value =
 
 let ws =
   P.skip
-    (P.char_if (function ' ' | '\t' | '\n' | '\r' -&gt; true | _ -&gt; false))
+    (P.char_if (function
+        | ' ' | '\t' | '\n' | '\r' -&gt; true
+        | _ -&gt; false))
+;;
 
 let implode l = List.to_seq l |&gt; String.of_seq
 let struct_char c = ws *&gt; P.char c &lt;* ws
@@ -519,16 +542,24 @@ let sprintf = Printf.sprintf
 
 let number_value =
   let* negative =
-    P.optional (P.char '-') &gt;|= function Some '-' -&gt; true | _ -&gt; false
+    P.optional (P.char '-')
+    &gt;|= function
+    | Some '-' -&gt; true
+    | _ -&gt; false
   in
   let* int =
     let digits1_to_9 =
-      P.char_if (function '1' .. '9' -&gt; true | _ -&gt; false) in
+      P.char_if (function
+          | '1' .. '9' -&gt; true
+          | _ -&gt; false)
+    in
     let num =
       P.map2
         (fun first_ch digits -&gt; sprintf &quot;%c%s&quot; first_ch digits)
-        digits1_to_9 P.digits in
-    P.any [P.string &quot;0&quot;; num]
+        digits1_to_9
+        P.digits
+    in
+    P.any [ P.string &quot;0&quot;; num ]
   in
   let* frac = P.optional (P.char '.' *&gt; P.digits) in
   let+ exponent =
@@ -536,36 +567,42 @@ let number_value =
       (let* e = P.char 'E' &lt;|&gt; P.char 'e' in
        let* sign = P.optional (P.char '-' &lt;|&gt; P.char '+') in
        let sign =
-         match sign with Some c -&gt; sprintf &quot;%c&quot; c | None -&gt; &quot;&quot; in
+         match sign with
+         | Some c -&gt; sprintf &quot;%c&quot; c
+         | None -&gt; &quot;&quot;
+       in
        let+ digits = P.digits in
        sprintf &quot;%c%s%s&quot; e sign digits)
   in
-  Number {negative; int; frac; exponent}
+  Number { negative; int; frac; exponent }
+;;
 
 let string =
   let escaped =
     let ch =
       P.char '\\'
       *&gt; P.char_if (function
-           | '&quot;' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -&gt; true
-           | _ -&gt; false )
-      &gt;|= sprintf &quot;\\%c&quot; in
+             | '&quot;' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -&gt; true
+             | _ -&gt; false)
+      &gt;|= sprintf &quot;\\%c&quot;
+    in
     let hex4digit =
       let+ hex =
-        P.string &quot;\\u&quot; *&gt; P.take ~at_least:4 ~up_to:4 P.hex_digit
-        &gt;|= implode
+        P.string &quot;\\u&quot; *&gt; P.take ~at_least:4 ~up_to:4 P.hex_digit &gt;|= implode
       in
-      sprintf &quot;\\u%s&quot; hex in
-    P.any [ch; hex4digit] in
+      sprintf &quot;\\u%s&quot; hex
+    in
+    P.any [ ch; hex4digit ]
+  in
   let unescaped =
     P.take_while
-      ~while_:(P.is_not (P.any [P.char '\\'; P.control; P.dquote]))
+      ~while_:(P.is_not (P.any [ P.char '\\'; P.control; P.dquote ]))
       P.next
-    &gt;|= implode in
-  let+ str =
-    P.dquote *&gt; P.take (P.any [escaped; unescaped]) &lt;* P.dquote
+    &gt;|= implode
   in
+  let+ str = P.dquote *&gt; P.take (P.any [ escaped; unescaped ]) &lt;* P.dquote in
   String.concat &quot;&quot; str
+;;
 
 let string_value = string &gt;|= fun s -&gt; String s
 
@@ -576,20 +613,28 @@ let json_value =
         let member =
           let* nm = string &lt;* struct_char ':' in
           let+ v = value in
-          (nm, v) in
-        let+ object_value =
-          struct_char '{' *&gt; P.take member ~sep_by:value_sep
-          &lt;* struct_char '}'
+          nm, v
         in
-        Object object_value in
+        let+ object_value =
+          struct_char '{' *&gt; P.take member ~sep_by:value_sep &lt;* struct_char '}'
+        in
+        Object object_value
+      in
       let array_value =
         let+ vals =
-          struct_char '[' *&gt; P.take value ~sep_by:value_sep
-          &lt;* struct_char ']'
+          struct_char '[' *&gt; P.take value ~sep_by:value_sep &lt;* struct_char ']'
         in
-        Array vals in
+        Array vals
+      in
       P.any
-        [ object_value; array_value; number_value; string_value
-        ; false_value; true_value; null_value ] )
+        [ object_value
+        ; array_value
+        ; number_value
+        ; string_value
+        ; false_value
+        ; true_value
+        ; null_value
+        ])
+;;
 
 let parse s = P.parse_string json_value s</code></pre></aside></section></section></div></body></html>

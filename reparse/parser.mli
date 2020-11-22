@@ -10,21 +10,20 @@
 
 (** {1 Overview} *)
 
-(** Parser provides functions and types to construct robust, performant and
-    reusable parsers.
+(** Parser provides functions and types to construct robust, performant and reusable
+    parsers.
 
-    At the core is a type {!type:t} which represents a constructed parser
-    definition. A parser {!type:t} is defined by composing together one or more
-    parsers or {!type:t}s via usage of parser operators.
+    At the core is a type {!type:t} which represents a constructed parser definition. A
+    parser {!type:t} is defined by composing together one or more parsers or {!type:t}s
+    via usage of parser operators.
 
-    An instance of {!type:t} represents an un-evaluated parser. Use {!val:parse}
-    function to evaluate it.
+    An instance of {!type:t} represents an un-evaluated parser. Use {!val:parse} function
+    to evaluate it.
 
-    {!type:input} represents a generalization of data input to {!val:parse}.
-    Implement the interface to create new input types.
+    {!type:input} represents a generalization of data input to {!val:parse}. Implement the
+    interface to create new input types.
 
-    Parser operators - or functions - are broadly organized into following
-    categories:
+    Parser operators - or functions - are broadly organized into following categories:
 
     - Pure
     - Concatentation
@@ -48,17 +47,16 @@
     Use {{:#parse} parse functions} to evaluate a parser. *)
 type 'a t
 
-(** Represents a generalization of data input source to a parser. Implement this
-    interface to provide new sources of input to {!val:parse}. *)
+(** Represents a generalization of data input source to a parser. Implement this interface
+    to provide new sources of input to {!val:parse}. *)
 class type input =
   object
-    (** [i#eof offset] returns [true] if [offset] position in [i] represents the
-        end of input. *)
+    (** [i#eof offset] returns [true] if [offset] position in [i] represents the end of
+        input. *)
     method eof : int -> bool
 
-    (** [i#sub t ~offset ~len] reads and returns a string of length [len] at
-        position [offset] from input [i]. May return a string of length less
-        than [len]. *)
+    (** [i#sub t ~offset ~len] reads and returns a string of length [len] at position
+        [offset] from input [i]. May return a string of length less than [len]. *)
     method sub : offset:int -> len:int -> string
 
     (** [i#nth n] returns the [n]th char from input [i].
@@ -79,14 +77,13 @@ class type input =
 
     Evaluate a parser. *)
 
-(** [parse_string ~track_lnum p s] evaluates [p] to value [v] while consuming
-    string instance [s].
+(** [parse_string ~track_lnum p s] evaluates [p] to value [v] while consuming string
+    instance [s].
 
-    If [track_num] is [true] then the parser tracks both the {e line} and the
-    {e column} numbers. It is set to [false] by default.
+    If [track_num] is [true] then the parser tracks both the {e line} and the {e column}
+    numbers. It is set to [false] by default.
 
-    Line number and column number both start count from [1] if enabled, [0]
-    otherwise.
+    Line number and column number both start count from [1] if enabled, [0] otherwise.
 
     {i Also see} {!val:lnum} and {!val:cnum}.
 
@@ -100,7 +97,7 @@ class type input =
 
       ;;
       let s = "hello world" in
-      let p = P.(take next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum) in
+      let p = P.(take next *> map2 (fun lnum cnum -> lnum, cnum) lnum cnum) in
       let v = P.parse_string ~track_lnum:true p s in
       v = (1, 12)
     ]}
@@ -113,15 +110,14 @@ class type input =
 
       ;;
       let s = "hello world" in
-      let p = P.(take next *> map2 (fun lnum cnum -> (lnum, cnum)) lnum cnum) in
+      let p = P.(take next *> map2 (fun lnum cnum -> lnum, cnum) lnum cnum) in
       let v = P.parse_string p s in
       v = (0, 0)
     ]}
     @raise Parser when parser encounters error *)
 val parse_string : ?track_lnum:bool -> 'a t -> string -> 'a
 
-(** [parse] is a generalised version of {!val:parse_string} over type
-    {!type:input}.
+(** [parse] is a generalised version of {!val:parse_string} over type {!type:input}.
 
     Use this function when you have a custom implementation of {!type:input}. *)
 val parse : ?track_lnum:bool -> 'a t -> input -> 'a
@@ -164,8 +160,8 @@ exception
     ]} *)
 val pure : 'a -> 'a t
 
-(** [unit] is a convenience function to create a new parser which always parses
-    to value [()].
+(** [unit] is a convenience function to create a new parser which always parses to value
+    [()].
 
     [unit] is [pure ()]. *)
 val unit : unit t
@@ -187,10 +183,10 @@ val unit : unit t
         try
           let _ = P.(parse input (fail "hello error")) in
           assert false
-        with e -> e in
-      r
-      = P.Parser
-          {offset= 0; line_number= 0; column_number= 0; msg= "hello error"}
+        with
+        | e -> e
+      in
+      r = P.Parser { offset = 0; line_number = 0; column_number = 0; msg = "hello error" }
     ]} *)
 val fail : string -> 'a t
 
@@ -224,9 +220,9 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
 
 (** {2 Map}
 
-    Mappers transform from one parser value to another. [map] functions
-    [map2, map3, map4] are defined in terms of {!val:bind}s. So a given mapper
-    function usage can be defined equivalently in terms of {!val:bind}s. *)
+    Mappers transform from one parser value to another. [map] functions [map2, map3, map4]
+    are defined in terms of {!val:bind}s. So a given mapper function usage can be defined
+    equivalently in terms of {!val:bind}s. *)
 
 (** [map f p] returns a new parser encapsulating value [b] where,
 
@@ -246,8 +242,8 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
       b = "hello world"
     ]}
 
-    Since [map] is defined in terms of [bind], the above usage of [map] is
-    equivalent to the [bind] usage below,
+    Since [map] is defined in terms of [bind], the above usage of [map] is equivalent to
+    the [bind] usage below,
 
     {[
       module P = Reparse.Parser
@@ -321,8 +317,7 @@ val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
 (** [map4 f p q r s] returns a new parser encapsulating value [e] where,
 
     - [p], [q], [r] and [s] are evaluated sequentially in order as given.
-    - [a, b, c, d] are the parsed values of parsers [p], [q], [r] and [s]
-      respectively.
+    - [a, b, c, d] are the parsed values of parsers [p], [q], [r] and [s] respectively.
     - [e] is [f a b c d].
 
     {4:map4_examples Examples}
@@ -357,8 +352,8 @@ val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
     ]} *)
 val delay : 'a t Lazy.t -> 'a t
 
-(** [named name p] uses [name] as part of an error message when constructing
-    exception {!exception:Parser} if parse of [p] fails.
+(** [named name p] uses [name] as part of an error message when constructing exception
+    {!exception:Parser} if parse of [p] fails.
 
     Also see {!val:Infix.(<?>)}
 
@@ -374,15 +369,16 @@ val delay : 'a t Lazy.t -> 'a t
         try
           let _ = P.parse_string p "zzd" in
           assert false
-        with e -> e in
+        with
+        | e -> e
+      in
       v
       = P.Parser
-          { offset= 0
-          ; line_number= 0
-          ; column_number= 0
-          ; msg=
-              "[parse_c] Reparse.Parser.Parser(0, 0, 0, \"[char] expected \
-               'a'\")" }
+          { offset = 0
+          ; line_number = 0
+          ; column_number = 0
+          ; msg = "[parse_c] Reparse.Parser.Parser(0, 0, 0, \"[char] expected 'a'\")"
+          }
     ]} *)
 val named : string -> 'a t -> 'a t
 
@@ -392,8 +388,8 @@ val named : string -> 'a t -> 'a t
 
 (** [any l] parses the value of the first successful parser in list [l].
 
-    Specified parsers in [l] are evaluated sequentially from left to right. A
-    failed parser doesn't consume any input, i.e. [offset] is unaffected.
+    Specified parsers in [l] are evaluated sequentially from left to right. A failed
+    parser doesn't consume any input, i.e. [offset] is unaffected.
 
     The parser fails if none of the parsers in [l] are evaluated successfully.
 
@@ -405,17 +401,17 @@ val named : string -> 'a t -> 'a t
       module P = Reparse.Parser
 
       ;;
-      let p = P.(any [char 'z'; char 'x'; char 'a']) in
+      let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
       let v = P.parse_string p "zabc" in
       v = 'z'
 
       ;;
-      let p = P.(any [char 'z'; char 'x'; char 'a']) in
+      let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
       let v = P.parse_string p "xabc" in
       v = 'x'
 
       ;;
-      let p = P.(any [char 'z'; char 'x'; char 'a']) in
+      let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
       let v = P.parse_string p "abc" in
       v = 'a'
     ]}
@@ -423,12 +419,14 @@ val named : string -> 'a t -> 'a t
     Parser fails when none of the parsers in [l] are successful.
 
     {[
-      let p = P.(any [char 'z'; char 'x'; char 'a']) in
+      let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
       let v =
         try
           let _ = P.parse_string p "yyy" in
           false
-        with _ -> true in
+        with
+        | _ -> true
+      in
       v = true
     ]} *)
 val any : 'a t list -> 'a t
@@ -456,9 +454,9 @@ val alt : 'a t -> 'a t -> 'a t
       module P = Reparse.Parser
 
       ;;
-      let p = P.(all [char 'a'; char 'b'; char 'c']) in
+      let p = P.(all [ char 'a'; char 'b'; char 'c' ]) in
       let v = P.parse_string p "abc" in
-      v = ['a'; 'b'; 'c']
+      v = [ 'a'; 'b'; 'c' ]
     ]}
 
     One of the specified parsers - [char 'c'] fails.
@@ -467,12 +465,14 @@ val alt : 'a t -> 'a t -> 'a t
       module P = Reparse.Parser
 
       ;;
-      let p = P.(all [char 'a'; char 'b'; char 'c']) in
+      let p = P.(all [ char 'a'; char 'b'; char 'c' ]) in
       let v =
         try
           let _ = P.parse_string p "abd" in
           false
-        with _ -> true in
+        with
+        | _ -> true
+      in
       v = true
     ]} *)
 val all : 'a t list -> 'a list t
@@ -487,7 +487,7 @@ val all : 'a t list -> 'a list t
       module P = Reparse.Parser
 
       ;;
-      let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
+      let p = P.(all_unit [ char 'a'; char 'b'; char 'c' ]) in
       let v = P.parse_string p "abc" in
       v = ()
     ]}
@@ -498,12 +498,14 @@ val all : 'a t list -> 'a list t
       module P = Reparse.Parser
 
       ;;
-      let p = P.(all_unit [char 'a'; char 'b'; char 'c']) in
+      let p = P.(all_unit [ char 'a'; char 'b'; char 'c' ]) in
       let v =
         try
           let _ = P.parse_string p "abd" in
           false
-        with _ -> true in
+        with
+        | _ -> true
+      in
       v = true
     ]} *)
 val all_unit : 'a t list -> unit t
@@ -512,9 +514,9 @@ val all_unit : 'a t list -> unit t
 
 (** {2 Recur} *)
 
-(** [recur f] returns a recursive parser. Function value [f] accepts a parser
-    [p] as its argument and returns a parser [q]. Parser [q] in its definition
-    can refer to [p] and [p] can refer to [q] in its own definition.
+(** [recur f] returns a recursive parser. Function value [f] accepts a parser [p] as its
+    argument and returns a parser [q]. Parser [q] in its definition can refer to [p] and
+    [p] can refer to [q] in its own definition.
 
     Such parsers are also known as a fixpoint or y combinator. *)
 val recur : ('a t -> 'a t) -> 'a t
@@ -525,9 +527,9 @@ val recur : ('a t -> 'a t) -> 'a t
 
 (** [skip ~at_least ~up_to p] repeatedly parses [p] and discards its value.
 
-    The lower and upper bound of repetition is specified by arguments [at_least]
-    and [up_to] respectively. The default value of [at_least] is 0. The default
-    value of [up_to] is unspecified, i.e. there is no upper limit.
+    The lower and upper bound of repetition is specified by arguments [at_least] and
+    [up_to] respectively. The default value of [at_least] is 0. The default value of
+    [up_to] is unspecified, i.e. there is no upper limit.
 
     The repetition ends when one of the following occurs:
 
@@ -548,8 +550,8 @@ val recur : ('a t -> 'a t) -> 'a t
     ]} *)
 val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 
-(** [skip_while p ~while_] repeatedly parses [p] and discards its value if
-    parser [while_] parses to value [true].
+(** [skip_while p ~while_] repeatedly parses [p] and discards its value if parser [while_]
+    parses to value [true].
 
     The repetition ends when one of the following occurs:
 
@@ -576,16 +578,14 @@ val skip_while : _ t -> while_:bool t -> int t
 
     Collects parsed values *)
 
-(** [take ~at_least ~up_to ~sep_by p] repeatedly parses [p] and returns the
-    parsed values.
+(** [take ~at_least ~up_to ~sep_by p] repeatedly parses [p] and returns the parsed values.
 
-    The lower and upper bound of repetition is specified by arguments [at_least]
-    and [up_to] respectively. The default value of [at_least] is [0]. The
-    default value of [up_to] is unspecified, i.e. there is no upper limit.
+    The lower and upper bound of repetition is specified by arguments [at_least] and
+    [up_to] respectively. The default value of [at_least] is [0]. The default value of
+    [up_to] is unspecified, i.e. there is no upper limit.
 
-    If [sep_by] is specified then the evaluation of [p] must be followed by a
-    successful evaluation of [sep_by]. The parsed value of [sep_by] is
-    discarded.
+    If [sep_by] is specified then the evaluation of [p] must be followed by a successful
+    evaluation of [sep_by]. The parsed value of [sep_by] is discarded.
 
     The repetition ends when one of the following occurs:
 
@@ -593,8 +593,8 @@ val skip_while : _ t -> while_:bool t -> int t
     - [sep_by] evaluates to failure
     - [up_to] upper boudn value is reached
 
-    The parser fails if the count of repetition of [p] does not match the value
-    specified by [at_least].
+    The parser fails if the count of repetition of [p] does not match the value specified
+    by [at_least].
 
     {4:take_examples Examples}
 
@@ -606,7 +606,7 @@ val skip_while : _ t -> while_:bool t -> int t
       ;;
       let p = P.(take (char 'a')) in
       let v = P.parse_string p "aaaaa" in
-      v = ['a'; 'a'; 'a'; 'a'; 'a']
+      v = [ 'a'; 'a'; 'a'; 'a'; 'a' ]
     ]}
 
     Specify [~sep_by].
@@ -617,7 +617,7 @@ val skip_while : _ t -> while_:bool t -> int t
       ;;
       let p = P.(take ~sep_by:(char ',') (char 'a')) in
       let v = P.parse_string p "a,a,a,a,a" in
-      v = ['a'; 'a'; 'a'; 'a'; 'a']
+      v = [ 'a'; 'a'; 'a'; 'a'; 'a' ]
     ]}
 
     Specify lower bound argument [at_least].
@@ -628,7 +628,7 @@ val skip_while : _ t -> while_:bool t -> int t
       ;;
       let p = P.(take ~at_least:3 ~sep_by:(char ',') (char 'a')) in
       let v = P.parse_string p "a,a,a,a,a" in
-      v = ['a'; 'a'; 'a'; 'a'; 'a']
+      v = [ 'a'; 'a'; 'a'; 'a'; 'a' ]
     ]}
 
     Lower bound not met results in error.
@@ -642,7 +642,9 @@ val skip_while : _ t -> while_:bool t -> int t
         try
           let _ = P.parse_string p "a,a,a,a" in
           false
-        with _ -> true in
+        with
+        | _ -> true
+      in
       v = true
     ]}
 
@@ -654,18 +656,16 @@ val skip_while : _ t -> while_:bool t -> int t
       ;;
       let p = P.(take ~up_to:3 ~sep_by:(char ',') (char 'a')) in
       let v = P.parse_string p "a,a,a,a,a" in
-      v = ['a'; 'a'; 'a']
+      v = [ 'a'; 'a'; 'a' ]
     ]} *)
 val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
 
-(** [take_while ~sep_by p ~while_ p] repeatedly parses [p] and returns its
-    value.
+(** [take_while ~sep_by p ~while_ p] repeatedly parses [p] and returns its value.
 
     [p] is evaluated if and only if [while_] evaluates to [true].
 
-    If [sep_by] is specified then the evaluation of [p] must be followed by a
-    successful evaluation of [sep_by]. The parsed value of [sep_by] is
-    discarded.
+    If [sep_by] is specified then the evaluation of [p] must be followed by a successful
+    evaluation of [sep_by]. The parsed value of [sep_by] is discarded.
 
     The repetition ends when one of the following occurs:
 
@@ -685,7 +685,7 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       ;;
       let p = P.(take_while ~while_:(is_not (char 'b')) (char 'a')) in
       let v = P.parse_string p "aab" in
-      v = ['a'; 'a']
+      v = [ 'a'; 'a' ]
     ]}
 
     Specify [sep_by].
@@ -694,35 +694,30 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       module P = Reparse.Parser
 
       ;;
-      let p =
-        P.(take_while ~sep_by:(char ',') ~while_:(is_not (char 'b')) (char 'a'))
-      in
+      let p = P.(take_while ~sep_by:(char ',') ~while_:(is_not (char 'b')) (char 'a')) in
       let v = P.parse_string p "a,a,ab" in
-      v = ['a'; 'a'; 'a']
+      v = [ 'a'; 'a'; 'a' ]
     ]} *)
 val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 
-(** [take_while_on ~sep_by ~while_ ~on_take p] repeatedly parses [p] and calls
-    callback [on_take_cb] with the parsed value.
+(** [take_while_on ~sep_by ~while_ ~on_take p] repeatedly parses [p] and calls callback
+    [on_take_cb] with the parsed value.
 
     [p] is evaluated if and only if [while_] evaluates to [true].
 
-    If [sep_by] is specified then the evaluation of [p] must be followed by a
-    successful evaluation of [sep_by]. The parsed value of [sep_by] is
-    discarded.
+    If [sep_by] is specified then the evaluation of [p] must be followed by a successful
+    evaluation of [sep_by]. The parsed value of [sep_by] is discarded.
 
-    [p] is evaluated repeatedly. The repetition ends when one of the following
-    occurs:
+    [p] is evaluated repeatedly. The repetition ends when one of the following occurs:
 
-    [on_take_cb] is the callback function that is called every time [p] is
-    evaluated.
+    [on_take_cb] is the callback function that is called every time [p] is evaluated.
 
     - [p] evaluates to failure
     - [while_] returns [false]
     - [sep_by] evaluates to failure
 
-    [take_while_cb] is the general version of {!val:take_while}. It allows to
-    specify how the value [a] is to be collected.
+    [take_while_cb] is the general version of {!val:take_while}. It allows to specify how
+    the value [a] is to be collected.
 
     {b Note} [while_] does not consume input.
 
@@ -735,9 +730,7 @@ val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
       ;;
       let buf = Buffer.create 0 in
       let on_take_cb a = Buffer.add_char buf a in
-      let p =
-        P.(take_while_cb (char 'a') ~while_:(is_not (char 'b')) ~on_take_cb)
-      in
+      let p = P.(take_while_cb (char 'a') ~while_:(is_not (char 'b')) ~on_take_cb) in
       let v = P.parse_string p "aaab" in
       let s = Buffer.contents buf in
       v = 3 && s = "aaa"
@@ -753,8 +746,8 @@ val take_while_cb
 
     Don't fail when parsing is not successful.*)
 
-(** [optional p] parses [Some a] if successful and [None] otherwise. [a] is the
-    parsed value of [p].
+(** [optional p] parses [Some a] if successful and [None] otherwise. [a] is the parsed
+    value of [p].
 
     {4:optional_examples Examples}
 
@@ -776,8 +769,7 @@ val optional : 'a t -> 'a option t
 
 (** {1 Query Input state} *)
 
-(** [is_eoi] parses to [true] if parser has reached end of input, [false]
-    otherwise.
+(** [is_eoi] parses to [true] if parser has reached end of input, [false] otherwise.
 
     {4:is_eoi_examples Examples}
 
@@ -810,13 +802,14 @@ val is_eoi : bool t
         try
           let _ = P.(parse_string eoi "a") in
           false
-        with _ -> true in
+        with
+        | _ -> true
+      in
       v = true
     ]} *)
 val eoi : unit t
 
-(** [lnum] parses the current line number of input. line number count start form
-    [1].
+(** [lnum] parses the current line number of input. line number count start form [1].
 
     {4:lnum_examples Examples}
 
@@ -865,8 +858,8 @@ val offset : int t
 
     [true], [false], is, is not. *)
 
-(** [not_ p] parses value [()] if and only if [p] fails to parse, otherwise the
-    parse fails.
+(** [not_ p] parses value [()] if and only if [p] fails to parse, otherwise the parse
+    fails.
 
     {4:not__examples Examples}
 
@@ -880,8 +873,8 @@ val offset : int t
     ]} *)
 val not_ : 'a t -> unit t
 
-(** [not_followed_by p q] parses value of [p] only if immediate and subsequent
-    parse of [q] is a failure. Parser [q] doesn't consumes any input.
+(** [not_followed_by p q] parses value of [p] only if immediate and subsequent parse of
+    [q] is a failure. Parser [q] doesn't consumes any input.
 
     {4:not_followed_by_examples Examples}
 
@@ -895,8 +888,8 @@ val not_ : 'a t -> unit t
     ]}*)
 val not_followed_by : 'a t -> 'b t -> 'a t
 
-(** [is_not p] parses value [true] if [p] fails to parse and [false] otherwise.
-    {b Note} evaluating [p] doesn't consume any input.
+(** [is_not p] parses value [true] if [p] fails to parse and [false] otherwise. {b Note}
+    evaluating [p] doesn't consume any input.
 
     {4:is_not_examples Examples}
 
@@ -910,8 +903,8 @@ val not_followed_by : 'a t -> 'b t -> 'a t
     ]} *)
 val is_not : 'a t -> bool t
 
-(** [is p] parses [true] if [p] is successful, [false] otherwise. {b Note}
-    evaluation of [p] doesn't consume any input.
+(** [is p] parses [true] if [p] is successful, [false] otherwise. {b Note} evaluation of
+    [p] doesn't consume any input.
 
     {4:is_examples Examples}
 
@@ -980,8 +973,7 @@ val peek_char : char t
     ]} *)
 val peek_string : int -> string t
 
-(** [next] parses the next character from input. Fails if input has reached end
-    of input.
+(** [next] parses the next character from input. Fails if input has reached end of input.
 
     {4:next_examples Examples}
 
@@ -1016,16 +1008,20 @@ val char : char -> char t
       module P = Reparse.Parser
 
       ;;
-      let p = P.char_if (function 'a' -> true | _ -> false) in
+      let p =
+        P.char_if (function
+            | 'a' -> true
+            | _ -> false)
+      in
       let v = P.parse_string p "abc" in
       v = 'a'
     ]} *)
 val char_if : (char -> bool) -> char t
 
-(** [string ~case_sensitive s] parses a string [s] exactly. 
+(** [string ~case_sensitive s] parses a string [s] exactly.
 
-    If [case_sensitive] is [false] then comparison is done without 
-    character case consideration. Default value is [true].
+    If [case_sensitive] is [false] then comparison is done without character case
+    consideration. Default value is [true].
 
     {4:string_examples Examples}
 
@@ -1041,8 +1037,8 @@ val string : ?case_sensitive:bool -> string -> string t
 
 (** [line c] parses a line of text from input.
 
-    Line delimiter [c] can be either [`LF] or [`CRLF]. This corresponds to [\n]
-    or [\r\n] character respectively.
+    Line delimiter [c] can be either [`LF] or [`CRLF]. This corresponds to [\n] or [\r\n]
+    character respectively.
 
     {4:line_examples Examples}
 
@@ -1073,7 +1069,7 @@ val line : [ `LF | `CRLF ] -> string t
       ;;
       let p = P.(take alpha) in
       let v = P.parse_string p "abcdABCD" in
-      v = ['a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D']
+      v = [ 'a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D' ]
     ]} *)
 val alpha : char t
 
@@ -1088,7 +1084,7 @@ val alpha : char t
       ;;
       let p = P.(take alpha_num) in
       let v = P.parse_string p "ab123ABCD" in
-      v = ['a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D']
+      v = [ 'a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D' ]
     ]} *)
 val alpha_num : char t
 
@@ -1102,7 +1098,7 @@ val alpha_num : char t
       ;;
       let p = P.(take bit) in
       let v = P.parse_string p "0110 ab" in
-      v = ['0'; '1'; '1'; '0']
+      v = [ '0'; '1'; '1'; '0' ]
     ]} *)
 val bit : char t
 
@@ -1116,7 +1112,7 @@ val bit : char t
       ;;
       let p = P.(take ascii_char) in
       let v = P.parse_string p "0110 abc '" in
-      v = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']
+      v = [ '0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'' ]
     ]} *)
 val ascii_char : char t
 
@@ -1169,7 +1165,7 @@ val control : char t
       ;;
       let p = P.(take digit) in
       let v = P.parse_string p "0123456789a" in
-      v = ['0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9']
+      v = [ '0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9' ]
     ]} *)
 val digit : char t
 
@@ -1209,7 +1205,7 @@ val dquote : char t
       ;;
       let p = P.(take hex_digit) in
       let v = P.parse_string p "0ABCDEFa" in
-      v = ['0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F']
+      v = [ '0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F' ]
     ]} *)
 val hex_digit : char t
 
@@ -1239,8 +1235,7 @@ val htab : char t
     ]} *)
 val lf : char t
 
-(** [octect] parses any character in the range [\x00 - \xFF]. Synonym for
-    {!val:next}
+(** [octect] parses any character in the range [\x00 - \xFF]. Synonym for {!val:next}
 
     {4:octet_examples Examples}
 
@@ -1250,7 +1245,7 @@ val lf : char t
       ;;
       let p = P.(take octet) in
       let v = P.parse_string p "0110 abc '" in
-      v = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']
+      v = [ '0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'' ]
     ]} *)
 val octet : char t
 
@@ -1276,7 +1271,7 @@ val space : char t
 
       ;;
       let v = P.(parse_string spaces "   abc") in
-      v = [' '; ' '; ' ']
+      v = [ ' '; ' '; ' ' ]
     ]} *)
 val spaces : char list t
 
@@ -1290,7 +1285,7 @@ val spaces : char list t
       ;;
       let p = P.(take vchar) in
       let v = P.parse_string p "0110abc\x00" in
-      v = ['0'; '1'; '1'; '0'; 'a'; 'b'; 'c']
+      v = [ '0'; '1'; '1'; '0'; 'a'; 'b'; 'c' ]
     ]} *)
 val vchar : char t
 
@@ -1304,7 +1299,7 @@ val vchar : char t
       ;;
       let p = P.(take whitespace) in
       let v = P.parse_string p "\t \t " in
-      v = ['\t'; ' '; '\t'; ' ']
+      v = [ '\t'; ' '; '\t'; ' ' ]
     ]} *)
 val whitespace : char t
 
@@ -1513,17 +1508,17 @@ module Infix : sig
           try
             let _ = P.parse_string p "" in
             false
-          with _ -> true in
+          with
+          | _ -> true
+        in
         v = true
       ]} *)
   val ( <|> ) : 'a t -> 'a t -> 'a t
 
-  (** [p <?> err_msg] parses [p] to value [a] and returns a new parser
-      encapsulating [a]. If [p] is a failure, then it fails with error message
-      [err_msg].
+  (** [p <?> err_msg] parses [p] to value [a] and returns a new parser encapsulating [a].
+      If [p] is a failure, then it fails with error message [err_msg].
 
-      Often used as a last choice in [<|>], e.g.
-      [a <|> b <|> c <?> "expected a b c"].
+      Often used as a last choice in [<|>], e.g. [a <|> b <|> c <?> "expected a b c"].
 
       {4:infix_error_named_examples Examples}
 
@@ -1540,10 +1535,10 @@ module Infix : sig
             let _ = P.parse_string p "" in
             false
           with
-          | P.Parser
-              {offset= 0; line_number= 0; column_number= 0; msg= "[error]"} ->
-              true
-          | _ -> false in
+          | P.Parser { offset = 0; line_number = 0; column_number = 0; msg = "[error]" }
+            -> true
+          | _ -> false
+        in
         v = true
       ]} *)
   val ( <?> ) : 'a t -> string -> 'a t
@@ -1560,7 +1555,8 @@ module Infix : sig
         let p =
           let* a = P.pure 5 in
           let total = a + 5 in
-          P.pure total in
+          P.pure total
+        in
         let v = P.parse_string p "" in
         v = 10
       ]} *)
@@ -1578,7 +1574,8 @@ module Infix : sig
         let p =
           let+ a = P.pure 5 in
           let total = a + 5 in
-          total in
+          total
+        in
         let v = P.parse_string p "" in
         v = 10
       ]} *)
@@ -1606,11 +1603,11 @@ end
       open P.Infix
 
       type expr =
-        | Int  of int
-        | Add  of expr * expr
-        | Sub  of expr * expr
+        | Int of int
+        | Add of expr * expr
+        | Sub of expr * expr
         | Mult of expr * expr
-        | Div  of expr * expr
+        | Div of expr * expr
 
       let skip_spaces = P.skip P.space
 
@@ -1621,23 +1618,28 @@ end
           exp1
           (skip_spaces *> P.char op <* skip_spaces)
           exp2
+     ;;
 
       let integer : expr P.t =
         let+ d = P.digits in
         Int (int_of_string d)
+      ;;
 
       let factor : expr P.t -> expr P.t =
        fun expr ->
         P.any
           [ P.char '(' *> skip_spaces *> expr <* skip_spaces <* P.char ')'
-          ; skip_spaces *> integer <* skip_spaces ]
+          ; skip_spaces *> integer <* skip_spaces
+          ]
+     ;;
 
       let term : expr P.t -> expr P.t =
        fun factor ->
         P.recur (fun term ->
             let mult = binop factor '*' term (fun e1 e2 -> Mult (e1, e2)) in
             let div = binop factor '/' term (fun e1 e2 -> Div (e1, e2)) in
-            mult <|> div <|> factor )
+            mult <|> div <|> factor)
+     ;;
 
       let expr : expr P.t =
         P.recur (fun expr ->
@@ -1645,20 +1647,23 @@ end
             let term = term factor in
             let add = binop term '+' expr (fun e1 e2 -> Add (e1, e2)) in
             let sub = binop term '-' expr (fun e1 e2 -> Sub (e1, e2)) in
-            P.any [add; sub; term] )
+            P.any [ add; sub; term ])
+      ;;
 
       let rec eval : expr -> int = function
-        | Int i         -> i
-        | Add (e1, e2)  -> eval e1 + eval e2
-        | Sub (e1, e2)  -> eval e1 - eval e2
+        | Int i -> i
+        | Add (e1, e2) -> eval e1 + eval e2
+        | Sub (e1, e2) -> eval e1 - eval e2
         | Mult (e1, e2) -> eval e1 * eval e2
-        | Div (e1, e2)  -> eval e1 / eval e2
+        | Div (e1, e2) -> eval e1 / eval e2
+      ;;
 
       (* Test AST *)
       let r =
         let actual = P.parse_string expr "1*2-4+3" in
         let expected = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
         Bool.equal (expected = actual) true
+      ;;
 
       (* Run the evaluator. *)
       let exp_result = eval (P.parse_string expr "12+1*10") |> Int.equal 22
@@ -1691,12 +1696,13 @@ end
 
       type value =
         | Object of (string * value) list
-        | Array  of value list
+        | Array of value list
         | Number of
-            { negative: bool
-            ; int: string
-            ; frac: string option
-            ; exponent: string option }
+            { negative : bool
+            ; int : string
+            ; frac : string option
+            ; exponent : string option
+            }
         | String of string
         | False
         | True
@@ -1704,7 +1710,10 @@ end
 
       let ws =
         P.skip
-          (P.char_if (function ' ' | '\t' | '\n' | '\r' -> true | _ -> false))
+          (P.char_if (function
+              | ' ' | '\t' | '\n' | '\r' -> true
+              | _ -> false))
+      ;;
 
       let implode l = List.to_seq l |> String.of_seq
       let struct_char c = ws *> P.char c <* ws
@@ -1715,16 +1724,24 @@ end
 
       let number_value =
         let* negative =
-          P.optional (P.char '-') >|= function Some '-' -> true | _ -> false
+          P.optional (P.char '-')
+          >|= function
+          | Some '-' -> true
+          | _ -> false
         in
         let* int =
           let digits1_to_9 =
-            P.char_if (function '1' .. '9' -> true | _ -> false) in
+            P.char_if (function
+                | '1' .. '9' -> true
+                | _ -> false)
+          in
           let num =
             P.map2
               (fun first_ch digits -> sprintf "%c%s" first_ch digits)
-              digits1_to_9 P.digits in
-          P.any [P.string "0"; num]
+              digits1_to_9
+              P.digits
+          in
+          P.any [ P.string "0"; num ]
         in
         let* frac = P.optional (P.char '.' *> P.digits) in
         let+ exponent =
@@ -1732,36 +1749,42 @@ end
             (let* e = P.char 'E' <|> P.char 'e' in
              let* sign = P.optional (P.char '-' <|> P.char '+') in
              let sign =
-               match sign with Some c -> sprintf "%c" c | None -> "" in
+               match sign with
+               | Some c -> sprintf "%c" c
+               | None -> ""
+             in
              let+ digits = P.digits in
              sprintf "%c%s%s" e sign digits)
         in
-        Number {negative; int; frac; exponent}
+        Number { negative; int; frac; exponent }
+      ;;
 
       let string =
         let escaped =
           let ch =
             P.char '\\'
             *> P.char_if (function
-                 | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -> true
-                 | _ -> false )
-            >|= sprintf "\\%c" in
+                   | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -> true
+                   | _ -> false)
+            >|= sprintf "\\%c"
+          in
           let hex4digit =
             let+ hex =
-              P.string "\\u" *> P.take ~at_least:4 ~up_to:4 P.hex_digit
-              >|= implode
+              P.string "\\u" *> P.take ~at_least:4 ~up_to:4 P.hex_digit >|= implode
             in
-            sprintf "\\u%s" hex in
-          P.any [ch; hex4digit] in
+            sprintf "\\u%s" hex
+          in
+          P.any [ ch; hex4digit ]
+        in
         let unescaped =
           P.take_while
-            ~while_:(P.is_not (P.any [P.char '\\'; P.control; P.dquote]))
+            ~while_:(P.is_not (P.any [ P.char '\\'; P.control; P.dquote ]))
             P.next
-          >|= implode in
-        let+ str =
-          P.dquote *> P.take (P.any [escaped; unescaped]) <* P.dquote
+          >|= implode
         in
+        let+ str = P.dquote *> P.take (P.any [ escaped; unescaped ]) <* P.dquote in
         String.concat "" str
+      ;;
 
       let string_value = string >|= fun s -> String s
 
@@ -1772,21 +1795,29 @@ end
               let member =
                 let* nm = string <* struct_char ':' in
                 let+ v = value in
-                (nm, v) in
-              let+ object_value =
-                struct_char '{' *> P.take member ~sep_by:value_sep
-                <* struct_char '}'
+                nm, v
               in
-              Object object_value in
+              let+ object_value =
+                struct_char '{' *> P.take member ~sep_by:value_sep <* struct_char '}'
+              in
+              Object object_value
+            in
             let array_value =
               let+ vals =
-                struct_char '[' *> P.take value ~sep_by:value_sep
-                <* struct_char ']'
+                struct_char '[' *> P.take value ~sep_by:value_sep <* struct_char ']'
               in
-              Array vals in
+              Array vals
+            in
             P.any
-              [ object_value; array_value; number_value; string_value
-              ; false_value; true_value; null_value ] )
+              [ object_value
+              ; array_value
+              ; number_value
+              ; string_value
+              ; false_value
+              ; true_value
+              ; null_value
+              ])
+      ;;
 
       let parse s = P.parse_string json_value s
     ]} *)

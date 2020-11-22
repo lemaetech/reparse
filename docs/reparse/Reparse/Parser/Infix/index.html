@@ -75,7 +75,9 @@ let v =
   try
     let _ = P.parse_string p &quot;&quot; in
     false
-  with _ -&gt; true in
+  with
+  | _ -&gt; true
+in
 v = true</code></pre></dd></dl><dl><dt class="spec value" id="val-(&lt;?&gt;)"><a href="#val-(&lt;?&gt;)" class="anchor"></a><code><span class="keyword">val</span> (&lt;?&gt;) : <span><span class="type-var">'a</span> <a href="../index.html#type-t">t</a></span> <span>&#45;&gt;</span> string <span>&#45;&gt;</span> <span><span class="type-var">'a</span> <a href="../index.html#type-t">t</a></span></code></dt><dd><p><code>p &lt;?&gt; err_msg</code> parses <code>p</code> to value <code>a</code> and returns a new parser encapsulating <code>a</code>. If <code>p</code> is a failure, then it fails with error message <code>err_msg</code>.</p><p>Often used as a last choice in <code>&lt;|&gt;</code>, e.g. <code>a &lt;|&gt; b &lt;|&gt; c &lt;?&gt; &quot;expected a b c&quot;</code>.</p><h5 id="infix_error_named_examples"><a href="#infix_error_named_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 open P.Infix
 
@@ -88,10 +90,10 @@ let v =
     let _ = P.parse_string p &quot;&quot; in
     false
   with
-  | P.Parser
-      {offset= 0; line_number= 0; column_number= 0; msg= &quot;[error]&quot;} -&gt;
-      true
-  | _ -&gt; false in
+  | P.Parser { offset = 0; line_number = 0; column_number = 0; msg = &quot;[error]&quot; }
+    -&gt; true
+  | _ -&gt; false
+in
 v = true</code></pre></dd></dl><dl><dt class="spec value" id="val-let*"><a href="#val-let*" class="anchor"></a><code><span class="keyword">val</span> let* : <span><span class="type-var">'a</span> <a href="../index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span>(<span class="type-var">'a</span> <span>&#45;&gt;</span> <span><span class="type-var">'b</span> <a href="../index.html#type-t">t</a></span>)</span> <span>&#45;&gt;</span> <span><span class="type-var">'b</span> <a href="../index.html#type-t">t</a></span></code></dt><dd><p><code>let*</code> is a let syntax binding for <a href="index.html#val-(&gt;&gt;=)"><code>(&gt;&gt;=)</code></a></p><h5 id="infix_let_bind_examples"><a href="#infix_let_bind_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 open P.Infix
 
@@ -99,7 +101,8 @@ open P.Infix
 let p =
   let* a = P.pure 5 in
   let total = a + 5 in
-  P.pure total in
+  P.pure total
+in
 let v = P.parse_string p &quot;&quot; in
 v = 10</code></pre></dd></dl><dl><dt class="spec value" id="val-let+"><a href="#val-let+" class="anchor"></a><code><span class="keyword">val</span> let+ : <span><span class="type-var">'a</span> <a href="../index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span>(<span class="type-var">'a</span> <span>&#45;&gt;</span> <span class="type-var">'b</span>)</span> <span>&#45;&gt;</span> <span><span class="type-var">'b</span> <a href="../index.html#type-t">t</a></span></code></dt><dd><p><code>let*</code> is a let syntax binding for <a href="index.html#val-(&gt;|=)"><code>(&gt;|=)</code></a></p><h5 id="infix_let_map_examples"><a href="#infix_let_map_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 open P.Infix
@@ -108,6 +111,7 @@ open P.Infix
 let p =
   let+ a = P.pure 5 in
   let total = a + 5 in
-  total in
+  total
+in
 let v = P.parse_string p &quot;&quot; in
 v = 10</code></pre></dd></dl></div></body></html>
