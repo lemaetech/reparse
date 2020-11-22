@@ -469,6 +469,16 @@ let take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t =
   ok (List.rev !items)
 ;;
 
+let take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t =
+ fun ?sep_by ~start ~end_ p ->
+  let sep_by =
+    match sep_by with
+    | None -> unit
+    | Some p -> p *> unit
+  in
+  start *> take_while ~sep_by ~while_:(is_not end_) p <* end_
+;;
+
 let named_ch name f state ~ok ~err =
   (char_if f) state ~ok ~err:(fun exn ->
       error ~err (Format.sprintf "[%s] %s" name (Printexc.to_string exn)) state)

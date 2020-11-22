@@ -126,17 +126,6 @@ let take_while_sep parse () =
   Alcotest.(check (pair (list char) int) "" ([ 'a'; 'a'; 'a'; 'a' ], 8) r)
 ;;
 
-let take_take_while parse () =
-  let p =
-    P.map2
-      make_pair
-      (P.take (P.take_while (P.char 'a') ~while_:(P.is_not (P.char 'z'))))
-      P.offset
-  in
-  let r = parse p in
-  Alcotest.(check (pair (list (list char)) int) "" ([ [ 'a'; 'a'; 'a'; 'a' ] ], 4) r)
-;;
-
 let take_while_cb parse () =
   let buf = Buffer.create 5 in
   let p =
@@ -170,6 +159,12 @@ let take_while_cb_sep_by parse () =
     check (pair (pair int int) string) "" ((4, 8), "aaaa") (r, Buffer.contents buf))
 ;;
 
+let take_between parse () =
+  let p = P.(take_between ~sep_by:(char ',') ~start:(P.char '(') ~end_:(char ')') next) in
+  let r = parse p in
+  Alcotest.(check (list char) "" [ 'a'; 'a'; 'a' ] r)
+;;
+
 module M = Make_test
 
 let suite =
@@ -188,9 +183,10 @@ let suite =
   ; M.make "take at_least up_to sep_by" take_at_least_up_to_sep_by "a a a acz"
   ; M.make "take_while" take_while "aaaacz"
   ; M.make "take_while sep_by" take_while_sep "a a a a cz"
-  ; M.make "take take_while" take_take_while "aaaacz"
+  ; M.make "take take_while" take_while "aaaacz"
   ; M.make "take_while_cb" take_while_cb "aaaacz"
   ; M.make "take_while_cb sepby" take_while_cb_sep_by "a a a a cz"
+  ; M.make "take_between" take_between "(a,a,a)"
   ]
   |> List.concat
 ;;

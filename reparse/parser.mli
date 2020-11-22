@@ -700,6 +700,35 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
     ]} *)
 val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 
+(** [take_between ~sep_by ~start ~end_ p] parses [start] and then repeatedly parses [p]
+    while the parsed value of [p] doesn't equal to parsed value of [end_]. After the
+    repetition end, it parses [end_]. The parser returns the list of parsed values of [p].
+
+    Both [start] and [end_] parser values are discarded.
+
+    If [sep_by] is specified then the evaluation of [p] must be followed by a successful
+    evaluation of [sep_by]. The parsed value of [sep_by] is discarded.
+
+    The repetition ends when one of the following occurs:
+
+    - [p] evaluates to failure
+    - [end_] parsed value matches [p] parsed value
+    - [sep_by] evaluates to failure
+
+    {4:take_between_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      ;;
+      let p =
+        P.(take_between ~sep_by:(char ',') ~start:(P.char '(') ~end_:(char ')') next)
+      in
+      let v = P.parse_string p "(a,a,a)" in
+      v = [ 'a'; 'a'; 'a' ]
+    ]} *)
+val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
+
 (** [take_while_on ~sep_by ~while_ ~on_take p] repeatedly parses [p] and calls callback
     [on_take_cb] with the parsed value.
 
