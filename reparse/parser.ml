@@ -330,8 +330,10 @@ let string : ?case_sensitive:bool -> string -> string t =
       in
       if String.equal s s2
       then (s <$ skip ~up_to:len next) state ~ok ~err
-      else error ~err ("[string] " ^ s) state)
-    ~err
+      else error ~err ("[string] \"" ^ s ^ "\"]") state)
+    ~err:(fun _ ->
+      let msg = Printf.sprintf {|[string %s] |} s in
+      error ~err msg state)
 ;;
 
 let skip_while : _ t -> while_:bool t -> int t =
