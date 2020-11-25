@@ -254,13 +254,14 @@ let offset state ~ok ~err:_ = ok state.offset
 
 let char : char -> char t =
  fun c state ~ok ~err ->
+  let raise_err () =
+    let msg = Printf.sprintf "[char] '%c'" c in
+    error ~err msg state
+  in
   peek_char
     state
-    ~ok:(fun c2 ->
-      if Char.equal c c2
-      then (c <$ next) state ~ok ~err
-      else error ~err (Format.sprintf "[char] expected '%c'" c) state)
-    ~err
+    ~ok:(fun c2 -> if Char.equal c c2 then (c <$ next) state ~ok ~err else raise_err ())
+    ~err:(fun _ -> raise_err ())
 ;;
 
 let char_if : (char -> bool) -> char t =

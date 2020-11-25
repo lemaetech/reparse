@@ -12,8 +12,17 @@ let char_exn parse () =
   Alcotest.(
     check_raises
       "char"
-      (P.Parser
-         { offset = 0; line_number = 0; column_number = 0; msg = "[char] expected 'h'" })
+      (P.Parser { offset = 0; line_number = 0; column_number = 0; msg = "[char] 'h'" })
+      r)
+;;
+
+let char_exn2 parse () =
+  let p = P.char 'h' in
+  let r () = ignore (parse p) in
+  Alcotest.(
+    check_raises
+      "char"
+      (P.Parser { offset = 0; line_number = 0; column_number = 0; msg = "[char] 'h'" })
       r)
 ;;
 
@@ -71,6 +80,7 @@ module M = Make_test
 let suite =
   [ M.make "char " char_h "hello"
   ; M.make "char exn" char_exn "aaaa"
+  ; M.make "char exn 2" char_exn2 ""
   ; M.make "string" string "hello"
   ; M.make "string exn" string_exn "world"
   ; M.make "char_if" char_if "a"
