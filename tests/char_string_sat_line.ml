@@ -43,7 +43,8 @@ let string_exn parse () =
 ;;
 
 let string_of_chars parse () =
-  let p = P.(string_of_chars @@ take ~sep_by:space next) in
+  let open P.Infix in
+  let p = P.(take ~sep_by:space next >>= string_of_chars) in
   let v = parse p in
   Alcotest.(check string "string_of_chars" "hello" v)
 ;;

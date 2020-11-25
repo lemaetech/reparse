@@ -273,11 +273,7 @@ let char_if : (char -> bool) -> char t =
     ~err
 ;;
 
-let string_of_chars l =
-  let+ chars = l in
-  String.of_seq @@ List.to_seq chars
-;;
-
+let string_of_chars l = pure @@ String.of_seq @@ List.to_seq l
 let not_followed_by p q = p <* not_ q
 
 let optional : 'a t -> 'a option t =

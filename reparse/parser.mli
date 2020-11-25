@@ -1071,11 +1071,12 @@ val string : ?case_sensitive:bool -> string -> string t
     {[
       module P = Reparse.Parser
 
-      let p = P.(string_of_chars @@ take ~sep_by:space next) in
+      ;;
+      let p = P.(take ~sep_by:space next >>= string_of_chars) in
       let v = P.parse_string p "h e l l o" in
       v = "hello"
     ]} *)
-val string_of_chars : char list t -> string t
+val string_of_chars : char list -> string t
 
 (** [line c] parses a line of text from input.
 
