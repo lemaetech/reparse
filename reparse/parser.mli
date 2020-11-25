@@ -1064,6 +1064,9 @@ val char_if : (char -> bool) -> char t
     ]} *)
 val string : ?case_sensitive:bool -> string -> string t
 
+(** [string_of_string l] converts [char list] [l] to string *)
+val string_of_chars : char list -> string
+
 (** [line c] parses a line of text from input.
 
     Line delimiter [c] can be either [`LF] or [`CRLF]. This corresponds to [\n] or [\r\n]
