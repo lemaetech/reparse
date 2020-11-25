@@ -1064,8 +1064,18 @@ val char_if : (char -> bool) -> char t
     ]} *)
 val string : ?case_sensitive:bool -> string -> string t
 
-(** [string_of_string l] converts [char list] [l] to string *)
-val string_of_chars : char list -> string
+(** [string_of_chars l] converts [char list] [l] to string
+
+    {4:string_of_chars_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+
+      let p = P.(string_of_chars @@ take ~sep_by:space next) in
+      let v = P.parse_string p "h e l l o" in
+      v = "hello"
+    ]} *)
+val string_of_chars : char list t -> string t
 
 (** [line c] parses a line of text from input.
 
@@ -1119,6 +1129,36 @@ val alpha : char t
       v = [ 'a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D' ]
     ]} *)
 val alpha_num : char t
+
+(** [lower_alpha] parses a character in range [a-z].
+
+    {4:lower_alpha_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let p = P.(take lower_alpha) in
+      let v = P.parse_string p "abcd" in
+      v = [ 'a'; 'b'; 'c'; 'd' ]
+    ]} *)
+val lower_alpha : char t
+
+(** [upper_alpha] parses a character in range [A-Z].
+
+    {4:upper_alpha_examples Examples}
+
+    {[
+      module P = Reparse.Parser
+      open P.Infix
+
+      ;;
+      let p = P.(take upper_alpha) in
+      let v = P.parse_string p "ABCD" in
+      v = [ 'A'; 'B'; 'C'; 'D' ]
+    ]} *)
+val upper_alpha : char t
 
 (** [bit] parses a character which is either ['0'] or ['1'].
 

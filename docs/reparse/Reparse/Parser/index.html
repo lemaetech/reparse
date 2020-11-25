@@ -346,7 +346,11 @@ v = 'a'</code></pre></dd></dl><dl><dt class="spec value" id="val-string"><a href
 ;;
 let p = P.string &quot;hello&quot; in
 let v = P.parse_string p &quot;hello world&quot; in
-v = &quot;hello&quot;</code></pre></dd></dl><dl><dt class="spec value" id="val-string_of_chars"><a href="#val-string_of_chars" class="anchor"></a><code><span class="keyword">val</span> string_of_chars : <span>char list</span> <span>&#45;&gt;</span> string</code></dt><dd><p><code>string_of_string l</code> converts <code>char list</code> <code>l</code> to string</p></dd></dl><dl><dt class="spec value" id="val-line"><a href="#val-line" class="anchor"></a><code><span class="keyword">val</span> line : <span>[ `LF <span>| `CRLF</span> ]</span> <span>&#45;&gt;</span> <span>string <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>line c</code> parses a line of text from input.</p><p>Line delimiter <code>c</code> can be either <code>`LF</code> or <code>`CRLF</code>. This corresponds to <code>\n</code> or <code>\r\n</code> character respectively.</p><h5 id="line_examples"><a href="#line_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = &quot;hello&quot;</code></pre></dd></dl><dl><dt class="spec value" id="val-string_of_chars"><a href="#val-string_of_chars" class="anchor"></a><code><span class="keyword">val</span> string_of_chars : <span><span>char list</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span>string <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>string_of_chars l</code> converts <code>char list</code> <code>l</code> to string</p><h5 id="string_of_chars_examples"><a href="#string_of_chars_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+
+let p = P.(string_of_chars @@ take ~sep_by:space next) in
+let v = P.parse_string p &quot;h e l l o&quot; in
+v = &quot;hello&quot;</code></pre></dd></dl><dl><dt class="spec value" id="val-line"><a href="#val-line" class="anchor"></a><code><span class="keyword">val</span> line : <span>[ `LF <span>| `CRLF</span> ]</span> <span>&#45;&gt;</span> <span>string <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>line c</code> parses a line of text from input.</p><p>Line delimiter <code>c</code> can be either <code>`LF</code> or <code>`CRLF</code>. This corresponds to <code>\n</code> or <code>\r\n</code> character respectively.</p><h5 id="line_examples"><a href="#line_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.line `CRLF in
@@ -363,7 +367,19 @@ open P.Infix
 ;;
 let p = P.(take alpha_num) in
 let v = P.parse_string p &quot;ab123ABCD&quot; in
-v = [ 'a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-bit"><a href="#val-bit" class="anchor"></a><code><span class="keyword">val</span> bit : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>bit</code> parses a character which is either <code>'0'</code> or <code>'1'</code>.</p><h5 id="bit_examples"><a href="#bit_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = [ 'a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-lower_alpha"><a href="#val-lower_alpha" class="anchor"></a><code><span class="keyword">val</span> lower_alpha : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>lower_alpha</code> parses a character in range <code>a-z</code>.</p><h5 id="lower_alpha_examples"><a href="#lower_alpha_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+open P.Infix
+
+;;
+let p = P.(take lower_alpha) in
+let v = P.parse_string p &quot;abcd&quot; in
+v = [ 'a'; 'b'; 'c'; 'd' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-upper_alpha"><a href="#val-upper_alpha" class="anchor"></a><code><span class="keyword">val</span> upper_alpha : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>upper_alpha</code> parses a character in range <code>A-Z</code>.</p><h5 id="upper_alpha_examples"><a href="#upper_alpha_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+open P.Infix
+
+;;
+let p = P.(take upper_alpha) in
+let v = P.parse_string p &quot;ABCD&quot; in
+v = [ 'A'; 'B'; 'C'; 'D' ]</code></pre></dd></dl><dl><dt class="spec value" id="val-bit"><a href="#val-bit" class="anchor"></a><code><span class="keyword">val</span> bit : <span>char <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>bit</code> parses a character which is either <code>'0'</code> or <code>'1'</code>.</p><h5 id="bit_examples"><a href="#bit_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.(take bit) in

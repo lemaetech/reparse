@@ -42,6 +42,12 @@ let string_exn parse () =
       r)
 ;;
 
+let string_of_chars parse () =
+  let p = P.(string_of_chars @@ take ~sep_by:space next) in
+  let v = parse p in
+  Alcotest.(check string "string_of_chars" "hello" v)
+;;
+
 let is_char = function
   | 'a' | 'b' | 'c' -> true
   | _ -> false
@@ -83,6 +89,7 @@ let suite =
   ; M.make "char exn 2" char_exn2 ""
   ; M.make "string" string "hello"
   ; M.make "string exn" string_exn "world"
+  ; M.make "string_of_chars" string_of_chars "h e l l o"
   ; M.make "char_if" char_if "a"
   ; M.make "char_if exn" char_if_exn "d"
   ; M.make "line lf" line_lf "abc\ndef\nghi"

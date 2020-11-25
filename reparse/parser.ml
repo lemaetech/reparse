@@ -273,7 +273,11 @@ let char_if : (char -> bool) -> char t =
     ~err
 ;;
 
-let string_of_chars l = String.of_seq @@ List.to_seq l
+let string_of_chars l =
+  let+ chars = l in
+  String.of_seq @@ List.to_seq chars
+;;
+
 let not_followed_by p q = p <* not_ q
 
 let optional : 'a t -> 'a option t =
@@ -500,6 +504,18 @@ let is_digit = function
 
 let alpha = named_ch "ALPHA" is_alpha
 let alpha_num = named_ch "ALPHA NUM" (function c -> is_alpha c || is_digit c)
+
+let lower_alpha =
+  named_ch "LOWER ALPHA" (function
+      | 'a' .. 'z' -> true
+      | _ -> false)
+;;
+
+let upper_alpha =
+  named_ch "UPPER ALPHA" (function
+      | 'A' .. 'Z' -> true
+      | _ -> false)
+;;
 
 let bit =
   named_ch "BIT" (function
