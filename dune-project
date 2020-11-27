@@ -34,5 +34,7 @@
  (depends
   (ocaml
    (>= 4.10.0))
-  reparse
-  base-unix))
+  (reparse
+   (= 2.0.0))
+  base-unix
+  (alcotest :with-test)))
