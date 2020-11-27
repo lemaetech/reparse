@@ -29,6 +29,8 @@
  (name reparse-unix)
  (synopsis
    "Provides support for parsing files as source of input for reparse library ")
+ (description
+   "Provides support for parsing files as source of input for reparse library ")
  (depends
   (ocaml
    (>= 4.10.0))

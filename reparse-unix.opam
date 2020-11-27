@@ -3,6 +3,8 @@ opam-version: "2.0"
 version: "2.0.0"
 synopsis:
   "Provides support for parsing files as source of input for reparse library "
+description:
+  "Provides support for parsing files as source of input for reparse library "
 maintainer: ["Bikal Lem"]
 authors: ["Bikal Lem <gbikal@gmail.com>"]
 license: "MPL-2.0"
