@@ -100,3 +100,4 @@ The expression grammar is defined by the following BNF grammar:
 
 - [HTTP Multipart](https://github.com/lemaetech/http-mutlipart-formdata/blob/master/lib/multipart.ml)
 - [RFC 8259 JSON parser](https://github.com/lemaetech/reparse/blob/master/examples/json.ml)
+- [HTML5 parser](https://github.com/lemaetech/pp_html/blob/master/src/pp_html.ml)
