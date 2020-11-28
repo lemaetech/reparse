@@ -903,7 +903,7 @@ val offset : int t
 val not_ : 'a t -> unit t
 
 (** [not_followed_by p q] parses value of [p] only if immediate and subsequent parse of
-    [q] is a failure. Parser [q] doesn't consumes any input.
+    [q] is a failure.
 
     {4:not_followed_by_examples Examples}
 
@@ -917,8 +917,7 @@ val not_ : 'a t -> unit t
     ]}*)
 val not_followed_by : 'a t -> 'b t -> 'a t
 
-(** [is_not p] parses value [true] if [p] fails to parse and [false] otherwise. {b Note}
-    evaluating [p] doesn't consume any input.
+(** [is_not p] parses value [true] if [p] fails to parse and [false] otherwise.
 
     {4:is_not_examples Examples}
 
@@ -932,8 +931,7 @@ val not_followed_by : 'a t -> 'b t -> 'a t
     ]} *)
 val is_not : 'a t -> bool t
 
-(** [is p] parses [true] if [p] is successful, [false] otherwise. {b Note} evaluation of
-    [p] doesn't consume any input.
+(** [is p] parses [true] if [p] is successful, [false] otherwise.
 
     {4:is_examples Examples}
 
