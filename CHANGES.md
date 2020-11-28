@@ -1,4 +1,8 @@
-## v2.0.0 2020-11-09 UK
+## v2.1.0 (unrelease
+
+- make `is`, `is_not` and `not_followed_by` consume input. Update documentation. #24.
+
+## v2.0.0 2020-11-28 UK
 
 - Rewrite the whole package to use exceptions rather than `result` type
 - Adds many more parsing combinators
