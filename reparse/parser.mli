@@ -903,7 +903,7 @@ val offset : int t
 val not_ : 'a t -> unit t
 
 (** [not_followed_by p q] parses value of [p] only if immediate and subsequent parse of
-    [q] is a failure. Parser [q] doesn't consumes any input.
+    [q] is a failure.
 
     {4:not_followed_by_examples Examples}
 
