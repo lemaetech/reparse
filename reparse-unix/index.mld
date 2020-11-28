@@ -2,6 +2,6 @@
 
 Reparse_unix provides parsing file functionality to [reparse] package.
 
-{1: Modules}
+{1 Modules}
 
 {!module:Reparse_unix.File_input}.

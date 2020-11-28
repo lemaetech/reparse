@@ -292,12 +292,12 @@ v = ()</code></pre></dd></dl><dl><dt class="spec value" id="val-not_followed_by"
 ;;
 let p = P.(not_followed_by (char 'a') (char 'a')) in
 let v = P.parse_string p &quot;ab&quot; in
-v = 'a'</code></pre></dd></dl><dl><dt class="spec value" id="val-is_not"><a href="#val-is_not" class="anchor"></a><code><span class="keyword">val</span> is_not : <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span>bool <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>is_not p</code> parses value <code>true</code> if <code>p</code> fails to parse and <code>false</code> otherwise. <b>Note</b> evaluating <code>p</code> doesn't consume any input.</p><h5 id="is_not_examples"><a href="#is_not_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = 'a'</code></pre></dd></dl><dl><dt class="spec value" id="val-is_not"><a href="#val-is_not" class="anchor"></a><code><span class="keyword">val</span> is_not : <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span>bool <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>is_not p</code> parses value <code>true</code> if <code>p</code> fails to parse and <code>false</code> otherwise.</p><h5 id="is_not_examples"><a href="#is_not_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.(is_not (char 'a')) in
 let v = P.parse_string p &quot;bbb&quot; in
-v = true</code></pre></dd></dl><dl><dt class="spec value" id="val-is"><a href="#val-is" class="anchor"></a><code><span class="keyword">val</span> is : <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span>bool <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>is p</code> parses <code>true</code> if <code>p</code> is successful, <code>false</code> otherwise. <b>Note</b> evaluation of <code>p</code> doesn't consume any input.</p><h5 id="is_examples"><a href="#is_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
+v = true</code></pre></dd></dl><dl><dt class="spec value" id="val-is"><a href="#val-is" class="anchor"></a><code><span class="keyword">val</span> is : <span><span class="type-var">'a</span> <a href="index.html#type-t">t</a></span> <span>&#45;&gt;</span> <span>bool <a href="index.html#type-t">t</a></span></code></dt><dd><p><code>is p</code> parses <code>true</code> if <code>p</code> is successful, <code>false</code> otherwise.</p><h5 id="is_examples"><a href="#is_examples" class="anchor"></a>Examples</h5><pre><code class="ml">module P = Reparse.Parser
 
 ;;
 let p = P.(is (char 'b')) in
