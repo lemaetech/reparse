@@ -223,11 +223,29 @@ let not_ : 'a t -> unit t =
 ;;
 
 let is_not : 'a t -> bool t =
- fun p state ~ok ~err:_ -> p state ~ok:(fun _ -> ok false) ~err:(fun _ -> ok true)
+ fun p state ~ok ~err:_ ->
+  let init_pos = pos state in
+  p
+    state
+    ~ok:(fun _ ->
+      backtrack state init_pos;
+      ok false)
+    ~err:(fun _ ->
+      backtrack state init_pos;
+      ok true)
 ;;
 
 let is : 'a t -> bool t =
- fun p state ~ok ~err:_ -> p state ~ok:(fun _ -> ok true) ~err:(fun _ -> ok false)
+ fun p state ~ok ~err:_ ->
+  let init_pos = pos state in
+  p
+    state
+    ~ok:(fun _ ->
+      backtrack state init_pos;
+      ok true)
+    ~err:(fun _ ->
+      backtrack state init_pos;
+      ok false)
 ;;
 
 let lnum state ~ok ~err:_ = ok state.lnum
