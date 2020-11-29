@@ -1,6 +1,6 @@
 ## Reparse
 
-Reparse is a monadic, recursive descent based, comprehensive, parser construction library for ocaml.
+Reparse is a monadic, recursive descent based, comprehensive parser construction library for ocaml.
 
 [Reparse Documentation](https://lemaetech.co.uk/reparse/)
 
