@@ -2,7 +2,7 @@
 
 Reparse is a monadic, recursive descent based, comprehensive, parser construction library for ocaml.
 
-{1:api Modules}
+{1 Modules}
 
 {!module:Reparse.Parser}
 
@@ -110,5 +110,5 @@ v}
 
 {1 More Examples?}
 - RFC 8259 compliant {{:https://github.com/lemaetech/reparse/blob/master/examples/json.ml} JSON parser}
-- {{:https://github.com/lemaetech/http-mutlipart-formdata/blob/master/lib/multipart.ml} HTTP Multipart parser}
+- {{:https://github.com/lemaetech/http-multipart-formdata/blob/master/src/http_multipart_formdata.ml} HTTP Multipart parser}
 
