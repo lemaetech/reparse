@@ -16,18 +16,6 @@ class type input =
     method nth : int -> char
   end
 
-class string_input s =
-  object
-    method eof i = i >= String.length s
-
-    method sub ~offset ~len = String.sub s offset len
-
-    method nth i =
-      match s.[i] with
-      | c -> c
-      | exception Invalid_argument _ -> raise End_of_file
-  end
-
 type state =
   { input : input
   ; track_lnum : bool (* Track line numbers. *)
@@ -67,7 +55,18 @@ let parse ?(track_lnum = false) p input =
 ;;
 
 let parse_string ?(track_lnum = false) p s =
-  let input = new string_input s in
+  let input =
+    object
+      method eof i = i >= String.length s
+
+      method sub ~offset ~len = String.sub s offset len
+
+      method nth i =
+        match s.[i] with
+        | c -> c
+        | exception Invalid_argument _ -> raise End_of_file
+    end
+  in
   parse ~track_lnum p input
 ;;
 

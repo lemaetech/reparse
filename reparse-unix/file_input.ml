@@ -7,7 +7,7 @@ external unsafe_pread
   -> int
   = "caml_pread"
 
-class t fd =
+let create fd =
   let rec really_read fd buf len fd_offset buf_offset =
     if len <= 0
     then ()
@@ -34,5 +34,4 @@ class t fd =
       really_read fd buf len offset 0;
       Bytes.to_string buf
   end
-
-let create fd = new t fd
+;;
