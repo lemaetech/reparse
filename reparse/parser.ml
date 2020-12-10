@@ -58,7 +58,6 @@ let parse_string ?(track_lnum = false) p s =
   let input =
     object
       method eof i = i >= String.length s
-
       method sub ~offset ~len = String.sub s offset len
 
       method nth i =
