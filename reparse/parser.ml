@@ -10,9 +10,7 @@
 class type input =
   object
     method eof : int -> bool
-
     method sub : offset:int -> len:int -> string
-
     method nth : int -> char
   end
 
