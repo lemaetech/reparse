@@ -4,7 +4,7 @@ This release has backwards incompatible changes.
 
 - Deprecate `Infix` module. Infix functions are now available in `Parser`
   moduel itself.
-- `sep_by` parameters in `take, take_while, skip, skip_while` functions are now `unit t`.
+- `sep_by` parameters in `take, take_while, take_while_cb` functions are now `unit t`.
 - Add support for let operators `and+` and `and*`.
 - `bind` and `map` function are now labelled following `base` library
   dependency convention.
@@ -14,6 +14,7 @@ This release has backwards incompatible changes.
   with monad conventions in `base` library dependency.
 - `>|=` is deprecated. Use `>>|` instead. This is to stay consistent with monad
   conventions in `base` library dependency.
+- Removed `map4` function.
 - Add support for `ppx_let`.
 
 ## v2.0.0 2020-11-09 UK

@@ -30,7 +30,7 @@ type expr =
   | Mult of expr * expr
   | Div of expr * expr
 
-let skip_spaces = skip space >>| fun _ -> ()
+let skip_spaces = skip (ignore_m space)
 
 let binop : 'a t -> char -> 'b t -> ('a -> 'b -> 'c) -> 'c t =
  fun exp1 op exp2 f ->

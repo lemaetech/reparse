@@ -163,7 +163,7 @@ let take_while_cb_sep_by parse () =
       (P.take_while_cb
          (P.char 'a')
          ~while_:(P.is_not (P.char 'z'))
-         ~sep_by:P.space
+         ~sep_by:(ignore_m P.space)
          ~on_take_cb:(fun c -> Buffer.add_char buf c))
       P.offset
   in
