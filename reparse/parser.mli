@@ -93,7 +93,7 @@ class type input =
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let s = "hello world" in
@@ -106,7 +106,7 @@ class type input =
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let s = "hello world" in
@@ -159,6 +159,7 @@ exception
       v1 = 5 && v2 = "hello"
     ]} *)
 val pure : 'a -> 'a t
+  [@@ocaml.deprecated "Use return."]
 
 (** [unit] is a convenience function to create a new parser which always parses to value
     [()].
@@ -190,152 +191,23 @@ val unit : unit t
     ]} *)
 val fail : string -> 'a t
 
-(** {1 Concatenation}
+(** {1 Concatenation/Monad combinators}
 
     Define parsers by joining two or more parsers. *)
 
-(** {2 Bind} *)
+include Base.Applicative.S with type 'a t := 'a t
+include Base.Monad.S with type 'a t := 'a t
 
-(** [bind p f] returns a new parser [b] where,
-
-    - [a] is the parsed value of [p]
-    - [b] is [f a]
-
-    {4:bind_examples Examples}
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let f a = P.pure (a ^ " world") in
-      let p = P.string "hello" in
-      let p = P.bind p f in
-      let input = new P.string_input "hello" in
-      let b = P.parse input p in
-      b = "hello world"
-    ]}
-
-    See {!Infix.(>>=)}. [p >>= f] is the infix equivalent of [bind p f]. *)
-val bind : 'a t -> ('a -> 'b t) -> 'b t
-
-(** {2 Map}
-
-    Mappers transform from one parser value to another. [map] functions [map2, map3, map4]
-    are defined in terms of {!val:bind}s. So a given mapper function usage can be defined
-    equivalently in terms of {!val:bind}s. *)
-
-(** [map f p] returns a new parser encapsulating value [b] where,
-
-    - [a] is the parsed value of [p].
-    - [b] is [f a].
-
-    {4:map_examples Examples}
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let f a = a ^ " world" in
-      let p = P.string "hello" in
-      let p = P.map f p in
-      let b = P.parse p "hello" in
-      b = "hello world"
-    ]}
-
-    Since [map] is defined in terms of [bind], the above usage of [map] is equivalent to
-    the [bind] usage below,
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let f a = P.pure (a ^ " world") in
-      let p = P.string "hello" in
-      let p = P.bind p f in
-      let r = P.parse_string p "hello" in
-      r = "hello world"
-    ]}
-
-    See {!Infix.(<$>)}. [f <$> p] is infix equivalent of [map f p]. *)
-val map : ('a -> 'b) -> 'a t -> 'b t
-
-(** [map2 f p q] returns a new parser encapsulating value [c] where,
-
-    - [p] and [q] are evaluated sequentially in order as given.
-    - [a, b] are the parsed values of parsers [p] and [q] respectively.
-    - [c] is [f a b].
-
-    {4:map2_examples Examples}
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let f a b = a + b in
-      let p = P.pure 1 in
-      let q = P.pure 2 in
-      let p = P.map2 f p q in
-      let v = P.parse_string p "" in
-      v = 3
-    ]}
-
-    The above usage of [map2] is equivalent to below,
-
-    {[
-      module P = Reparse.Parser
-      open P.Infix
-
-      ;;
-      let p = P.pure 1 >>= fun a -> P.pure 2 >>= fun b -> P.pure (a + b) in
-      let v = P.parse_string p "" in
-      v = 3
-    ]} *)
-val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
-
-(** [map3 f p q r] returns a new parser encapsulating value [d] where,
-
-    - [p], [q], [r] are evaluated sequentially in order as given.
-    - [a, b, c] are the parsed values of parsers [p], [q] and [r] respectively.
-    - [d] is [f a b c].
-
-    {4:map3_examples Examples}
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let f a b c = a + b + c in
-      let p = P.pure 1 in
-      let q = P.pure 2 in
-      let r = P.pure 3 in
-      let p = P.map3 f p q r in
-      let v = P.parse_string p "" in
-      v = 6
-    ]} *)
-val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
-
-(** [map4 f p q r s] returns a new parser encapsulating value [e] where,
-
-    - [p], [q], [r] and [s] are evaluated sequentially in order as given.
-    - [a, b, c, d] are the parsed values of parsers [p], [q], [r] and [s] respectively.
-    - [e] is [f a b c d].
-
-    {4:map4_examples Examples}
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let f a b c d = a + b + c + d in
-      let p = P.pure 1 in
-      let q = P.pure 2 in
-      let r = P.pure 3 in
-      let s = P.pure 4 in
-      let p = P.map4 f p q r s in
-      let v = P.parse_string p "" in
-      v = 10
-    ]} *)
-val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
+val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
+val ( <$ ) : 'b -> 'a t -> 'b t
+val ( <|> ) : 'a t -> 'a t -> 'a t
+val ( <?> ) : 'a t -> string -> 'a t
+val ( *> ) : _ t -> 'a t -> 'a t
+val ( <* ) : 'a t -> _ t -> 'a t
+val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
+val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
 
 (** [delay p] returns a parser which lazily parses [p].
 
@@ -343,7 +215,7 @@ val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let p = P.(delay (lazy (char 'z')) <|> delay (lazy (char 'a'))) in
@@ -361,7 +233,7 @@ val delay : 'a t Lazy.t -> 'a t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let p = P.(char 'a' |> named "parse_c") in
@@ -436,80 +308,6 @@ val any : 'a t list -> 'a t
     See {!val:Infix.(<|>)} *)
 val alt : 'a t -> 'a t -> 'a t
 
-(** {1 Grouping}
-
-    Group parsers. *)
-
-(** [all l] parses all parsers in [l] and returns the parsed values.
-
-    The parser only succeeds if and only if all of the parsers in [l] succeed.
-
-    Parsers in [l] are evaluated sequentially - from left to right.
-
-    {4:all_examples Examples}
-
-    All specified parsers succeed.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let p = P.(all [ char 'a'; char 'b'; char 'c' ]) in
-      let v = P.parse_string p "abc" in
-      v = [ 'a'; 'b'; 'c' ]
-    ]}
-
-    One of the specified parsers - [char 'c'] fails.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let p = P.(all [ char 'a'; char 'b'; char 'c' ]) in
-      let v =
-        try
-          let _ = P.parse_string p "abd" in
-          false
-        with
-        | _ -> true
-      in
-      v = true
-    ]} *)
-val all : 'a t list -> 'a list t
-
-(** [all_unit l] parses all parsers in [l] while discarding the parsed values.
-
-    {4:all_unit_examples Examples}
-
-    All specified parsers succeed.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let p = P.(all_unit [ char 'a'; char 'b'; char 'c' ]) in
-      let v = P.parse_string p "abc" in
-      v = ()
-    ]}
-
-    One of the specified parsers - [char 'c'] - fails.
-
-    {[
-      module P = Reparse.Parser
-
-      ;;
-      let p = P.(all_unit [ char 'a'; char 'b'; char 'c' ]) in
-      let v =
-        try
-          let _ = P.parse_string p "abd" in
-          false
-        with
-        | _ -> true
-      in
-      v = true
-    ]} *)
-val all_unit : 'a t list -> unit t
-
 (** {1 Repetition} *)
 
 (** {2 Recur} *)
@@ -572,7 +370,7 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
       let v = P.parse_string p "     " in
       v = 5
     ]} *)
-val skip_while : _ t -> while_:bool t -> int t
+val skip_while : unit t -> while_:bool t -> int t
 
 (** {2 Take}
 
@@ -698,7 +496,7 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       let v = P.parse_string p "a,a,ab" in
       v = [ 'a'; 'a'; 'a' ]
     ]} *)
-val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
+val take_while : ?sep_by:unit t -> while_:bool t -> 'a t -> 'a list t
 
 (** [take_between ~sep_by ~start ~end_ p] parses [start] and then repeatedly parses [p]
     while the parsed value of [p] doesn't equal to parsed value of [end_]. After the
@@ -727,7 +525,7 @@ val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
       let v = P.parse_string p "(a,a,a)" in
       v = [ 'a'; 'a'; 'a' ]
     ]} *)
-val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
+val take_between : ?sep_by:unit t -> start:unit t -> end_:unit t -> 'a t -> 'a list t
 
 (** [take_while_on ~sep_by ~while_ ~on_take p] repeatedly parses [p] and calls callback
     [on_take_cb] with the parsed value.
@@ -754,7 +552,7 @@ val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let buf = Buffer.create 0 in
@@ -782,7 +580,7 @@ val take_while_cb
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let p = P.(optional (char 'a')) in
@@ -844,7 +642,7 @@ val eoi : unit t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let p = P.(next *> lnum) in
@@ -859,7 +657,7 @@ val lnum : int t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let p = P.(next *> cnum) in
@@ -874,7 +672,7 @@ val cnum : int t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let p = P.(next *> offset) in
@@ -982,7 +780,7 @@ val peek_char : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let p = P.peek_string 5 in
@@ -1107,7 +905,7 @@ val line : [ `LF | `CRLF ] -> string t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let p = P.(take alpha) in
@@ -1122,7 +920,7 @@ val alpha : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let p = P.(take alpha_num) in
@@ -1137,7 +935,7 @@ val alpha_num : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let p = P.(take lower_alpha) in
@@ -1152,7 +950,7 @@ val lower_alpha : char t
 
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       ;;
       let p = P.(take upper_alpha) in
@@ -1395,7 +1193,7 @@ module Infix : sig
 
       {[
         module P = Reparse.Parser
-        open P.Infix
+        open P
 
         ;;
         let f a = P.pure (Char.code a) in
@@ -1417,7 +1215,7 @@ module Infix : sig
 
       {[
         module P = Reparse.Parser
-        open P.Infix
+        open P
 
         ;;
         let f a = Char.code a in
@@ -1441,7 +1239,7 @@ module Infix : sig
 
       {[
         module P = Reparse.Parser
-        open P.Infix
+        open P
 
         ;;
         let f a = a + 2 in
@@ -1459,7 +1257,7 @@ module Infix : sig
 
       {[
         module P = Reparse.Parser
-        open P.Infix
+        open P
 
         ;;
         let v = "hello" in
@@ -1481,7 +1279,7 @@ module Infix : sig
 
       {[
         module P = Reparse.Parser
-        open P.Infix
+        open P
 
         ;;
         let f a = a ^ " world" in
@@ -1504,7 +1302,7 @@ module Infix : sig
 
       {[
         module P = Reparse.Parser
-        open P.Infix
+        open P
 
         ;;
         let p = P.string "world" in
@@ -1527,7 +1325,7 @@ module Infix : sig
 
       {[
         module P = Reparse.Parser
-        open P.Infix
+        open P
 
         ;;
         let p = P.string "world" in
@@ -1551,7 +1349,7 @@ module Infix : sig
 
       {[
         module P = Reparse.Parser
-        open P.Infix
+        open P
 
         ;;
         let p = P.char 'h' in
@@ -1597,7 +1395,7 @@ module Infix : sig
 
       {[
         module P = Reparse.Parser
-        open P.Infix
+        open P
 
         ;;
         let p = P.char 'h' <|> P.char 'w' in
@@ -1622,7 +1420,7 @@ module Infix : sig
 
       {[
         module P = Reparse.Parser
-        open P.Infix
+        open P
 
         ;;
         let p =
@@ -1641,7 +1439,7 @@ module Infix : sig
 
       {[
         module P = Reparse.Parser
-        open P.Infix
+        open P
 
         ;;
         let p =
@@ -1654,6 +1452,7 @@ module Infix : sig
       ]} *)
   val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
 end
+[@@ocaml.deprecated "Infix functions are now available in Reparse.Parser module itself."]
 
 (** {1:examples Examples} *)
 
@@ -1673,7 +1472,7 @@ end
     v}
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       type expr =
         | Int of int
@@ -1765,7 +1564,7 @@ end
     v}
     {[
       module P = Reparse.Parser
-      open P.Infix
+      open P
 
       type value =
         | Object of (string * value) list

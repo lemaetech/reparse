@@ -1,4 +1,5 @@
 module P = Reparse.Parser
+open P
 
 let any parse () =
   let p = P.any [ P.char 'a'; P.char 'b'; P.char 'c' ] in
@@ -42,24 +43,21 @@ let all_fail parse () =
       r)
 ;;
 
+let char c = P.char c *> unit
+
 let all_unit parse () =
-  let p = P.all_unit [ P.char 'a'; P.char 'b'; P.char 'c' ] in
+  let p = P.all_unit [ char 'a'; char 'b'; char 'c' ] in
   let r = parse p in
   Alcotest.(check unit "()" () r)
 ;;
 
 let all_unit_fail parse () =
-  let p = P.all_unit [ P.char 'a'; P.char 'b'; P.char 'c' ] in
+  let p = P.all_unit [ char 'a'; char 'b'; char 'c' ] in
   let r () = ignore (parse p) in
   Alcotest.(
     check_raises
       "all fail"
-      (P.Parser
-         { offset = 0
-         ; line_number = 0
-         ; column_number = 0
-         ; msg = "[all_unit] one of the parsers failed"
-         })
+      (P.Parser { offset = 2; line_number = 0; column_number = 0; msg = "[char] 'c'" })
       r)
 ;;
 

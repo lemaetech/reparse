@@ -1,21 +1,22 @@
 module P = Reparse.Parser
+open P
 
 let make_pair a b = a, b
 
 let skip parse () =
-  let p = P.map2 make_pair (P.skip P.space) P.offset in
+  let p = P.map2 ~f:make_pair (P.skip P.space) P.offset in
   let r = parse p in
   Alcotest.(check (pair int int) "4, 4" (4, 4) r)
 ;;
 
 let skip_at_least parse () =
-  let p = P.map2 make_pair (P.skip ~at_least:3 P.space) P.offset in
+  let p = P.map2 ~f:make_pair (P.skip ~at_least:3 P.space) P.offset in
   let r = parse p in
   Alcotest.(check (pair int int) "4, 4" (4, 4) r)
 ;;
 
 let skip_at_least_fail parse () =
-  let p = P.map2 make_pair (P.skip ~at_least:5 P.space) P.offset in
+  let p = P.map2 ~f:make_pair (P.skip ~at_least:5 P.space) P.offset in
   let r () = ignore (parse p) in
   Alcotest.(
     check_raises
@@ -30,20 +31,23 @@ let skip_at_least_fail parse () =
 ;;
 
 let skip_upto parse () =
-  let p = P.map2 make_pair (P.skip ~up_to:3 P.space) P.offset in
+  let p = P.map2 ~f:make_pair (P.skip ~up_to:3 P.space) P.offset in
   let r = parse p in
   Alcotest.(check (pair int int) "3, 3" (3, 3) r)
 ;;
 
 let skip_skip_skip parse () =
-  let p = P.map2 make_pair (P.skip (P.skip (P.skip P.space))) P.offset in
+  let p = P.map2 ~f:make_pair (P.skip (P.skip (P.skip P.space))) P.offset in
   let r = parse p in
   Alcotest.(check (pair int int) "1, 5" (1, 5) r)
 ;;
 
 let skip_while parse () =
   let p =
-    P.map2 make_pair (P.skip_while P.next ~while_:(P.is_not (P.char 'z'))) P.peek_char
+    P.map2
+      ~f:make_pair
+      (P.skip_while (P.next *> unit) ~while_:(P.is_not (P.char 'z')))
+      P.peek_char
   in
   let r = parse p in
   Alcotest.(check (pair int char) "4, z" (4, 'z') r)
@@ -52,8 +56,8 @@ let skip_while parse () =
 let skip_while2 parse () =
   let p =
     P.map2
-      make_pair
-      (P.skip_while (P.char 'a') ~while_:(P.is_not (P.char 'z')))
+      ~f:make_pair
+      (P.skip_while (P.char 'a' *> unit) ~while_:(P.is_not (P.char 'z')))
       P.peek_char
   in
   let r = parse p in
@@ -61,19 +65,19 @@ let skip_while2 parse () =
 ;;
 
 let take parse () =
-  let p = P.map2 make_pair (P.take (P.char 'a')) P.offset in
+  let p = P.map2 ~f:make_pair (P.take (P.char 'a')) P.offset in
   let r = parse p in
   Alcotest.(check (pair (list char) int) "" ([ 'a'; 'a'; 'a'; 'a' ], 4) r)
 ;;
 
 let take_at_least parse () =
-  let p = P.map2 make_pair (P.take ~at_least:4 (P.char 'a')) P.offset in
+  let p = P.map2 ~f:make_pair (P.take ~at_least:4 (P.char 'a')) P.offset in
   let r = parse p in
   Alcotest.(check (pair (list char) int) "" ([ 'a'; 'a'; 'a'; 'a' ], 4) r)
 ;;
 
 let take_at_least_fail parse () =
-  let p = P.map2 make_pair (P.take ~at_least:5 (P.char 'a')) P.offset in
+  let p = P.map2 ~f:make_pair (P.take ~at_least:5 (P.char 'a')) P.offset in
   let r () = ignore (parse p) in
   Alcotest.(
     check_raises
@@ -88,20 +92,23 @@ let take_at_least_fail parse () =
 ;;
 
 let take_up_to parse () =
-  let p = P.map2 make_pair (P.take ~up_to:3 (P.char 'a')) P.offset in
+  let p = P.map2 ~f:make_pair (P.take ~up_to:3 (P.char 'a')) P.offset in
   let r = parse p in
   Alcotest.(check (pair (list char) int) "" ([ 'a'; 'a'; 'a' ], 3) r)
 ;;
 
 let take_sep_by parse () =
-  let p = P.map2 make_pair (P.take ~sep_by:P.space (P.char 'a')) P.offset in
+  let p = P.map2 ~f:make_pair (P.take ~sep_by:P.space (P.char 'a')) P.offset in
   let r = parse p in
   Alcotest.(check (pair (list char) int) "" ([ 'a'; 'a'; 'a'; 'a' ], 7) r)
 ;;
 
 let take_at_least_up_to_sep_by parse () =
   let p =
-    P.map2 make_pair (P.take ~at_least:3 ~up_to:3 ~sep_by:P.space (P.char 'a')) P.offset
+    P.map2
+      ~f:make_pair
+      (P.take ~at_least:3 ~up_to:3 ~sep_by:P.space (P.char 'a'))
+      P.offset
   in
   let r = parse p in
   Alcotest.(check (pair (list char) int) "" ([ 'a'; 'a'; 'a' ], 6) r)
@@ -109,7 +116,10 @@ let take_at_least_up_to_sep_by parse () =
 
 let take_while parse () =
   let p =
-    P.map2 make_pair (P.take_while (P.char 'a') ~while_:(P.is_not (P.char 'z'))) P.offset
+    P.map2
+      ~f:make_pair
+      (P.take_while (P.char 'a') ~while_:(P.is_not (P.char 'z')))
+      P.offset
   in
   let r = parse p in
   Alcotest.(check (pair (list char) int) "" ([ 'a'; 'a'; 'a'; 'a' ], 4) r)
@@ -118,8 +128,11 @@ let take_while parse () =
 let take_while_sep parse () =
   let p =
     P.map2
-      make_pair
-      (P.take_while ~sep_by:P.space (P.char 'a') ~while_:(P.is_not (P.char 'z')))
+      ~f:make_pair
+      (P.take_while
+         ~sep_by:(P.space *> unit)
+         (P.char 'a')
+         ~while_:(P.is_not (P.char 'z')))
       P.offset
   in
   let r = parse p in
@@ -130,7 +143,7 @@ let take_while_cb parse () =
   let buf = Buffer.create 5 in
   let p =
     P.map2
-      make_pair
+      ~f:make_pair
       (P.take_while_cb
          (P.char 'a')
          ~while_:(P.is_not (P.char 'z'))
@@ -146,7 +159,7 @@ let take_while_cb_sep_by parse () =
   let buf = Buffer.create 5 in
   let p =
     P.map2
-      make_pair
+      ~f:make_pair
       (P.take_while_cb
          (P.char 'a')
          ~while_:(P.is_not (P.char 'z'))
@@ -160,7 +173,14 @@ let take_while_cb_sep_by parse () =
 ;;
 
 let take_between parse () =
-  let p = P.(take_between ~sep_by:(char ',') ~start:(P.char '(') ~end_:(char ')') next) in
+  let p =
+    P.(
+      take_between
+        ~sep_by:(char ',' *> unit)
+        ~start:(P.char '(' *> unit)
+        ~end_:(char ')' *> unit)
+        next)
+  in
   let r = parse p in
   Alcotest.(check (list char) "" [ 'a'; 'a'; 'a' ] r)
 ;;

@@ -1,3 +1,21 @@
+## v3.0.0 2021-01-14
+
+This release has backwards incompatible changes. 
+
+- Deprecate `Infix` module. Infix functions are now available in `Parser`
+  moduel itself.
+- `sep_by` parameters in `take, take_while, skip, skip_while` functions are now `unit t`.
+- Add support for let operators `and+` and `and*`.
+- `bind` and `map` function are now labelled following `base` library
+  dependency convention.
+- Items in `all_unit` are now `unit t` rather than `_ t` following monad
+  combinator convention in `base` library dependency.
+- `pure` is now deprecated. Use `return` instead. This is to stay consistent
+  with monad conventions in `base` library dependency.
+- `>|=` is deprecated. Use `>>|` instead. This is to stay consistent with monad
+  conventions in `base` library dependency.
+- Add support for `ppx_let`.
+
 ## v2.0.0 2020-11-09 UK
 
 - Rewrite the whole package to use exceptions rather than `result` type

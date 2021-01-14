@@ -1,4 +1,5 @@
 module P = Reparse.Parser
+open P
 
 let peek_char_h parse () =
   let p = P.peek_char in
@@ -7,14 +8,12 @@ let peek_char_h parse () =
 ;;
 
 let peek_char_offset parse () =
-  let open P.Infix in
   let p = P.peek_char *> P.offset in
   let r = parse p in
   Alcotest.(check int "0" 0 r)
 ;;
 
 let peek_char_many parse () =
-  let open P.Infix in
   let p = P.peek_char *> P.peek_char *> P.offset in
   let r = parse p in
   Alcotest.(check int "0" 0 r)
@@ -44,13 +43,12 @@ let peek_string_exn parse () =
 ;;
 
 let next parse () =
-  let p = P.map2 (fun c o -> c, o) P.next P.offset in
+  let p = P.map2 ~f:(fun c o -> c, o) P.next P.offset in
   let r = parse p in
   Alcotest.(check (pair char int) "'h',1" ('h', 1) r)
 ;;
 
 let next_exn parse () =
-  let open P.Infix in
   let p1 = P.next *> P.next *> P.next in
   let p () = ignore (parse p1) in
   Alcotest.(
@@ -61,12 +59,12 @@ let next_exn parse () =
 ;;
 
 let pure_int parse () =
-  let r = parse (P.pure 5) in
+  let r = parse (P.return 5) in
   Alcotest.(check int "5" 5 r)
 ;;
 
 let pure_string parse () =
-  let r = parse (P.pure "hello") in
+  let r = parse (P.return "hello") in
   Alcotest.(check string "hello" "hello" r)
 ;;
 

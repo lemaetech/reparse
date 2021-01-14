@@ -10,7 +10,9 @@
 class type input =
   object
     method eof : int -> bool
+
     method sub : offset:int -> len:int -> string
+
     method nth : int -> char
   end
 
@@ -56,6 +58,7 @@ let parse_string ?(track_lnum = false) p s =
   let input =
     object
       method eof i = i >= String.length s
+
       method sub ~offset ~len = String.sub s offset len
 
       method nth i =
@@ -128,15 +131,45 @@ module Infix = struct
   let ( let* ) = ( >>= )
   let ( let+ ) = ( >|= )
 end
+[@@ocaml.deprecated "Infix functions are now available in Reparse.Parser module itself."]
 
-open Infix
+module Monad_arg = struct
+  type nonrec 'a t = 'a t
 
+  let return = pure
+  let bind p ~f state ~ok ~err = p state ~ok:(fun a -> f a state ~ok ~err) ~err
+  let map p ~f state ~ok ~err = p state ~ok:(fun a -> ok (f a)) ~err
+  let apply p q = bind p ~f:(fun f -> map q ~f:(fun a -> f a))
+  let map = `Custom map
+end
+
+include Base.Monad.Make (Monad_arg)
+include Base.Applicative.Make (Monad_arg)
+
+let ( <|> ) : 'a t -> 'a t -> 'a t =
+ fun p q state ~ok ~err ->
+  let init_pos = pos state in
+  p state ~ok ~err:(fun _e ->
+      backtrack state init_pos;
+      q state ~ok ~err)
+;;
+
+let ( <?> ) : 'a t -> string -> 'a t =
+ fun p err_msg state ~ok ~err ->
+  let offset = state.offset in
+  p state ~ok ~err:(fun e ->
+      if state.offset = offset then error ~err err_msg state else err e)
+;;
+
+let ( <$> ) f p = return f <*> p
+let ( <$ ) v p = (fun _ -> v) <$> p
+let ( *> ) p q = p >>= fun _ -> q
+let ( <* ) p q = p >>= fun a -> a <$ q
+let ( let* ) = ( >>= )
+let ( and* ) = both
+let ( let+ ) = ( >>| )
+let ( and+ ) = both
 let alt = ( <|> )
-let bind = ( >>= )
-let map = ( <$> )
-let map2 f p q = pure f <*> p <*> q
-let map3 f p q r = pure f <*> p <*> q <*> r
-let map4 f p q r s = pure f <*> p <*> q <*> r <*> s
 
 let any : 'a t list -> 'a t =
  fun parsers state ~ok ~err ->
@@ -176,12 +209,6 @@ let all : 'a t list -> 'a list t =
           error ~err "[all] one of the parsers failed" state)
   in
   loop parsers
-;;
-
-let all_unit : 'a t list -> unit t =
- fun parsers state ~ok ~err ->
-  let parsers = List.map (fun p -> p *> unit) parsers in
-  ((all parsers <?> "[all_unit] one of the parsers failed") *> unit) state ~ok ~err
 ;;
 
 let delay p state ~ok ~err = Lazy.force p state ~ok ~err
@@ -373,7 +400,7 @@ let take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t =
     | None -> pure true
     | Some p ->
       optional p
-      >|= (function
+      >>| (function
       | Some _ -> true
       | None -> false)
   in
@@ -388,7 +415,7 @@ let take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t =
     if upto = -1 || count < upto
     then (
       let init_pos = pos state in
-      let p = map2 (fun v continue -> v, continue) p sep_by in
+      let p = map2 p sep_by ~f:(fun v continue -> v, continue) in
       p
         state
         ~ok:(fun (a, continue) ->
@@ -427,14 +454,14 @@ let take_while_cb
     | None -> pure true
     | Some p ->
       optional p
-      >|= (function
+      >>| (function
       | Some _ -> true
       | None -> false)
   in
   eval_while ();
   while !cond do
     let init_pos = pos state in
-    let p = map2 (fun v continue -> v, continue) p sep_by in
+    let p = map2 p sep_by ~f:(fun v continue -> v, continue) in
     p
       state
       ~ok:(fun (a, continue) ->
@@ -523,7 +550,7 @@ let cr =
 
 let crlf = string "\r\n" <?> "[crlf]"
 let digit = named_ch "DIGIT" is_digit
-let digits = take ~at_least:1 digit >|= fun d -> List.to_seq d |> String.of_seq
+let digits = take ~at_least:1 digit >>| fun d -> List.to_seq d |> String.of_seq
 
 let dquote =
   named_ch "DQUOTE" (function
@@ -588,8 +615,8 @@ let line : [ `LF | `CRLF ] -> string t =
  fun line_delimiter state ~ok ~err ->
   let line_delimiter =
     match line_delimiter with
-    | `LF -> lf *> unit
-    | `CRLF -> crlf *> unit
+    | `LF -> lf >>= fun _ -> unit
+    | `CRLF -> crlf >>= fun _ -> unit
   in
   let buf = Buffer.create 0 in
   take_while_cb

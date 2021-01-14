@@ -1,7 +1,7 @@
 module P = Reparse.Parser
 
 let char_h parse () =
-  let p = P.map2 (fun c o -> c, o) (P.char 'h') P.offset in
+  let p = P.map2 ~f:(fun c o -> c, o) (P.char 'h') P.offset in
   let r = parse p in
   Alcotest.(check (pair char int) "'h', 1" ('h', 1) r)
 ;;
@@ -27,7 +27,7 @@ let char_exn2 parse () =
 ;;
 
 let string parse () =
-  let p = P.map2 (fun s o -> s, o) (P.string "hello") P.offset in
+  let p = P.map2 ~f:(fun s o -> s, o) (P.string "hello") P.offset in
   let r = parse p in
   Alcotest.(check (pair string int) "\"hello\", 4" ("hello", 5) r)
 ;;
@@ -43,7 +43,6 @@ let string_exn parse () =
 ;;
 
 let string_of_chars parse () =
-  let open P.Infix in
   let p = P.(take ~sep_by:space next >>= string_of_chars) in
   let v = parse p in
   Alcotest.(check string "string_of_chars" "hello" v)

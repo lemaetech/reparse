@@ -1,6 +1,9 @@
 (library
  (name reparse)
- (public_name reparse))
+ (libraries base)
+ (public_name reparse)
+ (preprocess
+  (pps ppx_let)))
 
 (documentation
  (package reparse)
