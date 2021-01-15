@@ -793,7 +793,7 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
       let v = P.parse_string p "a,a,ab" in
       v = [ 'a'; 'a'; 'a' ]
     ]} *)
-val take_while : ?sep_by:unit t -> while_:bool t -> 'a t -> 'a list t
+val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 
 (** [take_between ~sep_by ~start ~end_ p] parses [start] and then repeatedly parses [p]
     while the parsed value of [p] doesn't equal to parsed value of [end_]. After the
@@ -822,7 +822,7 @@ val take_while : ?sep_by:unit t -> while_:bool t -> 'a t -> 'a list t
       let v = P.parse_string p "(a,a,a)" in
       v = [ 'a'; 'a'; 'a' ]
     ]} *)
-val take_between : ?sep_by:unit t -> start:unit t -> end_:unit t -> 'a t -> 'a list t
+val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
 
 (** [take_while_on ~sep_by ~while_ ~on_take p] repeatedly parses [p] and calls callback
     [on_take_cb] with the parsed value.
@@ -860,7 +860,7 @@ val take_between : ?sep_by:unit t -> start:unit t -> end_:unit t -> 'a t -> 'a l
       v = 3 && s = "aaa"
     ]} *)
 val take_while_cb
-  :  ?sep_by:unit t
+  :  ?sep_by:_ t
   -> while_:bool t
   -> on_take_cb:('a -> unit)
   -> 'a t
