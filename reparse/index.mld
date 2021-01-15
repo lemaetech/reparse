@@ -4,6 +4,7 @@ Reparse is a monadic, recursive descent based, comprehensive, parser constructio
 
 {1 Modules}
 
+{!module:Reparse}
 {!module:Reparse.Parser}
 
 {1 Why Use Reparse?}
