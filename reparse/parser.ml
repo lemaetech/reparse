@@ -98,20 +98,24 @@ let backtrack state (o, l, c) =
   state.cnum <- c
 ;;
 
+module Monad_arg = struct
+  type nonrec 'a t = 'a t
+
+  let return = pure
+  let bind p ~f state ~ok ~err = p state ~ok:(fun a -> f a state ~ok ~err) ~err
+  let map p ~f state ~ok ~err = p state ~ok:(fun a -> ok (f a)) ~err
+  let apply p q = bind p ~f:(fun f -> map q ~f:(fun a -> f a))
+  let map = `Custom map
+end
+
+include Base.Monad.Make (Monad_arg)
+include Base.Applicative.Make (Monad_arg)
+
 module Infix = struct
-  let ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t =
-   fun p f state ~ok ~err -> p state ~ok:(fun a -> f a state ~ok ~err) ~err
- ;;
-
-  let ( >|= ) : 'a t -> ('a -> 'b) -> 'b t =
-   fun p f st ~ok ~err -> p st ~ok:(fun a -> ok (f a)) ~err
- ;;
-
-  let ( <*> ) p q = p >>= fun f -> q >|= f
-  let ( <$> ) f p = pure f <*> p
-  let ( <$ ) v p = (fun _ -> v) <$> p
-  let ( *> ) p q = p >>= fun _ -> q
-  let ( <* ) p q = p >>= fun a -> a <$ q
+  let ( >>= ) = ( >>= )
+  let ( >>| ) = ( >>| )
+  let ( >|= ) = ( >>| ) [@@ocaml.deprecated "Use >>| instead."]
+  let ( <*> ) = ( <*> )
 
   let ( <|> ) : 'a t -> 'a t -> 'a t =
    fun p q state ~ok ~err ->
@@ -128,47 +132,18 @@ module Infix = struct
         if state.offset = offset then error ~err err_msg state else err e)
  ;;
 
+  let ( <$> ) f p = return f <*> p
+  let ( <$ ) v p = (fun _ -> v) <$> p
+  let ( *> ) p q = p >>= fun _ -> q
+  let ( <* ) p q = p >>= fun a -> a <$ q
   let ( let* ) = ( >>= )
-  let ( let+ ) = ( >|= )
-end
-[@@ocaml.deprecated "Infix functions are now available in Reparse.Parser module itself."]
-
-module Monad_arg = struct
-  type nonrec 'a t = 'a t
-
-  let return = pure
-  let bind p ~f state ~ok ~err = p state ~ok:(fun a -> f a state ~ok ~err) ~err
-  let map p ~f state ~ok ~err = p state ~ok:(fun a -> ok (f a)) ~err
-  let apply p q = bind p ~f:(fun f -> map q ~f:(fun a -> f a))
-  let map = `Custom map
+  let ( and* ) = both
+  let ( let+ ) = ( >>| )
+  let ( and+ ) = both
 end
 
-include Base.Monad.Make (Monad_arg)
-include Base.Applicative.Make (Monad_arg)
+include Infix
 
-let ( <|> ) : 'a t -> 'a t -> 'a t =
- fun p q state ~ok ~err ->
-  let init_pos = pos state in
-  p state ~ok ~err:(fun _e ->
-      backtrack state init_pos;
-      q state ~ok ~err)
-;;
-
-let ( <?> ) : 'a t -> string -> 'a t =
- fun p err_msg state ~ok ~err ->
-  let offset = state.offset in
-  p state ~ok ~err:(fun e ->
-      if state.offset = offset then error ~err err_msg state else err e)
-;;
-
-let ( <$> ) f p = return f <*> p
-let ( <$ ) v p = (fun _ -> v) <$> p
-let ( *> ) p q = p >>= fun _ -> q
-let ( <* ) p q = p >>= fun a -> a <$ q
-let ( let* ) = ( >>= )
-let ( and* ) = both
-let ( let+ ) = ( >>| )
-let ( and+ ) = both
 let alt = ( <|> )
 
 let any : 'a t list -> 'a t =

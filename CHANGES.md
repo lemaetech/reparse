@@ -2,8 +2,7 @@
 
 This release has backwards incompatible changes. 
 
-- Deprecate `Infix` module. Infix functions are now available in `Parser`
-  moduel itself.
+- Infix functions are now available in `Parser` moduel itself.
 - `sep_by` parameters in `take, take_while, take_while_cb` functions are now `unit t`.
 - Add support for let operators `and+` and `and*`.
 - `bind` and `map` function are now labelled following `base` library

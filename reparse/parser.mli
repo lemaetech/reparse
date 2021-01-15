@@ -198,16 +198,313 @@ val fail : string -> 'a t
 include Base.Applicative.S with type 'a t := 'a t
 include Base.Monad.S with type 'a t := 'a t
 
-val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
-val ( <$ ) : 'b -> 'a t -> 'b t
-val ( <|> ) : 'a t -> 'a t -> 'a t
-val ( <?> ) : 'a t -> string -> 'a t
-val ( *> ) : _ t -> 'a t -> 'a t
-val ( <* ) : 'a t -> _ t -> 'a t
-val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
-val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
-val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
+(** {1:infix Infix} *)
+
+(** Provides functions to support infix and let syntax operators.
+
+    Open the module to use it:
+
+    {[ open Reparse.Parser.Infix ]} *)
+module Infix : sig
+  (** [p >>= f] returns a new parser b where,
+
+      - [a] is the parsed value of [p]
+      - [b] is [f a]
+
+      Also known as [bind] operation.
+
+      {4:infix_bind_examples Examples}
+
+      {[
+        module P = Reparse.Parser
+        open P
+
+        ;;
+        let f a = P.pure (Char.code a) in
+        let p = P.char 'h' in
+        let p = p >>= f in
+        let v = P.parse_string p "hello" in
+        v = 104
+      ]} *)
+  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+
+  (** [p >>| f] returns a new parser encapsulating value [b] where,
+
+      - [a] is the parsed value of [p].
+      - [b] is [f a].
+
+      Also known as [map] operation.
+
+      {4:infix_map_examples Examples}
+
+      {[
+        module P = Reparse.Parser
+        open P
+
+        ;;
+        let f a = Char.code a in
+        let p = P.char 'h' in
+        let p = p >>| f in
+        let v = P.parse_string p "hello" in
+        v = 104
+      ]} *)
+  val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
+
+  (** [p >|= f] returns a new parser encapsulating value [b] where,
+
+      - [a] is the parsed value of [p].
+      - [b] is [f a].
+
+      Also known as [map] operation.
+
+      {4:infix_map_examples Examples}
+
+      {[
+        module P = Reparse.Parser
+        open P
+
+        ;;
+        let f a = Char.code a in
+        let p = P.char 'h' in
+        let p = p >|= f in
+        let v = P.parse_string p "hello" in
+        v = 104
+      ]} *)
+  val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
+    [@@ocaml.deprecated "Use >>| instead."]
+
+  (** [pf <*> q] returns a new parser encapsulating value [b] where
+
+      - [pf] and [q] are evaluated sequentially in order as given.
+      - [f] is the parsed value of [pf]
+      - [a] is the parsed value of [q]
+      - [b] is [f a]
+
+      Also known as [Applicative] operation.
+
+      {4:infix_applicative_examples Examples}
+
+      {[
+        module P = Reparse.Parser
+        open P
+
+        ;;
+        let f a = a + 2 in
+        let pf = P.pure f in
+        let q = P.pure 2 in
+        let p = pf <*> q in
+        let v = P.parse_string p "hello" in
+        v = 4
+      ]} *)
+  val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
+
+  (** [v <$ p] replaces the parse value of [p] with [v].
+
+      {4:infix_replace_examples Examples}
+
+      {[
+        module P = Reparse.Parser
+        open P
+
+        ;;
+        let v = "hello" in
+        let p = P.char 'h' in
+        let p = v <$ p in
+        let v2 = P.parse_string p "hello" in
+        v2 = "hello"
+      ]} *)
+  val ( <$ ) : 'b -> 'a t -> 'b t
+
+  (** [f <$> p] returns a parser encapsulating value [b] where,
+
+      - [a] is the parsed value of [p]
+      - [b] is [f a]
+
+      This is the infix version of {!val:map}.
+
+      {4:infix_mapper_examples Examples}
+
+      {[
+        module P = Reparse.Parser
+        open P
+
+        ;;
+        let f a = a ^ " world" in
+        let p = P.string "hello" in
+        let p = f <$> p in
+        let v = P.parse_string p "hello" in
+        v = "hello world"
+      ]} *)
+  val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
+
+  (** [p *> q] returns a parser encapsulating value [a] where,
+
+      - [p], [q] are evaluated sequentially in order as given.
+      - [a] is parsed value of [q].
+      - The parsed value of [p] is discarded.
+
+      Also known as [discard left].
+
+      {4:infix_discard_left_examples Examples}
+
+      {[
+        module P = Reparse.Parser
+        open P
+
+        ;;
+        let p = P.string "world" in
+        let q = P.pure "hello" in
+        let p = p *> q in
+        let v = P.parse_string p "world" in
+        v = "hello"
+      ]} *)
+  val ( *> ) : _ t -> 'a t -> 'a t
+
+  (** [p <* q] returns a parser encapsulating value [a] where,
+
+      - [p], [q] are evaluated sequentially in order as given.
+      - [a] is parsed value of [p].
+      - The parsed value of [q] is discarded.
+
+      Also know as discard_right.
+
+      {4:infix_discard_right_examples Examples}
+
+      {[
+        module P = Reparse.Parser
+        open P
+
+        ;;
+        let p = P.string "world" in
+        let q = P.pure "hello" in
+        let p = p <* q in
+        let v = P.parse_string p "world" in
+        v = "world"
+      ]} *)
+  val ( <* ) : 'a t -> _ t -> 'a t
+
+  (** [p <|> q] returns a parser encapsulating value [a] where,
+
+      - [p],[q] are evaluated sequentially in order as given.
+      - [a] is the parsed value of [p] if [p] is successful
+      - [a] is the parsed value of [q] if [p] is a failure and [q] is a success.
+      - If both - [p] and [q] - fails, then the parser fails.
+
+      {4:infix_alternate_examples Examples}
+
+      [p] fails and [q] succeeds, therefore we return [q]'s parsed value ['w']
+
+      {[
+        module P = Reparse.Parser
+        open P
+
+        ;;
+        let p = P.char 'h' in
+        let q = P.char 'w' in
+        let p = p <|> q in
+        let v = P.parse_string p "world" in
+        v = 'w'
+      ]}
+
+      [p] succeeds therefore we return its parsed value ['h']
+
+      {[
+        let p = P.char 'h' in
+        let q = P.char 'w' in
+        let p = p <|> q in
+        let v = P.parse_string p "hello" in
+        v = 'h'
+      ]}
+
+      The parser fails if both [p] and [q] fails.
+
+      {[
+        let p = P.char 'h' in
+        let q = P.char 'w' in
+        let p = p <|> q in
+        let v =
+          try
+            let _ = P.parse_string p "" in
+            false
+          with
+          | _ -> true
+        in
+        v = true
+      ]} *)
+  val ( <|> ) : 'a t -> 'a t -> 'a t
+
+  (** [p <?> err_msg] parses [p] to value [a] and returns a new parser encapsulating [a].
+      If [p] is a failure, then it fails with error message [err_msg].
+
+      Often used as a last choice in [<|>], e.g. [a <|> b <|> c <?> "expected a b c"].
+
+      {4:infix_error_named_examples Examples}
+
+      {[
+        module P = Reparse.Parser
+        open P
+
+        ;;
+        let p = P.char 'h' <|> P.char 'w' in
+        let err_msg = "[error]" in
+        let p = p <?> err_msg in
+        let v =
+          try
+            let _ = P.parse_string p "" in
+            false
+          with
+          | P.Parser { offset = 0; line_number = 0; column_number = 0; msg = "[error]" }
+            -> true
+          | _ -> false
+        in
+        v = true
+      ]} *)
+  val ( <?> ) : 'a t -> string -> 'a t
+
+  (** [let*] is a let syntax binding for {!val:(>>=)}
+
+      {4:infix_let_bind_examples Examples}
+
+      {[
+        module P = Reparse.Parser
+        open P
+
+        ;;
+        let p =
+          let* a = P.pure 5 in
+          let total = a + 5 in
+          P.pure total
+        in
+        let v = P.parse_string p "" in
+        v = 10
+      ]} *)
+  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+
+  val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
+
+  (** [let*] is a let syntax binding for {!val:(>|=)}
+
+      {4:infix_let_map_examples Examples}
+
+      {[
+        module P = Reparse.Parser
+        open P
+
+        ;;
+        let p =
+          let+ a = P.pure 5 in
+          let total = a + 5 in
+          total
+        in
+        let v = P.parse_string p "" in
+        v = 10
+      ]} *)
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+
+  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
+end
+
+include module type of Infix
 
 (** [delay p] returns a parser which lazily parses [p].
 
@@ -1173,283 +1470,3 @@ val vchar : char t
       v = [ '\t'; ' '; '\t'; ' ' ]
     ]} *)
 val whitespace : char t
-
-(** {1:infix Infix} *)
-
-(** Provides functions to support infix and let syntax operators.
-
-    Open the module to use it:
-
-    {[ open Reparse.Parser.Infix ]} *)
-module Infix : sig
-  (** [p >>= f] returns a new parser b where,
-
-      - [a] is the parsed value of [p]
-      - [b] is [f a]
-
-      Also known as [bind] operation.
-
-      {4:infix_bind_examples Examples}
-
-      {[
-        module P = Reparse.Parser
-        open P
-
-        ;;
-        let f a = P.pure (Char.code a) in
-        let p = P.char 'h' in
-        let p = p >>= f in
-        let v = P.parse_string p "hello" in
-        v = 104
-      ]} *)
-  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-
-  (** [p >|= f] returns a new parser encapsulating value [b] where,
-
-      - [a] is the parsed value of [p].
-      - [b] is [f a].
-
-      Also known as [map] operation.
-
-      {4:infix_map_examples Examples}
-
-      {[
-        module P = Reparse.Parser
-        open P
-
-        ;;
-        let f a = Char.code a in
-        let p = P.char 'h' in
-        let p = p >|= f in
-        let v = P.parse_string p "hello" in
-        v = 104
-      ]} *)
-  val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
-
-  (** [pf <*> q] returns a new parser encapsulating value [b] where
-
-      - [pf] and [q] are evaluated sequentially in order as given.
-      - [f] is the parsed value of [pf]
-      - [a] is the parsed value of [q]
-      - [b] is [f a]
-
-      Also known as [Applicative] operation.
-
-      {4:infix_applicative_examples Examples}
-
-      {[
-        module P = Reparse.Parser
-        open P
-
-        ;;
-        let f a = a + 2 in
-        let pf = P.pure f in
-        let q = P.pure 2 in
-        let p = pf <*> q in
-        let v = P.parse_string p "hello" in
-        v = 4
-      ]} *)
-  val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
-
-  (** [v <$ p] replaces the parse value of [p] with [v].
-
-      {4:infix_replace_examples Examples}
-
-      {[
-        module P = Reparse.Parser
-        open P
-
-        ;;
-        let v = "hello" in
-        let p = P.char 'h' in
-        let p = v <$ p in
-        let v2 = P.parse_string p "hello" in
-        v2 = "hello"
-      ]} *)
-  val ( <$ ) : 'b -> 'a t -> 'b t
-
-  (** [f <$> p] returns a parser encapsulating value [b] where,
-
-      - [a] is the parsed value of [p]
-      - [b] is [f a]
-
-      This is the infix version of {!val:map}.
-
-      {4:infix_mapper_examples Examples}
-
-      {[
-        module P = Reparse.Parser
-        open P
-
-        ;;
-        let f a = a ^ " world" in
-        let p = P.string "hello" in
-        let p = f <$> p in
-        let v = P.parse_string p "hello" in
-        v = "hello world"
-      ]} *)
-  val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
-
-  (** [p *> q] returns a parser encapsulating value [a] where,
-
-      - [p], [q] are evaluated sequentially in order as given.
-      - [a] is parsed value of [q].
-      - The parsed value of [p] is discarded.
-
-      Also known as [discard left].
-
-      {4:infix_discard_left_examples Examples}
-
-      {[
-        module P = Reparse.Parser
-        open P
-
-        ;;
-        let p = P.string "world" in
-        let q = P.pure "hello" in
-        let p = p *> q in
-        let v = P.parse_string p "world" in
-        v = "hello"
-      ]} *)
-  val ( *> ) : _ t -> 'a t -> 'a t
-
-  (** [p <* q] returns a parser encapsulating value [a] where,
-
-      - [p], [q] are evaluated sequentially in order as given.
-      - [a] is parsed value of [p].
-      - The parsed value of [q] is discarded.
-
-      Also know as discard_right.
-
-      {4:infix_discard_right_examples Examples}
-
-      {[
-        module P = Reparse.Parser
-        open P
-
-        ;;
-        let p = P.string "world" in
-        let q = P.pure "hello" in
-        let p = p <* q in
-        let v = P.parse_string p "world" in
-        v = "world"
-      ]} *)
-  val ( <* ) : 'a t -> _ t -> 'a t
-
-  (** [p <|> q] returns a parser encapsulating value [a] where,
-
-      - [p],[q] are evaluated sequentially in order as given.
-      - [a] is the parsed value of [p] if [p] is successful
-      - [a] is the parsed value of [q] if [p] is a failure and [q] is a success.
-      - If both - [p] and [q] - fails, then the parser fails.
-
-      {4:infix_alternate_examples Examples}
-
-      [p] fails and [q] succeeds, therefore we return [q]'s parsed value ['w']
-
-      {[
-        module P = Reparse.Parser
-        open P
-
-        ;;
-        let p = P.char 'h' in
-        let q = P.char 'w' in
-        let p = p <|> q in
-        let v = P.parse_string p "world" in
-        v = 'w'
-      ]}
-
-      [p] succeeds therefore we return its parsed value ['h']
-
-      {[
-        let p = P.char 'h' in
-        let q = P.char 'w' in
-        let p = p <|> q in
-        let v = P.parse_string p "hello" in
-        v = 'h'
-      ]}
-
-      The parser fails if both [p] and [q] fails.
-
-      {[
-        let p = P.char 'h' in
-        let q = P.char 'w' in
-        let p = p <|> q in
-        let v =
-          try
-            let _ = P.parse_string p "" in
-            false
-          with
-          | _ -> true
-        in
-        v = true
-      ]} *)
-  val ( <|> ) : 'a t -> 'a t -> 'a t
-
-  (** [p <?> err_msg] parses [p] to value [a] and returns a new parser encapsulating [a].
-      If [p] is a failure, then it fails with error message [err_msg].
-
-      Often used as a last choice in [<|>], e.g. [a <|> b <|> c <?> "expected a b c"].
-
-      {4:infix_error_named_examples Examples}
-
-      {[
-        module P = Reparse.Parser
-        open P
-
-        ;;
-        let p = P.char 'h' <|> P.char 'w' in
-        let err_msg = "[error]" in
-        let p = p <?> err_msg in
-        let v =
-          try
-            let _ = P.parse_string p "" in
-            false
-          with
-          | P.Parser { offset = 0; line_number = 0; column_number = 0; msg = "[error]" }
-            -> true
-          | _ -> false
-        in
-        v = true
-      ]} *)
-  val ( <?> ) : 'a t -> string -> 'a t
-
-  (** [let*] is a let syntax binding for {!val:(>>=)}
-
-      {4:infix_let_bind_examples Examples}
-
-      {[
-        module P = Reparse.Parser
-        open P
-
-        ;;
-        let p =
-          let* a = P.pure 5 in
-          let total = a + 5 in
-          P.pure total
-        in
-        let v = P.parse_string p "" in
-        v = 10
-      ]} *)
-  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-
-  (** [let*] is a let syntax binding for {!val:(>|=)}
-
-      {4:infix_let_map_examples Examples}
-
-      {[
-        module P = Reparse.Parser
-        open P
-
-        ;;
-        let p =
-          let+ a = P.pure 5 in
-          let total = a + 5 in
-          total
-        in
-        let v = P.parse_string p "" in
-        v = 10
-      ]} *)
-  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
-end
-[@@ocaml.deprecated "Infix functions are now available in Reparse.Parser module itself."]
