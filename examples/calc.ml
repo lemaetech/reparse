@@ -21,7 +21,7 @@
       parse "123*123 - 23*234";;
     v} *)
 
-open Reparse.Parser
+open Reparse
 
 type expr =
   | Int of int

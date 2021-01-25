@@ -19,8 +19,7 @@
   v}
  *)
 
-module P = Reparse.Parser
-open P.Infix
+open Reparse
 
 type value =
   | Object of (string * value) list
@@ -42,46 +41,46 @@ let implode l = List.to_seq l |> String.of_seq
 
 (*---- Parser definitions ---------*)
 let ws =
-  P.skip
-    (P.char_if (function
+  skip
+    (char_if (function
         | ' ' | '\t' | '\n' | '\r' -> true
         | _ -> false))
 ;;
 
-let struct_char c = ws *> P.char c <* ws
-let null_value = ws *> P.string "null" *> ws *> P.pure Null
-let false_value = ws *> P.string "false" *> ws *> P.pure False
-let true_value = ws *> P.string "true" *> ws *> P.pure True
+let struct_char c = ws *> char c <* ws
+let null_value = ws *> string "null" *> ws *> return Null
+let false_value = ws *> string "false" *> ws *> return False
+let true_value = ws *> string "true" *> ws *> return True
 
 let number_value =
   let* negative =
-    P.optional (P.char '-')
-    >|= function
+    optional (char '-')
+    >>| function
     | Some '-' -> true
     | _ -> false
   in
   let* int =
     let digits1_to_9 =
-      P.char_if (function
+      char_if (function
           | '1' .. '9' -> true
           | _ -> false)
     in
     let num =
-      P.map2 (fun first_ch digits -> sprintf "%c%s" first_ch digits) digits1_to_9 P.digits
+      map2 ~f:(fun first_ch digits -> sprintf "%c%s" first_ch digits) digits1_to_9 digits
     in
-    P.any [ P.string "0"; num ]
+    any [ string "0"; num ]
   in
-  let* frac = P.optional (P.char '.' *> P.digits) in
+  let* frac = optional (char '.' *> digits) in
   let+ exponent =
-    P.optional
-      (let* e = P.char 'E' <|> P.char 'e' in
-       let* sign = P.optional (P.char '-' <|> P.char '+') in
+    optional
+      (let* e = char 'E' <|> char 'e' in
+       let* sign = optional (char '-' <|> char '+') in
        let sign =
          match sign with
          | Some c -> sprintf "%c" c
          | None -> ""
        in
-       let+ digits = P.digits in
+       let+ digits = digits in
        sprintf "%c%s%s" e sign digits)
   in
   Number { negative; int; frac; exponent }
@@ -90,30 +89,29 @@ let number_value =
 let string =
   let escaped =
     let ch =
-      P.char '\\'
-      *> P.char_if (function
+      char '\\'
+      *> char_if (function
              | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -> true
              | _ -> false)
-      >|= sprintf "\\%c"
+      >>| sprintf "\\%c"
     in
     let hex4digit =
-      let+ hex = P.string "\\u" *> P.take ~at_least:4 ~up_to:4 P.hex_digit >|= implode in
+      let+ hex = string "\\u" *> take ~at_least:4 ~up_to:4 hex_digit >>| implode in
       sprintf "\\u%s" hex
     in
-    P.any [ ch; hex4digit ]
+    any [ ch; hex4digit ]
   in
   let unescaped =
-    P.take_while ~while_:(P.is_not (P.any [ P.char '\\'; P.control; P.dquote ])) P.next
-    >|= implode
+    take_while ~while_:(is_not (any [ char '\\'; control; dquote ])) next >>| implode
   in
-  let+ str = P.dquote *> P.take (P.any [ escaped; unescaped ]) <* P.dquote in
+  let+ str = dquote *> take (any [ escaped; unescaped ]) <* dquote in
   String.concat "" str
 ;;
 
-let string_value = string >|= fun s -> String s
+let string_value = string >>| fun s -> String s
 
 let json_value =
-  P.recur (fun value ->
+  recur (fun value ->
       let value_sep = struct_char ',' in
       let object_value =
         let member =
@@ -122,17 +120,15 @@ let json_value =
           nm, v
         in
         let+ object_value =
-          struct_char '{' *> P.take member ~sep_by:value_sep <* struct_char '}'
+          struct_char '{' *> take member ~sep_by:value_sep <* struct_char '}'
         in
         Object object_value
       in
       let array_value =
-        let+ vals =
-          struct_char '[' *> P.take value ~sep_by:value_sep <* struct_char ']'
-        in
+        let+ vals = struct_char '[' *> take value ~sep_by:value_sep <* struct_char ']' in
         Array vals
       in
-      P.any
+      any
         [ object_value
         ; array_value
         ; number_value
@@ -143,7 +139,7 @@ let json_value =
         ])
 ;;
 
-let parse s = P.parse_string json_value s
+let parse s = parse_string json_value s
 
 (*-------------------------------------------------------------------------
   * Copyright (c) 2020 Bikal Gurung. All rights reserved.
