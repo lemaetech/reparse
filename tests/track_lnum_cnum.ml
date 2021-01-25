@@ -1,4 +1,4 @@
-module P = Reparse.Parser
+module P = Reparse
 open P
 
 let test_lnum_cnum_1 () =

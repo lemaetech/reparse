@@ -1,4 +1,4 @@
-module P = Reparse.Parser
+module P = Reparse
 open P
 
 let peek_char_h parse () =

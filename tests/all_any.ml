@@ -1,19 +1,18 @@
-module P = Reparse.Parser
-open P
+open Reparse
 
 let any parse () =
-  let p = P.any [ P.char 'a'; P.char 'b'; P.char 'c' ] in
+  let p = any [ char 'a'; char 'b'; char 'c' ] in
   let r = parse p in
   Alcotest.(check char "c" 'c' r)
 ;;
 
 let any_fail parse () =
-  let p = P.any [ P.char 'a'; P.char 'b'; P.char 'c' ] in
+  let p = Reparse.(any [ char 'a'; char 'b'; char 'c' ]) in
   let r () = ignore (parse p) in
   Alcotest.(
     check_raises
       "any"
-      (P.Parser
+      (Parser
          { offset = 0
          ; line_number = 0
          ; column_number = 0
@@ -23,18 +22,18 @@ let any_fail parse () =
 ;;
 
 let all parse () =
-  let p = P.all [ P.char 'a'; P.char 'b'; P.char 'c' ] in
+  let p = all [ char 'a'; char 'b'; char 'c' ] in
   let r = parse p in
   Alcotest.(check (list char) "list" [ 'a'; 'b'; 'c' ] r)
 ;;
 
 let all_fail parse () =
-  let p = P.all [ P.char 'a'; P.char 'b'; P.char 'c' ] in
+  let p = Reparse.(all [ char 'a'; char 'b'; char 'c' ]) in
   let r () = ignore (parse p) in
   Alcotest.(
     check_raises
       "all fail"
-      (P.Parser
+      (Parser
          { offset = 0
          ; line_number = 0
          ; column_number = 0
@@ -43,21 +42,21 @@ let all_fail parse () =
       r)
 ;;
 
-let char c = P.char c *> unit
+let char c = char c *> unit
 
-let all_unit parse () =
-  let p = P.all_unit [ char 'a'; char 'b'; char 'c' ] in
+let all_unit_test parse () =
+  let p = all_unit [ char 'a'; char 'b'; char 'c' ] in
   let r = parse p in
   Alcotest.(check unit "()" () r)
 ;;
 
 let all_unit_fail parse () =
-  let p = P.all_unit [ char 'a'; char 'b'; char 'c' ] in
+  let p = all_unit [ char 'a'; char 'b'; char 'c' ] in
   let r () = ignore (parse p) in
   Alcotest.(
     check_raises
       "all fail"
-      (P.Parser { offset = 2; line_number = 0; column_number = 0; msg = "[char] 'c'" })
+      (Parser { offset = 2; line_number = 0; column_number = 0; msg = "[char] 'c'" })
       r)
 ;;
 
@@ -68,7 +67,7 @@ let suite =
   ; M.make "any fail" any_fail "zzz"
   ; M.make "all" all "abcd"
   ; M.make "all fail" all_fail "abz"
-  ; M.make "all_unit" all_unit "abcd"
+  ; M.make "all_unit" all_unit_test "abcd"
   ; M.make "all_unit fail" all_unit_fail "abz"
   ]
   |> List.concat

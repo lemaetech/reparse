@@ -1,4 +1,4 @@
-module P = Reparse.Parser
+module P = Reparse
 open P
 
 let make_pair a b = a, b

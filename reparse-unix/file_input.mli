@@ -6,4 +6,4 @@
       let fd = Unix.openfile "hello.txt" [Unix.O_RDWR; Unix.O_CREAT] 0o640 in
       let file_input = Reparse_unix.File_input.create fd
     ]} *)
-val create : Unix.file_descr -> Reparse.Parser.input
+val create : Unix.file_descr -> Reparse.input

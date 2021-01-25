@@ -1,7 +1,7 @@
-module P = Reparse.Parser
+open Reparse
 
-let parse_string input p = P.parse_string p input
-let parse input p = P.parse p input
+let parse_string input p = parse_string p input
+let parse input p = parse p input
 
 let make test_name test data =
   let fd =
