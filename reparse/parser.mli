@@ -321,7 +321,7 @@ module Infix : sig
       - [a] is the parsed value of [p]
       - [b] is [f a]
 
-      This is the infix version of {!val:Reparse.map}.
+      This is the infix version of {!val:Reparse.Infix.map}.
 
       {4:infix_mapper_examples Examples}
 
