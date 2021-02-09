@@ -275,7 +275,14 @@ let string_of_chars l = pure @@ String.of_seq @@ List.to_seq l
 let not_followed_by p q = p <* not_ q
 
 let optional : 'a t -> 'a option t =
- fun p state ~ok ~err:_ -> p state ~ok:(fun a -> ok (Some a)) ~err:(fun _ -> ok None)
+ fun p state ~ok ~err:_ ->
+  let init_pos = pos state in
+  p
+    state
+    ~ok:(fun a -> ok (Some a))
+    ~err:(fun _ ->
+      backtrack state init_pos;
+      ok None)
 ;;
 
 let recur f =

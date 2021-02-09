@@ -13,15 +13,15 @@
 (** Parser provides functions and types to construct robust, performant and reusable
     parsers.
 
-    At the core is a type {!type:t} which represents a constructed parser definition. A
-    parser {!type:t} is defined by composing together one or more parsers or {!type:t}s
-    via usage of parser operators.
+    At the core is a type {!type:Reparse.t} which represents a constructed parser
+    definition. A parser {!type:Reparse.t} is defined by composing together one or more
+    parsers or {!type:Reparse.t}s via usage of parser operators.
 
-    An instance of {!type:t} represents an un-evaluated parser. Use {!val:parse} function
-    to evaluate it.
+    An instance of {!type:Reparse.t} represents an un-evaluated parser. Use
+    {!val:Reparse.parse} function to evaluate it.
 
-    {!type:input} represents a generalization of data input to {!val:parse}. Implement the
-    interface to create new input types.
+    {!type:Reparse.input} represents a generalization of data input to
+    {!val:Reparse.parse}. Implement the interface to create new input types.
 
     Parser operators - or functions - are broadly organized into following categories:
 
@@ -48,7 +48,7 @@
 type 'a t
 
 (** Represents a generalization of data input source to a parser. Implement this interface
-    to provide new sources of input to {!val:parse}. *)
+    to provide new sources of input to {!val:Reparse.parse}. *)
 class type input =
   object
     (** [i#eof offset] returns [true] if [offset] position in [i] represents the end of
@@ -85,7 +85,7 @@ class type input =
 
     Line number and column number both start count from [1] if enabled, [0] otherwise.
 
-    {i Also see} {!val:lnum} and {!val:cnum}.
+    {i Also see} {!val:Reparse.lnum} and {!val:Reparse.cnum}.
 
     {4:parse_examples Examples}
 
@@ -117,9 +117,10 @@ class type input =
     @raise Parser when parser encounters error *)
 val parse_string : ?track_lnum:bool -> 'a t -> string -> 'a
 
-(** [parse] is a generalised version of {!val:parse_string} over type {!type:input}.
+(** [parse] is a generalised version of {!val:Reparse.parse_string} over type
+    {!type:Reparse.input}.
 
-    Use this function when you have a custom implementation of {!type:input}. *)
+    Use this function when you have a custom implementation of {!type:Reparse.input}. *)
 val parse : ?track_lnum:bool -> 'a t -> input -> 'a
 
 (** {2 Exception} *)
@@ -320,7 +321,7 @@ module Infix : sig
       - [a] is the parsed value of [p]
       - [b] is [f a]
 
-      This is the infix version of {!val:map}.
+      This is the infix version of {!val:Reparse.map}.
 
       {4:infix_mapper_examples Examples}
 
@@ -461,7 +462,7 @@ module Infix : sig
       ]} *)
   val ( <?> ) : 'a t -> string -> 'a t
 
-  (** [let*] is a let syntax binding for {!val:(>>=)}
+  (** [let*] is a let syntax binding for {!val:Reparse.Infix.(>>=)}
 
       {4:infix_let_bind_examples Examples}
 
@@ -482,7 +483,7 @@ module Infix : sig
 
   val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
 
-  (** [let*] is a let syntax binding for {!val:(>|=)}
+  (** [let*] is a let syntax binding for {!val:Reparse.(>|=)}
 
       {4:infix_let_map_examples Examples}
 
@@ -522,9 +523,9 @@ include module type of Infix
 val delay : 'a t Lazy.t -> 'a t
 
 (** [named name p] uses [name] as part of an error message when constructing exception
-    {!exception:Parser} if parse of [p] fails.
+    {!exception:Reparse.Parser} if parse of [p] fails.
 
-    Also see {!val:Infix.(<?>)}
+    Also see {!val:Reparse.Infix.(<?>)}
 
     {4:named_examples Examples}
 
@@ -602,7 +603,7 @@ val any : 'a t list -> 'a t
 
 (** [alt p q] is [p <|> q].
 
-    See {!val:Infix.(<|>)} *)
+    See {!val:Reparse.Infix.(<|>)} *)
 val alt : 'a t -> 'a t -> 'a t
 
 (** {1 Repetition} *)
@@ -840,8 +841,8 @@ val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
     - [while_] returns [false]
     - [sep_by] evaluates to failure
 
-    [take_while_cb] is the general version of {!val:take_while}. It allows to specify how
-    the value [a] is to be collected.
+    [take_while_cb] is the general version of {!val:Reparse.take_while}. It allows to
+    specify how the value [a] is to be collected.
 
     {b Note} [while_] does not consume input.
 
@@ -1403,7 +1404,8 @@ val htab : char t
     ]} *)
 val lf : char t
 
-(** [octect] parses any character in the range [\x00 - \xFF]. Synonym for {!val:next}
+(** [octect] parses any character in the range [\x00 - \xFF]. Synonym for
+    {!val:Reparse.next}
 
     {4:octet_examples Examples}
 
