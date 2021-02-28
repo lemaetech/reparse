@@ -158,7 +158,8 @@ exception
       let v1 = P.(parse input (pure 5)) in
       let v2 = P.(parse input (pure "hello")) in
       v1 = 5 && v2 = "hello"
-    ]} *)
+    ]}
+    @deprecated Use [return] *)
 val pure : 'a -> 'a t
   [@@ocaml.deprecated "Use return."]
 
