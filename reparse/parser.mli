@@ -92,7 +92,7 @@ class type input =
     Track line and column number
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -105,7 +105,7 @@ class type input =
     Default behaviour - doesn't track line, column number.
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -151,7 +151,7 @@ exception
     {4:pure_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let input = new P.string_input "" in
@@ -178,7 +178,7 @@ val unit : unit t
     {4:fail_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let input = new P.string_input "" in
@@ -206,7 +206,7 @@ include Base.Monad.S with type 'a t := 'a t
 
     Open the module to use it:
 
-    {[ open Reparse.Parser.Infix ]} *)
+    {[ open Reparse.Infix ]} *)
 module Infix : sig
   (** [p >>= f] returns a new parser b where,
 
@@ -218,7 +218,7 @@ module Infix : sig
       {4:infix_bind_examples Examples}
 
       {[
-        module P = Reparse.Parser
+        module P = Reparse
         open P
 
         ;;
@@ -240,7 +240,7 @@ module Infix : sig
       {4:infix_map_examples Examples}
 
       {[
-        module P = Reparse.Parser
+        module P = Reparse
         open P
 
         ;;
@@ -262,7 +262,7 @@ module Infix : sig
       {4:infix_map_examples Examples}
 
       {[
-        module P = Reparse.Parser
+        module P = Reparse
         open P
 
         ;;
@@ -287,7 +287,7 @@ module Infix : sig
       {4:infix_applicative_examples Examples}
 
       {[
-        module P = Reparse.Parser
+        module P = Reparse
         open P
 
         ;;
@@ -305,7 +305,7 @@ module Infix : sig
       {4:infix_replace_examples Examples}
 
       {[
-        module P = Reparse.Parser
+        module P = Reparse
         open P
 
         ;;
@@ -327,7 +327,7 @@ module Infix : sig
       {4:infix_mapper_examples Examples}
 
       {[
-        module P = Reparse.Parser
+        module P = Reparse
         open P
 
         ;;
@@ -350,7 +350,7 @@ module Infix : sig
       {4:infix_discard_left_examples Examples}
 
       {[
-        module P = Reparse.Parser
+        module P = Reparse
         open P
 
         ;;
@@ -373,7 +373,7 @@ module Infix : sig
       {4:infix_discard_right_examples Examples}
 
       {[
-        module P = Reparse.Parser
+        module P = Reparse
         open P
 
         ;;
@@ -397,7 +397,7 @@ module Infix : sig
       [p] fails and [q] succeeds, therefore we return [q]'s parsed value ['w']
 
       {[
-        module P = Reparse.Parser
+        module P = Reparse
         open P
 
         ;;
@@ -443,7 +443,7 @@ module Infix : sig
       {4:infix_error_named_examples Examples}
 
       {[
-        module P = Reparse.Parser
+        module P = Reparse
         open P
 
         ;;
@@ -468,7 +468,7 @@ module Infix : sig
       {4:infix_let_bind_examples Examples}
 
       {[
-        module P = Reparse.Parser
+        module P = Reparse
         open P
 
         ;;
@@ -489,7 +489,7 @@ module Infix : sig
       {4:infix_let_map_examples Examples}
 
       {[
-        module P = Reparse.Parser
+        module P = Reparse
         open P
 
         ;;
@@ -513,7 +513,7 @@ include module type of Infix
     {4:delay_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -524,14 +524,14 @@ include module type of Infix
 val delay : 'a t Lazy.t -> 'a t
 
 (** [named name p] uses [name] as part of an error message when constructing exception
-    {!exception:Reparse.Parser} if parse of [p] fails.
+    {!exception:Reparse} if parse of [p] fails.
 
     Also see {!val:Reparse.Infix.(<?>)}
 
     {4:named_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -548,7 +548,7 @@ val delay : 'a t Lazy.t -> 'a t
           { offset = 0
           ; line_number = 0
           ; column_number = 0
-          ; msg = "[parse_c] Reparse.Parser.Parser(0, 0, 0, \"[char] expected 'a'\")"
+          ; msg = "[parse_c] Reparse.Parser(0, 0, 0, \"[char] expected 'a'\")"
           }
     ]} *)
 val named : string -> 'a t -> 'a t
@@ -569,7 +569,7 @@ val named : string -> 'a t -> 'a t
     First successful parser result is returned
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
@@ -638,7 +638,7 @@ val recur : ('a t -> 'a t) -> 'a t
     {4:skip_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(skip space) in
@@ -662,7 +662,7 @@ val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
     {4:skip_while_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(skip_while next ~while_:(is space)) in
@@ -698,7 +698,7 @@ val skip_while : _ t -> while_:bool t -> int t
     Default behaviour.
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take (char 'a')) in
@@ -709,7 +709,7 @@ val skip_while : _ t -> while_:bool t -> int t
     Specify [~sep_by].
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take ~sep_by:(char ',') (char 'a')) in
@@ -720,7 +720,7 @@ val skip_while : _ t -> while_:bool t -> int t
     Specify lower bound argument [at_least].
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take ~at_least:3 ~sep_by:(char ',') (char 'a')) in
@@ -731,7 +731,7 @@ val skip_while : _ t -> while_:bool t -> int t
     Lower bound not met results in error.
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take ~at_least:5 ~sep_by:(char ',') (char 'a')) in
@@ -748,7 +748,7 @@ val skip_while : _ t -> while_:bool t -> int t
     Specify upper bound [up_to].
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take ~up_to:3 ~sep_by:(char ',') (char 'a')) in
@@ -777,7 +777,7 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
     Default behaviour.
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take_while ~while_:(is_not (char 'b')) (char 'a')) in
@@ -788,7 +788,7 @@ val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
     Specify [sep_by].
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take_while ~sep_by:(char ',') ~while_:(is_not (char 'b')) (char 'a')) in
@@ -815,7 +815,7 @@ val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
     {4:take_between_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p =
@@ -850,7 +850,7 @@ val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
     {4:take_while_cb_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -878,7 +878,7 @@ val take_while_cb
     {4:optional_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -900,7 +900,7 @@ val optional : 'a t -> 'a option t
     {4:is_eoi_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let v = P.(parse_string is_eoi "") in
@@ -917,7 +917,7 @@ val is_eoi : bool t
     {4:eoi_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let v = P.(parse_string eoi "") in
@@ -940,7 +940,7 @@ val eoi : unit t
     {4:lnum_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -955,7 +955,7 @@ val lnum : int t
     {4:cnum_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -970,7 +970,7 @@ val cnum : int t
     {4:offset_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -990,7 +990,7 @@ val offset : int t
     {4:not__examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(not_ (char 'a')) in
@@ -1005,7 +1005,7 @@ val not_ : 'a t -> unit t
     {4:not_followed_by_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(not_followed_by (char 'a') (char 'a')) in
@@ -1020,7 +1020,7 @@ val not_followed_by : 'a t -> 'b t -> 'a t
     {4:is_not_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(is_not (char 'a')) in
@@ -1035,7 +1035,7 @@ val is_not : 'a t -> bool t
     {4:is_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(is (char 'b')) in
@@ -1053,7 +1053,7 @@ val is : 'a t -> bool t
     {4:peek_char_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.peek_char in
@@ -1064,7 +1064,7 @@ val is : 'a t -> bool t
     Input is not consumed.
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(peek_char *> offset) in
@@ -1078,7 +1078,7 @@ val peek_char : char t
     {4:peek_string_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -1090,7 +1090,7 @@ val peek_char : char t
     Input is not consumed.
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(peek_string 5 *> offset) in
@@ -1104,7 +1104,7 @@ val peek_string : int -> string t
     {4:next_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let v = P.(parse_string next "hello") in
@@ -1117,7 +1117,7 @@ val next : char t
     {4:char_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.char 'h' in
@@ -1131,7 +1131,7 @@ val char : char -> char t
     {4:char_if_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p =
@@ -1152,7 +1152,7 @@ val char_if : (char -> bool) -> char t
     {4:string_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.string "hello" in
@@ -1166,7 +1166,7 @@ val string : ?case_sensitive:bool -> string -> string t
     {4:string_of_chars_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take ~sep_by:space next >>= string_of_chars) in
@@ -1183,7 +1183,7 @@ val string_of_chars : char list -> string t
     {4:line_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.line `CRLF in
@@ -1203,7 +1203,7 @@ val line : [ `LF | `CRLF ] -> string t
     {4:alpha_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -1218,7 +1218,7 @@ val alpha : char t
     {4:alpha_num_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -1233,7 +1233,7 @@ val alpha_num : char t
     {4:lower_alpha_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -1248,7 +1248,7 @@ val lower_alpha : char t
     {4:upper_alpha_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
       open P
 
       ;;
@@ -1263,7 +1263,7 @@ val upper_alpha : char t
     {4:bit_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take bit) in
@@ -1277,7 +1277,7 @@ val bit : char t
     {4:ascii_char_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take ascii_char) in
@@ -1291,7 +1291,7 @@ val ascii_char : char t
     {4:cr_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let v = P.(parse_string cr "\rab") in
@@ -1304,7 +1304,7 @@ val cr : char t
     {4:crlf_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let v = P.(parse_string crlf "\r\n abc") in
@@ -1317,7 +1317,7 @@ val crlf : string t
     {4:control_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let v = P.(parse_string control "\x00") in
@@ -1330,7 +1330,7 @@ val control : char t
     {4:digit_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take digit) in
@@ -1344,7 +1344,7 @@ val digit : char t
     {4:digits_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let v = P.(parse_string digits "1234 +") in
@@ -1357,7 +1357,7 @@ val digits : string t
     {4:dquote_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let v = P.(parse_string dquote "\"hello ") in
@@ -1370,7 +1370,7 @@ val dquote : char t
     {4:hex_digit_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take hex_digit) in
@@ -1384,7 +1384,7 @@ val hex_digit : char t
     {4:htab_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let v = P.(parse_string htab "\t") in
@@ -1397,7 +1397,7 @@ val htab : char t
     {4:lf_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let v = P.(parse_string lf "\n") in
@@ -1411,7 +1411,7 @@ val lf : char t
     {4:octet_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take octet) in
@@ -1425,7 +1425,7 @@ val octet : char t
     {4:space_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let v = P.(parse_string space " abc '") in
@@ -1438,7 +1438,7 @@ val space : char t
     {4:spaces_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let v = P.(parse_string spaces "   abc") in
@@ -1451,7 +1451,7 @@ val spaces : char list t
     {4:vchar_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take vchar) in
@@ -1465,7 +1465,7 @@ val vchar : char t
     {4:whitespace_examples Examples}
 
     {[
-      module P = Reparse.Parser
+      module P = Reparse
 
       ;;
       let p = P.(take whitespace) in
