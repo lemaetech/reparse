@@ -1,7 +1,12 @@
 (* Implement JSON parser as defined at https://tools.ietf.org/html/rfc8259.
 
    Assumes UTF-8 character encoding. However, it doesn't do any validation.
-
+   
+   Note: It is unknown if the parser fully conforms to RFC 8259 as no testing, 
+   validation is done. The RFC is used mainly as a guidance and the sample is 
+   meant to demonstrate parser construction using reparse rather than a production
+   grade parser.
+   
    Sample top_level inputs;
 
    {v parse "true";; parse "false";; parse "null";; parse "123";; parse
