@@ -1,6 +1,7 @@
 open Reparse
 
 let parse_string input p = parse_string p input
+
 let parse input p = parse p input
 
 let make test_name test data =
@@ -11,7 +12,6 @@ let make test_name test data =
     fd
   in
   let file_input = Reparse_unix.File_input.create fd in
-  [ "[S] - " ^ test_name, `Quick, test (parse_string data)
-  ; "[F] - " ^ test_name, `Quick, test (parse file_input)
+  [ ("[S] - " ^ test_name, `Quick, test (parse_string data))
+  ; ("[F] - " ^ test_name, `Quick, test (parse file_input))
   ]
-;;

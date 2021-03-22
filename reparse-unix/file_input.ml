@@ -1,20 +1,14 @@
-external unsafe_pread
-  :  Unix.file_descr
-  -> bytes
-  -> int
-  -> int
-  -> int
-  -> int
+external unsafe_pread : Unix.file_descr -> bytes -> int -> int -> int -> int
   = "caml_pread"
 
 let create fd =
   let rec really_read fd buf len fd_offset buf_offset =
-    if len <= 0
-    then ()
-    else (
+    if len <= 0 then
+      ()
+    else
       match unsafe_pread fd buf len fd_offset buf_offset with
       | 0 -> raise End_of_file
-      | r -> really_read fd buf (len - r) (fd_offset + r) (buf_offset + r))
+      | r -> really_read fd buf (len - r) (fd_offset + r) (buf_offset + r)
   in
   object (self)
     method nth offset =
@@ -34,4 +28,3 @@ let create fd =
       really_read fd buf len offset 0;
       Bytes.to_string buf
   end
-;;
