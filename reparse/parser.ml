@@ -392,7 +392,8 @@ let take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t =
     match sep_by with
     | None -> pure true
     | Some p -> (
-      optional p >>| function
+      optional p
+      >>| function
       | Some _ -> true
       | None -> false)
   in
@@ -446,7 +447,8 @@ let take_while_cb :
     match sep_by with
     | None -> pure true
     | Some p -> (
-      optional p >>| function
+      optional p
+      >>| function
       | Some _ -> true
       | None -> false)
   in
@@ -605,9 +607,10 @@ let line : [ `LF | `CRLF ] -> string t =
     state
     ~ok:(fun (_ : int) -> ())
     ~err;
-  (is_eoi >>= function
-   | true -> unit
-   | false -> line_delimiter)
+  (is_eoi
+  >>= function
+  | true -> unit
+  | false -> line_delimiter)
     state
     ~ok:(fun (_ : unit) -> ())
     ~err;
