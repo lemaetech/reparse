@@ -1,9 +1,9 @@
-## v3.0.0 2021-01- [unreleased]
+## v3.0.0 2021-04-06 UK
 
 This release has backwards incompatible changes.
 
-- Infix functions are now available in `Parser` moduel itself.
-- Add support for let operators `and+` and `and*`.
+- Infix functions are now available in `Parser` module itself.
+- Add support for let operators - `let+`, `let*` ,`and+` and `and*`.
 - `bind` and `map` function are now labelled following `base` library
   dependency convention.
 - Items in `all_unit` are now `unit t` rather than `_ t` following monad
