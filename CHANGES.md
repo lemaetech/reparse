@@ -1,4 +1,4 @@
-## v3.0.0 2021-04-06 UK
+## v2.1.0 2021-04-06 UK
 
 This release has backwards incompatible changes.
 
