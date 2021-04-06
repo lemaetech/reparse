@@ -13,9 +13,8 @@ bug-reports: "https://github.com/lemaetech/reparse/issues"
 depends: [
   "dune" {>= "2.7"}
   "ocaml" {>= "4.10.0"}
-  "reparse" {= "2.0.0"}
+  "reparse" {= "2.1.0"}
   "base-unix"
-  "alcotest" {with-test}
   "odoc" {with-doc}
 ]
 build: [
