@@ -208,8 +208,10 @@ val fail : string -> 'a t
 
     Define parsers by joining two or more parsers. *)
 
+(** @inline *)
 include Base.Applicative.S with type 'a t := 'a t
 
+(** @inline *)
 include Base.Monad.S with type 'a t := 'a t
 
 (** {1:infix Infix} *)
@@ -525,6 +527,7 @@ module Infix : sig
   val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
 end
 
+(** @inline *)
 include module type of Infix
 
 (** [delay p] returns a parser which lazily parses [p].

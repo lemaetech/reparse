@@ -1,5 +1,7 @@
+(** @inline *)
 include module type of Parser
 
+(** @inline *)
 include module type of Parser.Let_syntax
 
 (**/**)
