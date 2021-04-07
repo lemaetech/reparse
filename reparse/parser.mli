@@ -216,11 +216,6 @@ include Base.Monad.S with type 'a t := 'a t
 
 (** {1:infix Infix} *)
 
-(** Provides functions to support infix and let syntax operators.
-
-    Open the module to use it:
-
-    {[ open Reparse.Infix ]} *)
 module Infix : sig
   (** [p >>= f] returns a new parser b where,
 
