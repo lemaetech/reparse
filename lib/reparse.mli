@@ -156,6 +156,6 @@ module type PARSER = sig
 end
 
 module Make : functor (Input : INPUT) ->
-  PARSER with type 'a promise := 'a Input.promise with type input := Input.t
+  PARSER with type 'a promise = 'a Input.promise with type input = Input.t
 
-(* module String : INPUT *)
+module String : PARSER

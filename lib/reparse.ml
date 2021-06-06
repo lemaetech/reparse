@@ -156,8 +156,12 @@ module type PARSER = sig
 end
 
 module Make (Input : INPUT) :
-  PARSER with type 'a promise := 'a Input.promise with type input := Input.t =
+  PARSER with type 'a promise = 'a Input.promise with type input = Input.t =
 struct
+  type input = Input.t
+
+  type 'a promise = 'a Input.promise
+
   type 'a t =
        Input.t
     -> pos:int
