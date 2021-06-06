@@ -46,7 +46,7 @@ module type PARSER = sig
       {4:return_examples Examples}
 
       {[
-        module P = Reparse.String
+        module P = Reparse.String.String
 
         ;;
         let input = new P.string_input "" in
@@ -61,7 +61,7 @@ module type PARSER = sig
       {4:fail_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let input = new P.string_input "" in
@@ -86,7 +86,7 @@ module type PARSER = sig
   val bind : ('a -> 'b t) -> 'a t -> 'b t
 
   (** [both p q] is evaluates to [(a,b)] when [a] is evaluted from [p] and [b]
-      is evaluated from q] *)
+      is evaluated from [q]. *)
   val both : 'a t -> 'b t -> ('a * 'b) t
 
   (** [map f p] is prefix version of [p >>| f]. *)
@@ -108,7 +108,7 @@ module type PARSER = sig
         {4:infix_bind_examples Examples}
 
         {[
-          module P = Reparse
+          module P = Reparse.String
           open P
 
           ;;
@@ -128,7 +128,7 @@ module type PARSER = sig
         {4:infix_map_examples Examples}
 
         {[
-          module P = Reparse
+          module P = Reparse.String
           open P
 
           ;;
@@ -171,7 +171,7 @@ module type PARSER = sig
         {4:infix_replace_examples Examples}
 
         {[
-          module P = Reparse
+          module P = Reparse.String
           open P
 
           ;;
@@ -195,7 +195,7 @@ module type PARSER = sig
         {4:infix_discard_left_examples Examples}
 
         {[
-          module P = Reparse
+          module P = Reparse.String
           open P
 
           ;;
@@ -216,7 +216,7 @@ module type PARSER = sig
         {4:infix_discard_right_examples Examples}
 
         {[
-          module P = Reparse
+          module P = Reparse.String
           open P
 
           ;;
@@ -241,7 +241,7 @@ module type PARSER = sig
         [p] fails and [q] succeeds, therefore we return [q]'s parsed value ['w']
 
         {[
-          module P = Reparse
+          module P = Reparse.String
           open P
 
           ;;
@@ -284,7 +284,7 @@ module type PARSER = sig
         {4:infix_let_bind_examples Examples}
 
         {[
-          module P = Reparse
+          module P = Reparse.String
           open P
 
           ;;
@@ -305,7 +305,7 @@ module type PARSER = sig
         {4:infix_let_map_examples Examples}
 
         {[
-          module P = Reparse
+          module P = Reparse.String
           open P
 
           ;;
@@ -329,7 +329,7 @@ module type PARSER = sig
         {4:infix_error_named_examples Examples}
 
         {[
-          module P = Reparse
+          module P = Reparse.String
           open P
 
           ;;
@@ -391,7 +391,7 @@ module type PARSER = sig
       {4:peek_char_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.peek_char in
@@ -411,7 +411,7 @@ module type PARSER = sig
       {4:peek_string_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
         open P
 
         ;;
@@ -429,7 +429,7 @@ module type PARSER = sig
       {4:next_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let v = P.(parse_string any_char "hello") in
@@ -442,7 +442,7 @@ module type PARSER = sig
       {4:char_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.char 'h' in
@@ -456,7 +456,7 @@ module type PARSER = sig
       {4:char_if_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p =
@@ -476,7 +476,7 @@ module type PARSER = sig
       {4:string_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.string "hello" in
@@ -490,7 +490,7 @@ module type PARSER = sig
       {4:string_of_chars_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.(take ~sep_by:space next >>= string_of_chars) in
@@ -514,7 +514,7 @@ module type PARSER = sig
       First successful parser result is returned
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
@@ -556,7 +556,7 @@ module type PARSER = sig
       {4:optional_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
         open P
 
         ;;
@@ -579,7 +579,7 @@ module type PARSER = sig
       {4:not__examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.(not_ (char 'a')) in
@@ -594,7 +594,7 @@ module type PARSER = sig
       {4:is_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.(is (char 'b')) in
@@ -609,7 +609,7 @@ module type PARSER = sig
       {4:is_not_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.(is_not (char 'a')) in
@@ -644,7 +644,7 @@ module type PARSER = sig
       {4:skip_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.(skip space) in
@@ -672,7 +672,7 @@ module type PARSER = sig
       Default behaviour.
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.(take (char 'a')) in
@@ -683,7 +683,7 @@ module type PARSER = sig
       Specify [~sep_by].
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.(take ~sep_by:(char ',') (char 'a')) in
@@ -694,7 +694,7 @@ module type PARSER = sig
       Specify lower bound argument [at_least].
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.(take ~at_least:3 ~sep_by:(char ',') (char 'a')) in
@@ -705,7 +705,7 @@ module type PARSER = sig
       Lower bound not met results in error.
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.(take ~at_least:5 ~sep_by:(char ',') (char 'a')) in
@@ -722,7 +722,7 @@ module type PARSER = sig
       Specify upper bound [up_to].
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.(take ~up_to:3 ~sep_by:(char ',') (char 'a')) in
@@ -748,7 +748,7 @@ module type PARSER = sig
       {4:take_while_cb_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
         open P
 
         ;;
@@ -779,7 +779,7 @@ module type PARSER = sig
       Default behaviour.
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p = P.(take_while ~while_:(is_not (char 'b')) (char 'a')) in
@@ -790,7 +790,7 @@ module type PARSER = sig
       Specify [sep_by].
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p =
@@ -818,7 +818,7 @@ module type PARSER = sig
       {4:take_between_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let p =
@@ -841,7 +841,7 @@ module type PARSER = sig
       {4:eoi_examples Examples}
 
       {[
-        module P = Reparse
+        module P = Reparse.String
 
         ;;
         let v = P.(parse_string eoi "") in
