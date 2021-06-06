@@ -1,14 +1,12 @@
-module type INPUT = sig
-  type t
-
-  type 'a promise
-
-  val return : 'a -> 'a promise
-
-  val bind : ('a -> 'b promise) -> 'a promise -> 'b promise
-
-  val get : t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
-end
+(*-------------------------------------------------------------------------
+ * Copyright (c) 2020, 2021 Bikal Gurung. All rights reserved.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License,  v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * %%NAME%% %%VERSION%%
+ *-------------------------------------------------------------------------*)
 
 module type PARSER = sig
   type 'a t
@@ -153,6 +151,18 @@ module type PARSER = sig
   val advance : int -> unit t
 
   val eoi : unit t
+end
+
+module type INPUT = sig
+  type t
+
+  type 'a promise
+
+  val return : 'a -> 'a promise
+
+  val bind : ('a -> 'b promise) -> 'a promise -> 'b promise
+
+  val get : t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
 end
 
 module Make (Input : INPUT) :
