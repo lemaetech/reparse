@@ -158,4 +158,4 @@ end
 module Make : functor (Input : INPUT) ->
   PARSER with type 'a promise = 'a Input.promise with type input = Input.t
 
-module String : PARSER
+module String : PARSER with type 'a promise = 'a with type input = string
