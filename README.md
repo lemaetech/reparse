@@ -87,17 +87,6 @@ val ast : (expr, string) result =
 - : int = 22
 ```
 
-The expression grammar is defined by the following BNF grammar:
-
-```ebnf
-<expr>   ::= <term>   "+" <expr>
-           | <term>
-<term>   ::= <factor> "*" <term>
-           | <factor>
-<factor> ::= "(" <expr> ")"
-           | integer
-```
-
 ## More Examples
 
 - [HTTP Multipart](https://github.com/lemaetech/http-multipart-formdata/blob/master/src/http_multipart_formdata.ml)
