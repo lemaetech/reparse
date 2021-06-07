@@ -6,7 +6,7 @@ Reparse is a monadic, recursive descent based, comprehensive parser construction
 
 ## Getting Started
 
-```sh
+```
 $ opam install reparse
 ```
 
@@ -24,7 +24,11 @@ Add `reparse` to dune,
 A **calculator** is the `hello world` of parsers. Here is an implementation in `Reparse` which supports `+,-,*` and `/` operations.
 
 ```ocaml
-open Reparse
+# #require "reparse";;
+```
+
+```ocaml
+open Reparse.String
 
 type expr =
   | Int of int
@@ -33,25 +37,23 @@ type expr =
   | Mult of expr * expr
   | Div of expr * expr
 
-let skip_spaces = skip (ignore_m space)
+let skip_spaces = skip space
 
 let binop : 'a t -> char -> 'b t -> ('a -> 'b -> 'c) -> 'c t =
  fun exp1 op exp2 f ->
-  map3 exp1 (skip_spaces *> char op <* skip_spaces) exp2 ~f:(fun e1 _ e2 -> f e1 e2)
-;;
+  map3
+    (fun e1 _ e2 -> f e1 e2)
+    exp1
+    (skip_spaces *> char op <* skip_spaces)
+    exp2
 
 let integer : expr t =
-  let+ d = digits in
+  let+ d = skip_spaces *> digits <* skip_spaces in
   Int (int_of_string d)
-;;
 
 let factor : expr t -> expr t =
  fun expr ->
-  any
-    [ char '(' *> skip_spaces *> expr <* skip_spaces <* char ')'
-    ; skip_spaces *> integer <* skip_spaces
-    ]
-;;
+  any [ char '(' *> skip_spaces *> expr <* skip_spaces <* char ')'; integer ]
 
 let term : expr t -> expr t =
  fun factor ->
@@ -59,7 +61,6 @@ let term : expr t -> expr t =
       let mult = binop factor '*' term (fun e1 e2 -> Mult (e1, e2)) in
       let div = binop factor '/' term (fun e1 e2 -> Div (e1, e2)) in
       mult <|> div <|> factor)
-;;
 
 let expr : expr t =
   recur (fun expr ->
@@ -67,8 +68,7 @@ let expr : expr t =
       let term = term factor in
       let add = binop term '+' expr (fun e1 e2 -> Add (e1, e2)) in
       let sub = binop term '-' expr (fun e1 e2 -> Sub (e1, e2)) in
-      any [ add; sub; term ])
-;;
+      any [ add; sub; term ] <?> "expr")
 
 let rec eval : expr -> int = function
   | Int i -> i
@@ -76,21 +76,15 @@ let rec eval : expr -> int = function
   | Sub (e1, e2) -> eval e1 - eval e2
   | Mult (e1, e2) -> eval e1 * eval e2
   | Div (e1, e2) -> eval e1 / eval e2
-;;
+```
 
-(* Test AST *)
-let r =
-  let actual = parse_string expr "1*2-4+3" in
-  let expected = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
-  Bool.equal (expected = actual) true
-;;
+```ocaml
+# let ast = parse expr "1*2-4+3";;
+val ast : (expr, string) result =
+  Ok (Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)))
 
-(* Run and test the evaluator. *)
-let exp_result =
-  let v = eval (parse_string expr "12+1*10") in
-  Int.equal 22 v
-;;
-
+# eval @@ Result.get_ok (parse expr "12+1*10")
+- : int = 22
 ```
 
 The expression grammar is defined by the following BNF grammar:
@@ -110,7 +104,3 @@ The expression grammar is defined by the following BNF grammar:
 - [RFC 8259 JSON parser](https://github.com/lemaetech/reparse/blob/master/examples/json.ml)
 - [HTML5 parser](https://github.com/lemaetech/pp_html/blob/master/src/pp_html.ml)
 
-## Credits
-
-- https://github.com/MLton/mlton/blob/master/lib/mlton/basic/parse.sig
-- https://github.com/c-cube/ocaml-containers/blob/master/src/core/CCParse.mli

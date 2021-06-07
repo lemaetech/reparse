@@ -25,3 +25,4 @@
    (>= 4.10.0))
   (ppx_expect :with-test)
   (mdx :with-test)))
+(using mdx 0.1)
