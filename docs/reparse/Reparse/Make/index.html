@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Make (reparse.Reparse.Make)</title><link rel="stylesheet" href="../../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.0.0-beta3-27-g7dfcb41d"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">reparse</a> &#x00BB; <a href="../index.html">Reparse</a> &#x00BB; Make</nav><header class="odoc-preamble"><h1>Module <code><span>Reparse.Make</span></code></h1><p>A functor to create parsers based on the given <code>Input</code> module.</p></header><nav class="odoc-toc"><ul><li><a href="#parameters">Parameters</a></li><li><a href="#signature">Signature</a><ul><li><a href="#monadic-operators">Monadic operators</a></li><li><a href="#char/string-parsers">Char/String parsers</a></li><li><a href="#alternate-parsers">Alternate parsers</a></li><li><a href="#boolean">Boolean</a></li><li><a href="#repetition">Repetition</a></li></ul></li><li><a href="#rfc5234">RFC 5234</a><ul><li><a href="#others">Others</a></li></ul></li></ul></nav><div class="odoc-content"><h2 id="parameters"><a href="#parameters" class="anchor"></a>Parameters</h2><div class="odoc-spec"><div class="spec parameter" id="argument-1-Input" class="anchored"><a href="#argument-1-Input" class="anchor"></a><code><span><span class="keyword">module</span> </span><span><a href="argument-1-Input/index.html">Input</a></span><span> : <a href="../module-type-INPUT/index.html">INPUT</a></span></code></div></div><h2 id="signature"><a href="#signature" class="anchor"></a>Signature</h2><div class="odoc-spec"><div class="spec type" id="type-t" class="anchored"><a href="#type-t" class="anchor"></a><code><span><span class="keyword">type</span> <span>'a t</span></span></code></div><div class="spec-doc"><p>Represents a parser which can parse value <code>'a</code>. Use <a href="#parse">parse functions</a> to evaluate a parser.</p></div></div><div class="odoc-spec"><div class="spec type" id="type-promise" class="anchored"><a href="#type-promise" class="anchor"></a><code><span><span class="keyword">type</span> <span>'a promise</span></span><span> = <span><span class="type-var">'a</span> <a href="argument-1-Input/index.html#type-promise">Input.promise</a></span></span></code></div></div><div class="odoc-spec"><div class="spec type" id="type-input" class="anchored"><a href="#type-input" class="anchor"></a><code><span><span class="keyword">type</span> input</span><span> = <a href="argument-1-Input/index.html#type-t">Input.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-parse" class="anchored"><a href="#val-parse" class="anchor"></a><code><span><span class="keyword">val</span> parse : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-input">input</a> <span class="arrow">&#45;&gt;</span></span> <span><span><span>(<span class="type-var">'a</span>, string)</span> <span class="xref-unresolved">Stdlib</span>.result</span> <a href="#type-promise">promise</a></span></span></code></div></div><h3 id="monadic-operators"><a href="#monadic-operators" class="anchor"></a>Monadic operators</h3><div class="odoc-spec"><div class="spec value" id="val-return" class="anchored"><a href="#val-return" class="anchor"></a><code><span><span class="keyword">val</span> return : <span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>return v</code> always parses value <code>v</code>.</p><p>Examples</p><pre><code>module P = Reparse.String.String
+
+;;
+let input = new P.string_input &quot;&quot; in
+let v1 = P.(parse input (return 5)) in
+let v2 = P.(parse input (return &quot;hello&quot;)) in
+v1 = 5 &amp;&amp; v2 = &quot;hello&quot;</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-fail" class="anchored"><a href="#val-fail" class="anchor"></a><code><span><span class="keyword">val</span> fail : <span>string <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>fail err_msg</code> returns a parser that always fails with <code>err_msg</code>.</p><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let input = new P.string_input &quot;&quot; in
+let r =
+  try
+    let _ = P.(parse input (fail &quot;hello error&quot;)) in
+    assert false
+  with
+  | e -&gt; e
+in
+r
+= P.Parser
+    { offset = 0
+    ; line_number = 0
+    ; column_number = 0
+    ; msg = &quot;hello error&quot;
+    }</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-bind" class="anchored"><a href="#val-bind" class="anchor"></a><code><span><span class="keyword">val</span> bind : <span><span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>bind f p</code> is prefix version of <code>p &gt;&gt;= f</code>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-both" class="anchored"><a href="#val-both" class="anchor"></a><code><span><span class="keyword">val</span> both : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'b</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span>(<span class="type-var">'a</span> * <span class="type-var">'b</span>)</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>both p q</code> is evaluates to <code>(a,b)</code> when <code>a</code> is evaluted from <code>p</code> and <code>b</code> is evaluated from <code>q</code>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-map" class="anchored"><a href="#val-map" class="anchor"></a><code><span><span class="keyword">val</span> map : <span><span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'b</span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>map f p</code> is prefix version of <code>p &gt;&gt;| f</code>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-map2" class="anchored"><a href="#val-map2" class="anchor"></a><code><span><span class="keyword">val</span> map2 : <span><span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'c</span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'b</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'c</span> <a href="#type-t">t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-map3" class="anchored"><a href="#val-map3" class="anchor"></a><code><span><span class="keyword">val</span> map3 : <span><span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'c</span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'d</span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'b</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'c</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'d</span> <a href="#type-t">t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-map4" class="anchored"><a href="#val-map4" class="anchor"></a><code><span><span class="keyword">val</span> map4 : <span><span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'c</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'d</span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'e</span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'b</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'c</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'d</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'e</span> <a href="#type-t">t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec module" id="module-Infix" class="anchored"><a href="#module-Infix" class="anchor"></a><code><span><span class="keyword">module</span> </span><span><a href="Infix/index.html">Infix</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-include"><details open="open"><summary class="spec include"><code><span><span class="keyword">include</span> <span class="keyword">module</span> <span class="keyword">type</span> <span class="keyword">of</span> <a href="Infix/index.html">Infix</a></span></code></summary><div class="odoc-spec"><div class="spec value" id="val-(&gt;&gt;=)" class="anchored"><a href="#val-(&gt;&gt;=)" class="anchor"></a><code><span><span class="keyword">val</span> (&gt;&gt;=) : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>p &gt;&gt;= f</code> returns a new parser b where,</p><ul><li><code>a</code> is the parsed value of <code>p</code></li><li><code>b</code> is <code>f a</code> Also known as <code>bind</code> operation.</li></ul><p>Examples</p><pre><code>module P = Reparse.String
+open P
+
+;;
+let f a = P.pure (Char.code a) in
+let p = P.char 'h' in
+let p = p &gt;&gt;= f in
+let v = P.parse_string p &quot;hello&quot; in
+v = 104</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-(&gt;&gt;|)" class="anchored"><a href="#val-(&gt;&gt;|)" class="anchor"></a><code><span><span class="keyword">val</span> (&gt;&gt;|) : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'b</span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>p &gt;&gt;| f</code> returns a new parser encapsulating value <code>b</code> where,</p><ul><li><code>a</code> is the parsed value of <code>p</code>.</li><li><code>b</code> is <code>f a</code>. Also known as <code>map</code> operation.</li></ul><p>Examples</p><pre><code>module P = Reparse.String
+open P
+
+;;
+let f a = Char.code a in
+let p = P.char 'h' in
+let p = p &gt;&gt;| f in
+let v = P.parse_string p &quot;hello&quot; in
+v = 104</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-(&lt;*&gt;)" class="anchored"><a href="#val-(&lt;*&gt;)" class="anchor"></a><code><span><span class="keyword">val</span> (&lt;*&gt;) : <span><span><span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'b</span>)</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>pf &lt;*&gt; q</code> returns a new parser encapsulating value <code>b</code> where</p><ul><li><code>pf</code> and <code>q</code> are evaluated sequentially in order as given.</li><li><code>f</code> is the parsed value of <code>pf</code></li><li><code>a</code> is the parsed value of <code>q</code></li><li><code>b</code> is <code>f a</code> Also known as <code>Applicative</code> operation.</li></ul><p>Examples</p><pre><code>module P = Reparse
+open P
+
+;;
+let f a = a + 2 in
+let pf = P.pure f in
+let q = P.pure 2 in
+let p = pf &lt;*&gt; q in
+let v = P.parse_string p &quot;hello&quot; in
+v = 4</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-(&lt;$&gt;)" class="anchored"><a href="#val-(&lt;$&gt;)" class="anchor"></a><code><span><span class="keyword">val</span> (&lt;$&gt;) : <span><span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'b</span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>f &lt;$&gt; p</code> is <code>return f &lt;*&gt; p</code>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-(&lt;$)" class="anchored"><a href="#val-(&lt;$)" class="anchor"></a><code><span><span class="keyword">val</span> (&lt;$) : <span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'b</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>v &lt;$ p</code> replaces the parse value of <code>p</code> with <code>v</code>.</p><p>Examples</p><pre><code>module P = Reparse.String
+open P
+
+;;
+let v = &quot;hello&quot; in
+let p = P.char 'h' in
+let p = v &lt;$ p in
+let v2 = P.parse_string p &quot;hello&quot; in
+v2 = &quot;hello&quot;</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-($&gt;)" class="anchored"><a href="#val-($&gt;)" class="anchor"></a><code><span><span class="keyword">val</span> ($&gt;) : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>p $&gt; v</code> is inverse of <code>v &lt;$ p</code>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-(*&gt;)" class="anchored"><a href="#val-(*&gt;)" class="anchor"></a><code><span><span class="keyword">val</span> (*&gt;) : <span><span><span class="type-var">_</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'b</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>p *&gt; q</code> returns a parser encapsulating value <code>a</code> where,</p><ul><li><code>p</code>, <code>q</code> are evaluated sequentially in order as given.</li><li><code>a</code> is parsed value of <code>q</code>.</li><li>The parsed value of <code>p</code> is discarded. Also known as <code>discard left</code>.</li></ul><p>Examples</p><pre><code>module P = Reparse.String
+open P
+
+;;
+let p = P.string &quot;world&quot; in
+let q = P.pure &quot;hello&quot; in
+let p = p *&gt; q in
+let v = P.parse_string p &quot;world&quot; in
+v = &quot;hello&quot;</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-(&lt;*)" class="anchored"><a href="#val-(&lt;*)" class="anchor"></a><code><span><span class="keyword">val</span> (&lt;*) : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">_</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>p &lt;* q</code> returns a parser encapsulating value <code>a</code> where,</p><ul><li><code>p</code>, <code>q</code> are evaluated sequentially in order as given.</li><li><code>a</code> is parsed value of <code>p</code>.</li><li>The parsed value of <code>q</code> is discarded. Also know as discard_right.</li></ul><p>Examples</p><pre><code>module P = Reparse.String
+open P
+
+;;
+let p = P.string &quot;world&quot; in
+let q = P.pure &quot;hello&quot; in
+let p = p &lt;* q in
+let v = P.parse_string p &quot;world&quot; in
+v = &quot;world&quot;</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-(&lt;|&gt;)" class="anchored"><a href="#val-(&lt;|&gt;)" class="anchor"></a><code><span><span class="keyword">val</span> (&lt;|&gt;) : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>p &lt;|&gt; q</code> returns a parser encapsulating value <code>a</code> where,</p><ul><li><code>p</code>,<code>q</code> are evaluated sequentially in order as given.</li><li><code>a</code> is the parsed value of <code>p</code> if <code>p</code> is successful</li><li><code>a</code> is the parsed value of <code>q</code> if <code>p</code> is a failure and <code>q</code> is a success.</li><li>If both - <code>p</code> and <code>q</code> - fails, then the parser fails.</li></ul><p>Examples</p><p><code>p</code> fails and <code>q</code> succeeds, therefore we return <code>q</code>'s parsed value <code>'w'</code></p><pre><code>module P = Reparse.String
+open P
+
+;;
+let p = P.char 'h' in
+let q = P.char 'w' in
+let p = p &lt;|&gt; q in
+let v = P.parse_string p &quot;world&quot; in
+v = 'w'</code></pre><p><code>p</code> succeeds therefore we return its parsed value <code>'h'</code></p><pre><code>let p = P.char 'h' in
+let q = P.char 'w' in
+let p = p &lt;|&gt; q in
+let v = P.parse_string p &quot;hello&quot; in
+v = 'h'</code></pre><p>The parser fails if both <code>p</code> and <code>q</code> fails.</p><pre><code>let p = P.char 'h' in
+let q = P.char 'w' in
+let p = p &lt;|&gt; q in
+let v =
+  try
+    let _ = P.parse_string p &quot;&quot; in
+    false
+  with
+  | _ -&gt; true
+in
+v = true</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-let*" class="anchored"><a href="#val-let*" class="anchor"></a><code><span><span class="keyword">val</span> let* : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>let*</code> is a let syntax binding for <code>Reparse</code>.Infix.((&gt;&gt;=))</p><p>Examples</p><pre><code>module P = Reparse.String
+open P
+
+;;
+let p =
+  let* a = P.pure 5 in
+  let total = a + 5 in
+  P.pure total
+in
+let v = P.parse_string p &quot;&quot; in
+v = 10</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-and*" class="anchored"><a href="#val-and*" class="anchor"></a><code><span><span class="keyword">val</span> and* : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'b</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span>(<span class="type-var">'a</span> * <span class="type-var">'b</span>)</span> <a href="#type-t">t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-let+" class="anchored"><a href="#val-let+" class="anchor"></a><code><span><span class="keyword">val</span> let+ : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'b</span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'b</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>let*</code> is a let syntax binding for <code>Reparse</code>.((&gt;|=))</p><p>Examples</p><pre><code>module P = Reparse.String
+open P
+
+;;
+let p =
+  let+ a = P.pure 5 in
+  let total = a + 5 in
+  total
+in
+let v = P.parse_string p &quot;&quot; in
+v = 10</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-and+" class="anchored"><a href="#val-and+" class="anchor"></a><code><span><span class="keyword">val</span> and+ : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'b</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span>(<span class="type-var">'a</span> * <span class="type-var">'b</span>)</span> <a href="#type-t">t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-(&lt;?&gt;)" class="anchored"><a href="#val-(&lt;?&gt;)" class="anchor"></a><code><span><span class="keyword">val</span> (&lt;?&gt;) : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span>string <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>p &lt;?&gt; err_msg</code> parses <code>p</code> to value <code>a</code> and returns a new parser encapsulating <code>a</code>. If <code>p</code> is a failure, then it fails with error message <code>err_msg</code>. Often used as a last choice in <code>&lt;|&gt;</code>, e.g. <code>a &lt;|&gt; b &lt;|&gt; c &lt;?&gt; &quot;expected a b c&quot;</code>.</p><p>Examples</p><pre><code>module P = Reparse.String
+open P
+
+;;
+let p = P.char 'h' &lt;|&gt; P.char 'w' in
+let err_msg = &quot;[error]&quot; in
+let p = p &lt;?&gt; err_msg in
+let v =
+  try
+    let _ = P.parse_string p &quot;&quot; in
+    false
+  with
+  | P.Parser
+      { offset = 0
+      ; line_number = 0
+      ; column_number = 0
+      ; msg = &quot;[error]&quot;
+      } -&gt;
+    true
+  | _ -&gt; false
+in
+v = true</code></pre></div></div></details></div><div class="odoc-spec"><div class="spec module" id="module-Let_syntax" class="anchored"><a href="#module-Let_syntax" class="anchor"></a><code><span><span class="keyword">module</span> </span><span><a href="Let_syntax/index.html">Let_syntax</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div><div class="spec-doc"><p><code>ppx_let</code> syntax support module.</p></div></div><h3 id="char/string-parsers"><a href="#char/string-parsers" class="anchor"></a>Char/String parsers</h3><div class="odoc-spec"><div class="spec value" id="val-peek_char" class="anchored"><a href="#val-peek_char" class="anchor"></a><code><span><span class="keyword">val</span> peek_char : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>peek_char t</code> parses the next character from input without consuming it. It fails if <code>EOI</code> is reached.</p><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.peek_char in
+let v = P.parse_string p &quot;hello&quot; in
+v = 'h'</code></pre><p>Input is not consumed.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-peek_char_opt" class="anchored"><a href="#val-peek_char_opt" class="anchor"></a><code><span><span class="keyword">val</span> peek_char_opt : <span><span>char option</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>peek_char_opt</code> is the exception safe version of <code>peek_char</code>. It returns an option rather than throwing <code>exn</code> when <code>EOI</code> is reached.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-peek_string" class="anchored"><a href="#val-peek_string" class="anchor"></a><code><span><span class="keyword">val</span> peek_string : <span>int <span class="arrow">&#45;&gt;</span></span> <span>string <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>peek_string n</code> parse a string of length <code>n</code> without consuming it.</p><p>Examples</p><pre><code>module P = Reparse.String
+open P
+
+;;
+let p = P.peek_string 5 in
+let v = P.parse_string p &quot;hello&quot; in
+v = &quot;hello&quot;</code></pre><p>Input is not consumed.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-any_char" class="anchored"><a href="#val-any_char" class="anchor"></a><code><span><span class="keyword">val</span> any_char : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>any_char</code> parses the next character from input. Fails if input has reached end of input.</p><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let v = P.(parse_string any_char &quot;hello&quot;) in
+v = 'h'</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-char" class="anchored"><a href="#val-char" class="anchor"></a><code><span><span class="keyword">val</span> char : <span>char <span class="arrow">&#45;&gt;</span></span> <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>char c</code> parses character <code>c</code> exactly.</p><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.char 'h' in
+let v = P.parse_string p &quot;hello&quot; in
+v = 'h'</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-char_if" class="anchored"><a href="#val-char_if" class="anchor"></a><code><span><span class="keyword">val</span> char_if : <span><span>(<span>char <span class="arrow">&#45;&gt;</span></span> bool)</span> <span class="arrow">&#45;&gt;</span></span> <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>char_if f</code> parses a character <code>c</code> if <code>f c</code> is <code>true</code>.</p><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let p =
+  P.char_if (function
+    | 'a' -&gt; true
+    | _ -&gt; false)
+in
+let v = P.parse_string p &quot;abc&quot; in
+v = 'a'</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-string" class="anchored"><a href="#val-string" class="anchor"></a><code><span><span class="keyword">val</span> string : <span>?case_sensitive:bool <span class="arrow">&#45;&gt;</span></span> <span>string <span class="arrow">&#45;&gt;</span></span> <span>string <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>string ~case_sensitive s</code> parses a string <code>s</code> exactly. If <code>case_sensitive</code> is <code>false</code> then comparison is done without character case consideration. Default value is <code>true</code>.</p><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.string &quot;hello&quot; in
+let v = P.parse_string p &quot;hello world&quot; in
+v = &quot;hello&quot;</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-string_of_chars" class="anchored"><a href="#val-string_of_chars" class="anchor"></a><code><span><span class="keyword">val</span> string_of_chars : <span><span>char list</span> <span class="arrow">&#45;&gt;</span></span> <span>string <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>string_of_chars l</code> converts <code>char list</code> <code>l</code> to string</p><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.(take ~sep_by:space next &gt;&gt;= string_of_chars) in
+let v = P.parse_string p &quot;h e l l o&quot; in
+v = &quot;hello&quot;</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-take_string" class="anchored"><a href="#val-take_string" class="anchor"></a><code><span><span class="keyword">val</span> take_string : <span>int <span class="arrow">&#45;&gt;</span></span> <span>string <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>take_string n</code> returns a string of length <code>n</code> exactly from input.</p></div></div><h3 id="alternate-parsers"><a href="#alternate-parsers" class="anchor"></a>Alternate parsers</h3><div class="odoc-spec"><div class="spec value" id="val-any" class="anchored"><a href="#val-any" class="anchor"></a><code><span><span class="keyword">val</span> any : <span>?failure_msg:string <span class="arrow">&#45;&gt;</span></span> <span><span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> list</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>any l</code> parses the value of the first successful parser in list <code>l</code>. Specified parsers in <code>l</code> are evaluated sequentially from left to right. A failed parser doesn't consume any input, i.e. <code>offset</code> is unaffected. The parser fails if none of the parsers in <code>l</code> are evaluated successfully.</p><p>Examples</p><p>First successful parser result is returned</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
+let v = P.parse_string p &quot;zabc&quot; in
+v = 'z'
+
+;;
+let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
+let v = P.parse_string p &quot;xabc&quot; in
+v = 'x'
+
+;;
+let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
+let v = P.parse_string p &quot;abc&quot; in
+v = 'a'</code></pre><p>Parser fails when none of the parsers in <code>l</code> are successful.</p><pre><code>let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
+let v =
+  try
+    let _ = P.parse_string p &quot;yyy&quot; in
+    false
+  with
+  | _ -&gt; true
+in
+v = true</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-alt" class="anchored"><a href="#val-alt" class="anchor"></a><code><span><span class="keyword">val</span> alt : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>alt p q</code> is <code>p &lt;|&gt; q</code>. See <code>Reparse</code>.Infix.((&lt;|&gt;))</p></div></div><div class="odoc-spec"><div class="spec value" id="val-optional" class="anchored"><a href="#val-optional" class="anchor"></a><code><span><span class="keyword">val</span> optional : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> option</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>optional p</code> parses <code>Some a</code> if successful and <code>None</code> otherwise. <code>a</code> is the parsed value of <code>p</code>.</p><p>Examples</p><pre><code>module P = Reparse.String
+open P
+
+;;
+let p = P.(optional (char 'a')) in
+let v = P.parse_string p &quot;ab&quot; in
+v = Some 'a'
+
+;;
+let p = P.(optional (char 'z')) in
+let v = P.parse_string p &quot;ab&quot; in
+v = None</code></pre></div></div><h3 id="boolean"><a href="#boolean" class="anchor"></a>Boolean</h3><div class="odoc-spec"><div class="spec value" id="val-not_" class="anchored"><a href="#val-not_" class="anchor"></a><code><span><span class="keyword">val</span> not_ : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span>unit <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>not_ p</code> parses value <code>()</code> if and only if <code>p</code> fails to parse, otherwise the parse fails.</p><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.(not_ (char 'a')) in
+let v = P.parse_string p &quot;bbb&quot; in
+v = ()</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-is" class="anchored"><a href="#val-is" class="anchor"></a><code><span><span class="keyword">val</span> is : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span>bool <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>is p</code> parses <code>true</code> if <code>p</code> is successful, <code>false</code> otherwise. <b>Note</b> evaluation of <code>p</code> doesn't consume any input.</p><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.(is (char 'b')) in
+let v = P.parse_string p &quot;bcb&quot; in
+v = true</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-is_not" class="anchored"><a href="#val-is_not" class="anchor"></a><code><span><span class="keyword">val</span> is_not : <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span>bool <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>is_not p</code> parses value <code>true</code> if <code>p</code> fails to parse and <code>false</code> otherwise. <b>Note</b> evaluating <code>p</code> doesn't consume any input.</p><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.(is_not (char 'a')) in
+let v = P.parse_string p &quot;bbb&quot; in
+v = true</code></pre></div></div><h3 id="repetition"><a href="#repetition" class="anchor"></a>Repetition</h3><div class="odoc-spec"><div class="spec value" id="val-recur" class="anchored"><a href="#val-recur" class="anchor"></a><code><span><span class="keyword">val</span> recur : <span><span>(<span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="#type-t">t</a></span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>recur f</code> returns a recursive parser. Function value <code>f</code> accepts a parser <code>p</code> as its argument and returns a parser <code>q</code>. Parser <code>q</code> in its definition can refer to <code>p</code> and <code>p</code> can refer to <code>q</code> in its own definition. Such parsers are also known as a fixpoint or y combinator.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-all" class="anchored"><a href="#val-all" class="anchor"></a><code><span><span class="keyword">val</span> all : <span><span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> list</span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> list</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>all parsers</code> parses all parsers in <code>parsers</code> and returns a list of successful parse result. All of the <code>parsers</code> must succeed for <code>all</code> to succeed.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-skip" class="anchored"><a href="#val-skip" class="anchor"></a><code><span><span class="keyword">val</span> skip : <span>?at_least:int <span class="arrow">&#45;&gt;</span></span> <span>?up_to:int <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">_</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span>int <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>skip ~at_least ~up_to p</code> repeatedly parses <code>p</code> and discards its value. The lower and upper bound of repetition is specified by arguments <code>at_least</code> and <code>up_to</code> respectively. The default value of <code>at_least</code> is 0. The default value of <code>up_to</code> is unspecified, i.e. there is no upper limit. The repetition ends when one of the following occurs:</p><ul><li><code>p</code> evaluates to failure</li><li><code>up_to</code> upper bound value is reached The parser encapsulates the count of times <code>p</code> was evaluated successfully.</li></ul><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.(skip space) in
+let v = P.parse_string p &quot;     &quot; in
+v = 5</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-take" class="anchored"><a href="#val-take" class="anchor"></a><code><span><span class="keyword">val</span> take : <span>?at_least:int <span class="arrow">&#45;&gt;</span></span> <span>?up_to:int <span class="arrow">&#45;&gt;</span></span> <span>?sep_by:<span><span class="type-var">_</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> list</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>take ~at_least ~up_to ~sep_by p</code> repeatedly parses <code>p</code> and returns the parsed values. The lower and upper bound of repetition is specified by arguments <code>at_least</code> and <code>up_to</code> respectively. The default value of <code>at_least</code> is <code>0</code>. The default value of <code>up_to</code> is unspecified, i.e. there is no upper limit. If <code>sep_by</code> is specified then the evaluation of <code>p</code> must be followed by a successful evaluation of <code>sep_by</code>. The parsed value of <code>sep_by</code> is discarded. The repetition ends when one of the following occurs:</p><ul><li><code>p</code> evaluates to failure</li><li><code>sep_by</code> evaluates to failure</li><li><code>up_to</code> upper boudn value is reached The parser fails if the count of repetition of <code>p</code> does not match the value specified by <code>at_least</code>.</li></ul><p>Examples</p><p>Default behaviour.</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.(take (char 'a')) in
+let v = P.parse_string p &quot;aaaaa&quot; in
+v = [ 'a'; 'a'; 'a'; 'a'; 'a' ]</code></pre><p>Specify <code>~sep_by</code>.</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.(take ~sep_by:(char ',') (char 'a')) in
+let v = P.parse_string p &quot;a,a,a,a,a&quot; in
+v = [ 'a'; 'a'; 'a'; 'a'; 'a' ]</code></pre><p>Specify lower bound argument <code>at_least</code>.</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.(take ~at_least:3 ~sep_by:(char ',') (char 'a')) in
+let v = P.parse_string p &quot;a,a,a,a,a&quot; in
+v = [ 'a'; 'a'; 'a'; 'a'; 'a' ]</code></pre><p>Lower bound not met results in error.</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.(take ~at_least:5 ~sep_by:(char ',') (char 'a')) in
+let v =
+  try
+    let _ = P.parse_string p &quot;a,a,a,a&quot; in
+    false
+  with
+  | _ -&gt; true
+in
+v = true</code></pre><p>Specify upper bound <code>up_to</code>.</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.(take ~up_to:3 ~sep_by:(char ',') (char 'a')) in
+let v = P.parse_string p &quot;a,a,a,a,a&quot; in
+v = [ 'a'; 'a'; 'a' ]</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-take_while_cb" class="anchored"><a href="#val-take_while_cb" class="anchor"></a><code><span><span class="keyword">val</span> take_while_cb : <span>?sep_by:<span><span class="type-var">_</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span>while_:<span>bool <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span>on_take_cb:<span>(<span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> unit)</span> <span class="arrow">&#45;&gt;</span></span>
+<span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span>int <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>take_while_on ~sep_by ~while_ ~on_take p</code> repeatedly parses <code>p</code> and calls callback <code>on_take_cb</code> with the parsed value. <code>p</code> is evaluated if and only if <code>while_</code> evaluates to <code>true</code>. If <code>sep_by</code> is specified then the evaluation of <code>p</code> must be followed by a successful evaluation of <code>sep_by</code>. The parsed value of <code>sep_by</code> is discarded. <code>p</code> is evaluated repeatedly. The repetition ends when one of the following occurs: <code>on_take_cb</code> is the callback function that is called every time <code>p</code> is evaluated.</p><ul><li><code>p</code> evaluates to failure</li><li><code>while_</code> returns <code>false</code></li><li><code>sep_by</code> evaluates to failure <code>take_while_cb</code> is the general version of <code>Reparse</code>.take_while. It allows to specify how the value <code>a</code> is to be collected. <b>Note</b> <code>while_</code> does not consume input.</li></ul><p>Examples</p><pre><code>module P = Reparse.String
+open P
+
+;;
+let buf = Buffer.create 0 in
+let on_take_cb a = Buffer.add_char buf a in
+let p =
+  P.(take_while_cb (char 'a') ~while_:(is_not (char 'b')) ~on_take_cb)
+in
+let v = P.parse_string p &quot;aaab&quot; in
+let s = Buffer.contents buf in
+v = 3 &amp;&amp; s = &quot;aaa&quot;</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-take_while" class="anchored"><a href="#val-take_while" class="anchor"></a><code><span><span class="keyword">val</span> take_while : <span>?sep_by:<span><span class="type-var">_</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span>while_:<span>bool <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> list</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>take_while ~sep_by p ~while_ p</code> repeatedly parses <code>p</code> and returns its value. <code>p</code> is evaluated if and only if <code>while_</code> evaluates to <code>true</code>. If <code>sep_by</code> is specified then the evaluation of <code>p</code> must be followed by a successful evaluation of <code>sep_by</code>. The parsed value of <code>sep_by</code> is discarded. The repetition ends when one of the following occurs:</p><ul><li><code>p</code> evaluates to failure</li><li><code>while_</code> returns <code>false</code></li><li><code>sep_by</code> evaluates to failure <b>Note</b> <code>while_</code> does not consume input.</li></ul><p>Examples</p><p>Default behaviour.</p><pre><code>module P = Reparse.String
+
+;;
+let p = P.(take_while ~while_:(is_not (char 'b')) (char 'a')) in
+let v = P.parse_string p &quot;aab&quot; in
+v = [ 'a'; 'a' ]</code></pre><p>Specify <code>sep_by</code>.</p><pre><code>module P = Reparse.String
+
+;;
+let p =
+  P.(
+    take_while ~sep_by:(char ',') ~while_:(is_not (char 'b')) (char 'a'))
+in
+let v = P.parse_string p &quot;a,a,ab&quot; in
+v = [ 'a'; 'a'; 'a' ]</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-take_between" class="anchored"><a href="#val-take_between" class="anchor"></a><code><span><span class="keyword">val</span> take_between : <span>?sep_by:<span><span class="type-var">_</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span>start:<span><span class="type-var">_</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span>end_:<span><span class="type-var">_</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> <a href="#type-t">t</a></span> <span class="arrow">&#45;&gt;</span></span> <span><span><span class="type-var">'a</span> list</span> <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>take_between ~sep_by ~start ~end_ p</code> parses <code>start</code> and then repeatedly parses <code>p</code> while the parsed value of <code>p</code> doesn't equal to parsed value of <code>end_</code>. After the repetition end, it parses <code>end_</code>. The parser returns the list of parsed values of <code>p</code>. Both <code>start</code> and <code>end_</code> parser values are discarded. If <code>sep_by</code> is specified then the evaluation of <code>p</code> must be followed by a successful evaluation of <code>sep_by</code>. The parsed value of <code>sep_by</code> is discarded. The repetition ends when one of the following occurs:</p><ul><li><code>p</code> evaluates to failure</li><li><code>end_</code> parsed value matches <code>p</code> parsed value</li><li><code>sep_by</code> evaluates to failure</li></ul><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let p =
+  P.(
+    take_between ~sep_by:(char ',') ~start:(P.char '(') ~end_:(char ')')
+      next)
+in
+let v = P.parse_string p &quot;(a,a,a)&quot; in
+v = [ 'a'; 'a'; 'a' ]</code></pre></div></div><h2 id="rfc5234"><a href="#rfc5234" class="anchor"></a>RFC 5234</h2><p>Parsers as defined in RFC 5234, Appendix B.1.</p><ul class="at-tags"><li class="see"><span class="at-tag">see</span> <a href="https://tools.ietf.org/html/rfc5234#appendix-B" class="value">https://tools.ietf.org/html/rfc5234#appendix-B</a> </li></ul><div class="odoc-spec"><div class="spec value" id="val-alpha" class="anchored"><a href="#val-alpha" class="anchor"></a><code><span><span class="keyword">val</span> alpha : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>alpha</code> parses a character in range <code>A- Z</code> or <code>a-z</code>.</p><p>Examples</p><pre><code>module P = Reparse
+open P
+
+;;
+let p = P.(take alpha) in
+let v = P.parse_string p &quot;abcdABCD&quot; in
+v = [ 'a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D' ]</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-alpha_num" class="anchored"><a href="#val-alpha_num" class="anchor"></a><code><span><span class="keyword">val</span> alpha_num : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>alpha_num</code> parses a character in range <code>A-Z</code> or <code>a-z</code> or <code>0-9</code>.</p><p>Examples</p><pre><code>module P = Reparse
+open P
+
+;;
+let p = P.(take alpha_num) in
+let v = P.parse_string p &quot;ab123ABCD&quot; in
+v = [ 'a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D' ]</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-lower_alpha" class="anchored"><a href="#val-lower_alpha" class="anchor"></a><code><span><span class="keyword">val</span> lower_alpha : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>lower_alpha</code> parses a character in range <code>a-z</code>.</p><p>Examples</p><pre><code>module P = Reparse
+open P
+
+;;
+let p = P.(take lower_alpha) in
+let v = P.parse_string p &quot;abcd&quot; in
+v = [ 'a'; 'b'; 'c'; 'd' ]</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-upper_alpha" class="anchored"><a href="#val-upper_alpha" class="anchor"></a><code><span><span class="keyword">val</span> upper_alpha : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>upper_alpha</code> parses a character in range <code>A-Z</code>.</p><p>Examples</p><pre><code>module P = Reparse
+open P
+
+;;
+let p = P.(take upper_alpha) in
+let v = P.parse_string p &quot;ABCD&quot; in
+v = [ 'A'; 'B'; 'C'; 'D' ]</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-bit" class="anchored"><a href="#val-bit" class="anchor"></a><code><span><span class="keyword">val</span> bit : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>bit</code> parses a character which is either <code>'0'</code> or <code>'1'</code>.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let p = P.(take bit) in
+let v = P.parse_string p &quot;0110 ab&quot; in
+v = [ '0'; '1'; '1'; '0' ]</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-ascii_char" class="anchored"><a href="#val-ascii_char" class="anchor"></a><code><span><span class="keyword">val</span> ascii_char : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>ascii_char</code> parses any US-ASCII character.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let p = P.(take ascii_char) in
+let v = P.parse_string p &quot;0110 abc '&quot; in
+v = [ '0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'' ]</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-cr" class="anchored"><a href="#val-cr" class="anchor"></a><code><span><span class="keyword">val</span> cr : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>cr</code> parses character <code>'\r'</code>.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let v = P.(parse_string cr &quot;\rab&quot;) in
+v = '\r'</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-crlf" class="anchored"><a href="#val-crlf" class="anchor"></a><code><span><span class="keyword">val</span> crlf : <span>string <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>crlf</code> parses string <code>&quot;\r\n&quot;</code>.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let v = P.(parse_string crlf &quot;\r\n abc&quot;) in
+v = &quot;\r\n&quot;</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-control" class="anchored"><a href="#val-control" class="anchor"></a><code><span><span class="keyword">val</span> control : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>control</code> parses characters in range <code>0x00 - 0x1F</code> or character <code>0x7F</code>.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let v = P.(parse_string control &quot;\x00&quot;) in
+v = '\x00'</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-digit" class="anchored"><a href="#val-digit" class="anchor"></a><code><span><span class="keyword">val</span> digit : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>digit</code> parses one of the digit characters, <code>0 .. 9</code>.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let p = P.(take digit) in
+let v = P.parse_string p &quot;0123456789a&quot; in
+v = [ '0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9' ]</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-digits" class="anchored"><a href="#val-digits" class="anchor"></a><code><span><span class="keyword">val</span> digits : <span>string <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>digits</code> parses one or more digit characters, <code>0 .. 9</code>.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let v = P.(parse_string digits &quot;1234 +&quot;) in
+v = &quot;1234&quot;</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-dquote" class="anchored"><a href="#val-dquote" class="anchor"></a><code><span><span class="keyword">val</span> dquote : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>dquote</code> parses double quote character <code>'&quot;'</code>.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let v = P.(parse_string dquote &quot;\&quot;hello &quot;) in
+v = '&quot;'</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-hex_digit" class="anchored"><a href="#val-hex_digit" class="anchor"></a><code><span><span class="keyword">val</span> hex_digit : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>hex_digit</code> parses any of the hexadecimal digits - <code>0..9, A, B, C, D, E, F</code>.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let p = P.(take hex_digit) in
+let v = P.parse_string p &quot;0ABCDEFa&quot; in
+v = [ '0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F' ]</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-htab" class="anchored"><a href="#val-htab" class="anchor"></a><code><span><span class="keyword">val</span> htab : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>htab</code> parses a horizontal tab character <code>'\t'</code>.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let v = P.(parse_string htab &quot;\t&quot;) in
+v = '\t'</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-lf" class="anchored"><a href="#val-lf" class="anchor"></a><code><span><span class="keyword">val</span> lf : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>lf</code> parses a linefeed <code>'\n'</code> character.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let v = P.(parse_string lf &quot;\n&quot;) in
+v = '\n'</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-octet" class="anchored"><a href="#val-octet" class="anchor"></a><code><span><span class="keyword">val</span> octet : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>octect</code> parses any character in the range <code>\x00 - \xFF</code>. Synonym for <code>Reparse</code>.next</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let p = P.(take octet) in
+let v = P.parse_string p &quot;0110 abc '&quot; in
+v = [ '0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'' ]</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-space" class="anchored"><a href="#val-space" class="anchor"></a><code><span><span class="keyword">val</span> space : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>space</code> parses a space character.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let v = P.(parse_string space &quot; abc '&quot;) in
+v = ' '</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-vchar" class="anchored"><a href="#val-vchar" class="anchor"></a><code><span><span class="keyword">val</span> vchar : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>vchar</code> parses any of the visible - printable - characters.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let p = P.(take vchar) in
+let v = P.parse_string p &quot;0110abc\x00&quot; in
+v = [ '0'; '1'; '1'; '0'; 'a'; 'b'; 'c' ]</code></pre></div></div><div class="odoc-spec"><div class="spec value" id="val-whitespace" class="anchored"><a href="#val-whitespace" class="anchor"></a><code><span><span class="keyword">val</span> whitespace : <span>char <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>whitespace</code> parses a space <code>' '</code> or horizontal tab <code>'\t'</code> character.</p><p>Examples</p><pre><code>module P = Reparse
+
+;;
+let p = P.(take whitespace) in
+let v = P.parse_string p &quot;\t \t &quot; in
+v = [ '\t'; ' '; '\t'; ' ' ]</code></pre></div></div><h3 id="others"><a href="#others" class="anchor"></a>Others</h3><div class="odoc-spec"><div class="spec value" id="val-advance" class="anchored"><a href="#val-advance" class="anchor"></a><code><span><span class="keyword">val</span> advance : <span>int <span class="arrow">&#45;&gt;</span></span> <span>unit <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>advance n</code> advances input by <code>n</code> bytes.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-eoi" class="anchored"><a href="#val-eoi" class="anchor"></a><code><span><span class="keyword">val</span> eoi : <span>unit <a href="#type-t">t</a></span></span></code></div><div class="spec-doc"><p><code>eoi</code> parses end of input. Fails if parser is not at end of input.</p><p>Examples</p><pre><code>module P = Reparse.String
+
+;;
+let v = P.(parse_string eoi &quot;&quot;) in
+v = ()
+
+;;
+let v =
+  try
+    let _ = P.(parse_string eoi &quot;a&quot;) in
+    false
+  with
+  | _ -&gt; true
+in
+v = true</code></pre></div></div></div></body></html>
