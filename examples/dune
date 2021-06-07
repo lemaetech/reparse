@@ -1,3 +1,3 @@
-(executable
- (name calc)
+(executables
+ (names calc json)
  (libraries reparse))

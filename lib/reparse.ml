@@ -15,7 +15,7 @@ module type PARSER = sig
 
   type input
 
-  val parse : input -> 'a t -> ('a, string) result promise
+  val parse : 'a t -> input -> ('a, string) result promise
 
   (** {2 Monadic operators} *)
 
@@ -146,6 +146,46 @@ module type PARSER = sig
 
   val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
 
+  (** RFC 5234 parsers *)
+
+  val alpha : char t
+
+  val alpha_num : char t
+
+  val lower_alpha : char t
+
+  val upper_alpha : char t
+
+  val bit : char t
+
+  val ascii_char : char t
+
+  val cr : char t
+
+  val crlf : string t
+
+  val control : char t
+
+  val digit : char t
+
+  val digits : string t
+
+  val dquote : char t
+
+  val hex_digit : char t
+
+  val htab : char t
+
+  val lf : char t
+
+  val octet : char t
+
+  val space : char t
+
+  val vchar : char t
+
+  val whitespace : char t
+
   (** {2 Others} *)
 
   val advance : int -> unit t
@@ -222,7 +262,7 @@ struct
 
     let ( <|> ) : 'a t -> 'a t -> 'a t =
      fun p q inp ~pos ~succ ~fail ->
-      p inp ~pos ~succ ~fail:(fun ~pos _s -> q inp ~pos ~succ ~fail)
+      p inp ~pos ~succ ~fail:(fun ~pos:_ _s -> q inp ~pos ~succ ~fail)
 
     let both a b = a >>= fun a -> b >>| fun b -> (a, b)
 
@@ -271,7 +311,7 @@ struct
     end
   end
 
-  let parse (inp : Input.t) (p : 'a t) =
+  let parse (p : 'a t) (inp : Input.t) =
     let v = ref (Error "") in
     p inp ~pos:0
       ~succ:(fun ~pos:_ a -> Input.return (v := Ok a))
@@ -513,6 +553,110 @@ struct
   let take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t =
    fun ?sep_by ~start ~end_ p ->
     start *> take_while ?sep_by ~while_:(is_not end_) p <* end_
+
+  (*+++++ RFC 5234 parsers *)
+
+  let named_ch name f inp ~pos ~succ ~fail =
+    (char_if f) inp ~pos ~succ ~fail:(fun ~pos msg ->
+        fail ~pos (Format.sprintf "[%s] %s" name msg))
+
+  let is_alpha = function
+    | 'a' .. 'z'
+    | 'A' .. 'Z' ->
+      true
+    | _ -> false
+
+  let is_digit = function
+    | '0' .. '9' -> true
+    | _ -> false
+
+  let alpha = named_ch "ALPHA" is_alpha
+
+  let alpha_num =
+    named_ch "ALPHA NUM" (function c -> is_alpha c || is_digit c)
+
+  let lower_alpha =
+    named_ch "LOWER ALPHA" (function
+      | 'a' .. 'z' -> true
+      | _ -> false)
+
+  let upper_alpha =
+    named_ch "UPPER ALPHA" (function
+      | 'A' .. 'Z' -> true
+      | _ -> false)
+
+  let bit =
+    named_ch "BIT" (function
+      | '0'
+      | '1' ->
+        true
+      | _ -> false)
+
+  let cr =
+    named_ch "CR" (function
+      | '\r' -> true
+      | _ -> false)
+
+  let crlf = string "\r\n" <?> "[crlf]"
+
+  let digit = named_ch "DIGIT" is_digit
+
+  let digits =
+    take ~at_least:1 digit
+    >>| (fun d -> List.to_seq d |> String.of_seq)
+    <?> "[digits]"
+
+  let dquote =
+    named_ch "DQUOTE" (function
+      | '"' -> true
+      | _ -> false)
+
+  let htab =
+    named_ch "HTAB" (function
+      | '\t' -> true
+      | _ -> false)
+
+  let lf =
+    named_ch "LF" (function
+      | '\n' -> true
+      | _ -> false)
+
+  let octet = any_char
+
+  let space =
+    named_ch "SPACE" (function
+      | '\x20' -> true
+      | _ -> false)
+
+  let vchar =
+    named_ch "VCHAR" (function
+      | '\x21' .. '\x7E' -> true
+      | _ -> false)
+
+  let whitespace =
+    named_ch "WSP" (function
+      | ' '
+      | '\t' ->
+        true
+      | _ -> false)
+
+  let ascii_char =
+    named_ch "US-ASCII" (function
+      | '\x00' .. '\x7F' -> true
+      | _ -> false)
+
+  let control =
+    named_ch "CONTROL" (function
+      | '\x00' .. '\x1F'
+      | '\x7F' ->
+        true
+      | _ -> false)
+
+  let hex_digit =
+    named_ch "HEX DIGIT" (function
+      | c when is_digit c -> true
+      | 'A' .. 'F' -> true
+      | _ -> false)
 
   (*+++++ Others +++++*)
   let advance : int -> unit t =

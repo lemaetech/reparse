@@ -37,7 +37,7 @@ module type PARSER = sig
 
   type input
 
-  val parse : input -> 'a t -> ('a, string) result promise
+  val parse : 'a t -> input -> ('a, string) result promise
 
   (** {2 Monadic operators} *)
 
@@ -830,6 +830,276 @@ module type PARSER = sig
         v = [ 'a'; 'a'; 'a' ]
       ]} *)
   val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
+
+  (** {1:rfc5234 RFC 5234}
+
+      Parsers as defined in RFC 5234, Appendix B.1.
+
+      @see <https://tools.ietf.org/html/rfc5234#appendix-B> *)
+
+  (** [alpha] parses a character in range [A- Z] or [a-z].
+
+      {4:alpha_examples Examples}
+
+      {[
+        module P = Reparse
+        open P
+
+        ;;
+        let p = P.(take alpha) in
+        let v = P.parse_string p "abcdABCD" in
+        v = [ 'a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D' ]
+      ]} *)
+  val alpha : char t
+
+  (** [alpha_num] parses a character in range [A-Z] or [a-z] or [0-9].
+
+      {4:alpha_num_examples Examples}
+
+      {[
+        module P = Reparse
+        open P
+
+        ;;
+        let p = P.(take alpha_num) in
+        let v = P.parse_string p "ab123ABCD" in
+        v = [ 'a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D' ]
+      ]} *)
+  val alpha_num : char t
+
+  (** [lower_alpha] parses a character in range [a-z].
+
+      {4:lower_alpha_examples Examples}
+
+      {[
+        module P = Reparse
+        open P
+
+        ;;
+        let p = P.(take lower_alpha) in
+        let v = P.parse_string p "abcd" in
+        v = [ 'a'; 'b'; 'c'; 'd' ]
+      ]} *)
+  val lower_alpha : char t
+
+  (** [upper_alpha] parses a character in range [A-Z].
+
+      {4:upper_alpha_examples Examples}
+
+      {[
+        module P = Reparse
+        open P
+
+        ;;
+        let p = P.(take upper_alpha) in
+        let v = P.parse_string p "ABCD" in
+        v = [ 'A'; 'B'; 'C'; 'D' ]
+      ]} *)
+  val upper_alpha : char t
+
+  (** [bit] parses a character which is either ['0'] or ['1'].
+
+      {4:bit_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let p = P.(take bit) in
+        let v = P.parse_string p "0110 ab" in
+        v = [ '0'; '1'; '1'; '0' ]
+      ]} *)
+  val bit : char t
+
+  (** [ascii_char] parses any US-ASCII character.
+
+      {4:ascii_char_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let p = P.(take ascii_char) in
+        let v = P.parse_string p "0110 abc '" in
+        v = [ '0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'' ]
+      ]} *)
+  val ascii_char : char t
+
+  (** [cr] parses character ['\r'].
+
+      {4:cr_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let v = P.(parse_string cr "\rab") in
+        v = '\r'
+      ]} *)
+  val cr : char t
+
+  (** [crlf] parses string ["\r\n"].
+
+      {4:crlf_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let v = P.(parse_string crlf "\r\n abc") in
+        v = "\r\n"
+      ]} *)
+  val crlf : string t
+
+  (** [control] parses characters in range [0x00 - 0x1F] or character [0x7F].
+
+      {4:control_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let v = P.(parse_string control "\x00") in
+        v = '\x00'
+      ]} *)
+  val control : char t
+
+  (** [digit] parses one of the digit characters, [0 .. 9].
+
+      {4:digit_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let p = P.(take digit) in
+        let v = P.parse_string p "0123456789a" in
+        v = [ '0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9' ]
+      ]} *)
+  val digit : char t
+
+  (** [digits] parses one or more digit characters, [0 .. 9].
+
+      {4:digits_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let v = P.(parse_string digits "1234 +") in
+        v = "1234"
+      ]} *)
+  val digits : string t
+
+  (** [dquote] parses double quote character ['"'].
+
+      {4:dquote_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let v = P.(parse_string dquote "\"hello ") in
+        v = '"'
+      ]} *)
+  val dquote : char t
+
+  (** [hex_digit] parses any of the hexadecimal digits -
+      [0..9, A, B, C, D, E, F].
+
+      {4:hex_digit_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let p = P.(take hex_digit) in
+        let v = P.parse_string p "0ABCDEFa" in
+        v = [ '0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F' ]
+      ]} *)
+  val hex_digit : char t
+
+  (** [htab] parses a horizontal tab character ['\t'].
+
+      {4:htab_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let v = P.(parse_string htab "\t") in
+        v = '\t'
+      ]} *)
+  val htab : char t
+
+  (** [lf] parses a linefeed ['\n'] character.
+
+      {4:lf_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let v = P.(parse_string lf "\n") in
+        v = '\n'
+      ]} *)
+  val lf : char t
+
+  (** [octect] parses any character in the range [\x00 - \xFF]. Synonym for
+      {!val:Reparse.next}
+
+      {4:octet_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let p = P.(take octet) in
+        let v = P.parse_string p "0110 abc '" in
+        v = [ '0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'' ]
+      ]} *)
+  val octet : char t
+
+  (** [space] parses a space character.
+
+      {4:space_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let v = P.(parse_string space " abc '") in
+        v = ' '
+      ]} *)
+  val space : char t
+
+  (** [vchar] parses any of the visible - printable - characters.
+
+      {4:vchar_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let p = P.(take vchar) in
+        let v = P.parse_string p "0110abc\x00" in
+        v = [ '0'; '1'; '1'; '0'; 'a'; 'b'; 'c' ]
+      ]} *)
+  val vchar : char t
+
+  (** [whitespace] parses a space [' '] or horizontal tab ['\t'] character.
+
+      {4:whitespace_examples Examples}
+
+      {[
+        module P = Reparse
+
+        ;;
+        let p = P.(take whitespace) in
+        let v = P.parse_string p "\t \t " in
+        v = [ '\t'; ' '; '\t'; ' ' ]
+      ]} *)
+  val whitespace : char t
 
   (** {2 Others} *)
 

@@ -21,7 +21,7 @@
       parse "123*123 - 23*234";;
     v} *)
 
-open Reparse
+open Reparse.String
 
 type expr =
   | Int of int
@@ -30,25 +30,23 @@ type expr =
   | Mult of expr * expr
   | Div of expr * expr
 
-let skip_spaces = skip (ignore_m space)
+let skip_spaces = skip space
 
 let binop : 'a t -> char -> 'b t -> ('a -> 'b -> 'c) -> 'c t =
  fun exp1 op exp2 f ->
-  map3 exp1
+  map3
+    (fun e1 _ e2 -> f e1 e2)
+    exp1
     (skip_spaces *> char op <* skip_spaces)
     exp2
-    ~f:(fun e1 _ e2 -> f e1 e2)
 
 let integer : expr t =
-  let+ d = digits in
+  let+ d = skip_spaces *> digits <* skip_spaces in
   Int (int_of_string d)
 
 let factor : expr t -> expr t =
  fun expr ->
-  any
-    [ char '(' *> skip_spaces *> expr <* skip_spaces <* char ')'
-    ; skip_spaces *> integer <* skip_spaces
-    ]
+  any [ char '(' *> skip_spaces *> expr <* skip_spaces <* char ')'; integer ]
 
 let term : expr t -> expr t =
  fun factor ->
@@ -63,7 +61,7 @@ let expr : expr t =
       let term = term factor in
       let add = binop term '+' expr (fun e1 e2 -> Add (e1, e2)) in
       let sub = binop term '-' expr (fun e1 e2 -> Sub (e1, e2)) in
-      any [ add; sub; term ])
+      any [ add; sub; term ] <?> "expr")
 
 let rec eval : expr -> int = function
   | Int i -> i
@@ -74,13 +72,13 @@ let rec eval : expr -> int = function
 
 (* Test AST *)
 let r =
-  let actual = parse_string expr "1*2-4+3" in
-  let expected = Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)) in
+  let actual = parse expr "1*2-4+3" in
+  let expected = Ok (Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3))) in
   Bool.equal (expected = actual) true
 
 (* Run and test the evaluator. *)
 let exp_result =
-  let v = eval (parse_string expr "12+1*10") in
+  let v = eval @@ Result.get_ok (parse expr "12+1*10") in
   Int.equal 22 v
 
 (*-------------------------------------------------------------------------
