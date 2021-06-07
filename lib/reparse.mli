@@ -11,21 +11,25 @@
 (** {1 Overview} *)
 
 (** Parser provides functions and types to construct robust, performant and
-    reusable parsers. At the core is a type {!type:Reparse.t} which represents a
-    constructed parser definition. A parser {!type:Reparse.t} is defined by
-    composing together one or more parsers or {!type:Reparse.t}s via usage of
-    parser operators. An instance of {!type:Reparse.t} represents an
-    un-evaluated parser. Use {!val:Reparse.parse} function to evaluate it.
-    {!type:Reparse.input} represents a generalization of data input to
+    reusable parsers. At the core is a type {!type:Reparse.PARSER.t} which
+    represents a constructed parser definition. A parser
+    {!type:Reparse.PARSER.t} is defined by composing together one or more
+    parsers or {!type:Reparse.t}s via usage of parser operators.
+
+    An instance of {!type:Reparse.PARSER.t} represents an un-evaluated parser.
+    Use {!val:Reparse.PARSER.parse} function to evaluate it.
+
+    {!type:Reparse.INPUT} represents a generalization of data input to
     {!val:Reparse.parse}. Implement the interface to create new input types.
-    Parser operators - or functions - are broadly organized into following
-    categories:
+
+    Parser functions are broadly organized into following categories:
 
     - Monadic parsers
     - Char/String parsers
     - Alternate parsers
-    - Boolean
-    - Repetition
+    - Boolean parsers
+    - Repetition parsers
+    - RFC 5234 parsers
     - Others *)
 
 module type PARSER = sig
