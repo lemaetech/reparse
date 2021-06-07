@@ -179,18 +179,29 @@ struct
     -> fail:(pos:int -> string -> unit Input.promise)
     -> unit Input.promise
 
+  (** Variable names:
+
+      inp/_inp : Input.t
+
+      pos : int
+
+      p/q/r/s .. : 'a t
+
+      f : function type
+
+      v/a : polymorphic value types *)
+
   (*+++++ Monadic operators +++++*)
 
-  let return : 'a -> 'a t =
-   fun v (_input : Input.t) ~pos ~succ ~fail:_ -> succ ~pos v
+  let return : 'a -> 'a t = fun v _inp ~pos ~succ ~fail:_ -> succ ~pos v
 
   let fail : string -> 'a t = fun msg _inp ~pos ~succ:_ ~fail -> fail ~pos msg
 
-  let bind f p input ~pos ~succ ~fail =
-    p input ~pos ~succ:(fun ~pos a -> f a input ~pos ~succ ~fail) ~fail
+  let bind f p inp ~pos ~succ ~fail =
+    p inp ~pos ~succ:(fun ~pos a -> f a inp ~pos ~succ ~fail) ~fail
 
-  let map f p input ~pos ~succ ~fail =
-    p input ~pos ~succ:(fun ~pos a -> succ ~pos (f a)) ~fail
+  let map f p inp ~pos ~succ ~fail =
+    p inp ~pos ~succ:(fun ~pos a -> succ ~pos (f a)) ~fail
 
   module Infix = struct
     let ( >>= ) p f = bind f p
@@ -210,8 +221,8 @@ struct
     let ( <* ) : 'a t -> _ t -> 'a t = fun p q -> p >>= fun a -> a <$ q
 
     let ( <|> ) : 'a t -> 'a t -> 'a t =
-     fun p q input ~pos ~succ ~fail ->
-      p input ~pos ~succ ~fail:(fun ~pos _s -> q input ~pos ~succ ~fail)
+     fun p q inp ~pos ~succ ~fail ->
+      p inp ~pos ~succ ~fail:(fun ~pos _s -> q inp ~pos ~succ ~fail)
 
     let both a b = a >>= fun a -> b >>| fun b -> (a, b)
 
@@ -260,9 +271,9 @@ struct
     end
   end
 
-  let parse (input : Input.t) (p : 'a t) =
+  let parse (inp : Input.t) (p : 'a t) =
     let v = ref (Error "") in
-    p input ~pos:0
+    p inp ~pos:0
       ~succ:(fun ~pos:_ a -> Input.return (v := Ok a))
       ~fail:(fun ~pos:_ e -> Input.return (v := Error e))
     |> Input.bind (fun () -> Input.return !v)
