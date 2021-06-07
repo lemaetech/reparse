@@ -23,18 +23,6 @@
  (depends
   (ocaml
    (>= 4.10.0))
-  (alcotest :with-test)))
-
-(package
- (name reparse-unix)
- (synopsis
-  "Provides support for parsing files as source of input for reparse library ")
- (description
-  "Provides support for parsing files as source of input for reparse library ")
- (depends
-  (ocaml
-   (>= 4.10.0))
-  (reparse
-   (= 2.0.0))
-  base-unix
-  (alcotest :with-test)))
+  (ppx_expect :with-test)
+  (mdx :with-test)))
+(using mdx 0.1)

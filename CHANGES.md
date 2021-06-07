@@ -1,3 +1,10 @@
+## v3.0.0 2021-08-06 UK
+
+- Overhaul parser implementation. 
+- Remove `reparse-unix` package
+- Remove base dependency
+- Facilitate IO promise monads such as `Lwt` and `Async`
+
 ## v2.1.0 2021-04-06 UK
 
 This release has backwards incompatible changes.

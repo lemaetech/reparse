@@ -1,21 +1,27 @@
-(* Implement JSON parser as defined at https://tools.ietf.org/html/rfc8259.
+(** Implement JSON parser as defined at https://tools.ietf.org/html/rfc8259.
 
-   Assumes UTF-8 character encoding. However, it doesn't do any validation.
+    Assumes UTF-8 character encoding. However, it doesn't do any validation.
 
-   Note: It is unknown if the parser fully conforms to RFC 8259 as no testing,
-   validation is done. The RFC is used mainly as a guidance and the sample is
-   meant to demonstrate parser construction using reparse rather than a
-   production grade parser.
+    Note: It is unknown if the parser fully conforms to RFC 8259 as no testing,
+    validation is done. The RFC is used mainly as a guidance and the sample is
+    meant to demonstrate parser construction using reparse rather than a
+    production grade parser.
 
-   Sample top_level inputs;
+    Sample top_level inputs;
 
-   {v parse "true";; parse "false";; parse "null";; parse "123";; parse
-   "123.345";; parse "123e123";; parse "123.33E123";; parse {|{"field1":
-   123,"field2": "value2"}|};; parse {|{"field1":[123,"hello",-123.23],
-   "field2":123} |};; parse {|{"field1":123, "field2":123} |};; parse
-   {|[123,"hello",-123.23, 123.33e13, 123E23] |};; v} *)
+    {v
+parse "true";; parse "false";; 
+parse "null";; parse "123";; 
+parse "123.345";;
+parse "123e123";;
+parse "123.33E123";;
+parse {|{"field1":123,"field2": "value2"}|};; 
+parse {|{"field1":[123,"hello",-123.23], "field2":123} |};;
+parse {|{"field1":123, "field2":123} |};;
+parse {|[123,"hello",-123.23, 123.33e13, 123E23] |};;
+    v} *)
 
-open Reparse
+open Reparse.String
 
 type value =
   | Object of (string * value) list
@@ -31,12 +37,6 @@ type value =
   | True
   | Null
 
-(*---- utils and aliases ----*)
-let sprintf = Printf.sprintf
-
-let implode l = List.to_seq l |> String.of_seq
-
-(*---- Parser definitions ---------*)
 let ws =
   skip
     (char_if (function
@@ -70,7 +70,7 @@ let number_value =
     in
     let num =
       map2
-        ~f:(fun first_ch digits -> sprintf "%c%s" first_ch digits)
+        (fun first_ch digits -> Format.sprintf "%c%s" first_ch digits)
         digits1_to_9 digits
     in
     any [ string "0"; num ]
@@ -82,11 +82,11 @@ let number_value =
        let* sign = optional (char '-' <|> char '+') in
        let sign =
          match sign with
-         | Some c -> sprintf "%c" c
+         | Some c -> Format.sprintf "%c" c
          | None -> ""
        in
        let+ digits = digits in
-       sprintf "%c%s%s" e sign digits)
+       Format.sprintf "%c%s%s" e sign digits)
   in
   Number { negative; int; frac; exponent }
 
@@ -105,19 +105,19 @@ let string =
            | 't' ->
              true
            | _ -> false)
-      >>| sprintf "\\%c"
+      >>| Format.sprintf "\\%c"
     in
     let hex4digit =
       let+ hex =
-        string "\\u" *> take ~at_least:4 ~up_to:4 hex_digit >>| implode
+        string "\\u" *> take ~at_least:4 ~up_to:4 hex_digit >>= string_of_chars
       in
-      sprintf "\\u%s" hex
+      Format.sprintf "\\u%s" hex
     in
     any [ ch; hex4digit ]
   in
   let unescaped =
-    take_while ~while_:(is_not (any [ char '\\'; control; dquote ])) next
-    >>| implode
+    take_while ~while_:(is_not (any [ char '\\'; control; dquote ])) any_char
+    >>= string_of_chars
   in
   let+ str = dquote *> take (any [ escaped; unescaped ]) <* dquote in
   String.concat "" str
@@ -154,7 +154,7 @@ let json_value =
         ; null_value
         ])
 
-let parse s = parse_string json_value s
+let parse s = parse json_value s
 
 (*------------------------------------------------------------------------- *
   Copyright (c) 2020 Bikal Gurung. All rights reserved. * * This Source Code

@@ -1,8 +1,0 @@
-(library
- (name reparse)
- (libraries base)
- (public_name reparse))
-
-(documentation
- (package reparse)
- (mld_files index))
