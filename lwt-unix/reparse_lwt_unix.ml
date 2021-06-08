@@ -32,20 +32,18 @@ module Stream = Reparse.Make (struct
 
   let get t ~pos ~len =
     if len < 0 then raise (invalid_arg "len");
-    if pos < 0 || pos < t.committed_pos then invalid_arg "pos";
+    if pos < 0 || pos < t.committed_pos then
+      invalid_arg (Format.sprintf "pos: %d" pos);
 
-    if Lwt_stream.is_closed t.stream then
-      Lwt.return `Eof
+    let pos' = pos - t.committed_pos in
+    let len' = Buffer.length t.buf - (pos' + len) in
+    if len' >= 0 then
+      Lwt.return (`String (Buffer.sub t.buf pos' len))
     else
-      let pos' = pos - t.committed_pos in
-      let len' = Buffer.length t.buf - (pos' + len) in
-      if len' >= 0 then
-        Lwt.return (`String (Buffer.sub t.buf pos' len))
-      else
-        Lwt_stream.nget (abs len') t.stream
-        >>= fun chars ->
-        String.of_seq (List.to_seq chars) |> Buffer.add_string t.buf;
-        Lwt.return (`String (Buffer.sub t.buf pos' len))
+      Lwt_stream.nget (abs len') t.stream
+      >>= fun chars ->
+      String.of_seq (List.to_seq chars) |> Buffer.add_string t.buf;
+      Lwt.return (`String (Buffer.sub t.buf pos' len))
 
   let commit t ~pos =
     Buffer.reset t.buf;
