@@ -1105,7 +1105,7 @@ module type PARSER = sig
       ]} *)
   val whitespace : char t
 
-  (** {2 Others} *)
+  (** {2 Parser state} *)
 
   (** [advance n] advances input by [n] bytes. *)
   val advance : int -> unit t
@@ -1132,6 +1132,13 @@ module type PARSER = sig
         v = true
       ]} *)
   val eoi : unit t
+
+  (** [commit ()] commits the parser such that the parser will not backtrack
+      from the current parser position. *)
+  val commit : unit -> unit t
+
+  (** [pos] returns the current parser position. *)
+  val pos : int t
 end
 
 module type INPUT = sig
@@ -1145,9 +1152,11 @@ module type INPUT = sig
 
   val bind : ('a -> 'b promise) -> 'a promise -> 'b promise
 
-  (** [get t ~pos ~len] returns [`String s] where [String.length s = len] or
+  (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
       [`Eof] if [EOI] is reached. *)
   val get : t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
+
+  val commit : t -> pos:int -> unit promise
 end
 
 (** A functor to create parsers based on the given [Input] module. *)

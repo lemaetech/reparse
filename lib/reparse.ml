@@ -186,11 +186,15 @@ module type PARSER = sig
 
   val whitespace : char t
 
-  (** {2 Others} *)
+  (** {2 Parser State} *)
 
   val advance : int -> unit t
 
   val eoi : unit t
+
+  val commit : unit -> unit t
+
+  val pos : int t
 end
 
 module type INPUT = sig
@@ -203,6 +207,8 @@ module type INPUT = sig
   val bind : ('a -> 'b promise) -> 'a promise -> 'b promise
 
   val get : t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
+
+  val commit : t -> pos:int -> unit promise
 end
 
 module Make (Input : INPUT) :
@@ -326,8 +332,7 @@ struct
            | `String s when String.length s = n -> succ ~pos s
            | `String _ ->
              fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
-           | `Eof ->
-             fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)))
+           | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n)))
 
   (*+++++ String/Char parsers ++++++*)
 
@@ -658,7 +663,8 @@ struct
       | 'A' .. 'F' -> true
       | _ -> false)
 
-  (*+++++ Others +++++*)
+  (*+++++ Parser State +++++*)
+
   let advance : int -> unit t =
    fun n _inp ~pos ~succ ~fail:_ -> succ ~pos:(pos + n) ()
 
@@ -669,6 +675,12 @@ struct
       |> bind (function
            | `String _ -> fail ~pos (Format.sprintf "[eof] pos:%d, not eof" pos)
            | `Eof -> succ ~pos ()))
+
+  let commit : unit -> unit t =
+   fun () inp ~pos ~succ ~fail:_ ->
+    Input.(commit inp ~pos |> bind (fun _ -> succ ~pos ()))
+
+  let pos : int t = fun _inp ~pos ~succ ~fail:_ -> succ ~pos pos
 end
 
 module String = Make (struct
@@ -681,10 +693,10 @@ module String = Make (struct
   let bind f promise = f promise
 
   let get t ~pos ~len =
-    assert (len > 0);
-    assert (pos >= 0);
     if pos + len <= String.length t then
       `String (String.sub t pos len)
     else
       `Eof
+
+  let commit _ ~pos:_ = return ()
 end)

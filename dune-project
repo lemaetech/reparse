@@ -1,10 +1,12 @@
-(lang dune 2.7)
+(lang dune 2.8)
 
-(generate_opam_files false)
+(generate_opam_files true)
 
 (name reparse)
 
-(version 2.1.0)
+(version 3.0.0)
+
+(using mdx 0.1)
 
 (source
  (github lemaetech/reparse))
@@ -25,4 +27,13 @@
    (>= 4.10.0))
   (ppx_expect :with-test)
   (mdx :with-test)))
-(using mdx 0.1)
+
+(package
+ (name reparse-lwt-unix)
+ (synopsis "lwt-unix support for reparse")
+ (description "Lwt_stream.t and Lwt_io.input_channel support for 'reparse'.")
+ (depends
+  (ocaml
+   (>= 4.10.0))
+  (lwt
+   (>= 5.4.1))))
