@@ -11,10 +11,13 @@
 type stream =
   { stream : char Lwt_stream.t
   ; buf : Buffer.t
-  ; mutable committed : int (* count of chars already processed by parser. *)
+  ; mutable committed_pos : int
+        (* input position marker which denotes that the parser is unable to
+           backtrack beyound this point. The parser will raise an exception if
+           an attempt is made to do so. *)
   }
 
-let create_stream stream = { stream; buf = Buffer.create 0; committed = 0 }
+let create_stream stream = { stream; buf = Buffer.create 0; committed_pos = 0 }
 
 module Stream = Reparse.Make (struct
   open Lwt.Infix
@@ -29,12 +32,12 @@ module Stream = Reparse.Make (struct
 
   let get t ~pos ~len =
     if len < 0 then raise (invalid_arg "len");
-    if pos < 0 || pos < t.committed then invalid_arg "pos";
+    if pos < 0 || pos < t.committed_pos then invalid_arg "pos";
 
     if Lwt_stream.is_closed t.stream then
       Lwt.return `Eof
     else
-      let pos' = pos - t.committed in
+      let pos' = pos - t.committed_pos in
       let len' = Buffer.length t.buf - (pos' + len) in
       if len' >= 0 then
         Lwt.return (`String (Buffer.sub t.buf pos' len))
@@ -46,6 +49,6 @@ module Stream = Reparse.Make (struct
 
   let commit t ~pos =
     Buffer.reset t.buf;
-    t.committed <- pos;
+    t.committed_pos <- pos;
     Lwt.return_unit
 end)
