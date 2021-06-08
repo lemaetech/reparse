@@ -1105,7 +1105,7 @@ module type PARSER = sig
       ]} *)
   val whitespace : char t
 
-  (** {2 Maintain parser state} *)
+  (** {2 Parser state} *)
 
   (** [advance n] advances input by [n] bytes. *)
   val advance : int -> unit t

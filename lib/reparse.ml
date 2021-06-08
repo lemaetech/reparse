@@ -186,7 +186,7 @@ module type PARSER = sig
 
   val whitespace : char t
 
-  (** {2 Maintain Parser State} *)
+  (** {2 Parser State} *)
 
   val advance : int -> unit t
 
@@ -663,7 +663,7 @@ struct
       | 'A' .. 'F' -> true
       | _ -> false)
 
-  (*+++++ Maintain Parser State +++++*)
+  (*+++++ Parser State +++++*)
 
   let advance : int -> unit t =
    fun n _inp ~pos ~succ ~fail:_ -> succ ~pos:(pos + n) ()
