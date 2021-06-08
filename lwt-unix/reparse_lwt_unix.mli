@@ -10,7 +10,7 @@
 
 type stream
 
-val create_stream_input : char Lwt_stream.t -> stream
+val create_stream : char Lwt_stream.t -> stream
 
 module Stream :
   Reparse.PARSER with type 'a promise = 'a Lwt.t with type input = stream

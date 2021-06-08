@@ -14,8 +14,7 @@ type stream =
   ; mutable committed : int (* count of chars already processed by parser. *)
   }
 
-let create_stream_input stream =
-  { stream; buf = Buffer.create 0; committed = 0 }
+let create_stream stream = { stream; buf = Buffer.create 0; committed = 0 }
 
 module Stream = Reparse.Make (struct
   open Lwt.Infix
