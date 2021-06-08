@@ -8,7 +8,7 @@
  * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
 
-type stream_input =
+type stream =
   { stream : char Lwt_stream.t
   ; buf : Buffer.t
   ; mutable committed : int (* count of chars already processed by parser. *)
@@ -22,7 +22,7 @@ module Stream = Reparse.Make (struct
 
   type 'a promise = 'a Lwt.t
 
-  type t = stream_input
+  type t = stream
 
   let return = Lwt.return
 

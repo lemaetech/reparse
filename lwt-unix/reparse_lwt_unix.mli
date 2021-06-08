@@ -8,9 +8,9 @@
  * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
 
-type stream_input
+type stream
 
-val create_stream_input : char Lwt_stream.t -> stream_input
+val create_stream_input : char Lwt_stream.t -> stream
 
 module Stream :
-  Reparse.PARSER with type 'a promise = 'a Lwt.t with type input = stream_input
+  Reparse.PARSER with type 'a promise = 'a Lwt.t with type input = stream
