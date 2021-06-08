@@ -326,8 +326,7 @@ struct
            | `String s when String.length s = n -> succ ~pos s
            | `String _ ->
              fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
-           | `Eof ->
-             fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)))
+           | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n)))
 
   (*+++++ String/Char parsers ++++++*)
 
