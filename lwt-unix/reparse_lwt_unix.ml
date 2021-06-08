@@ -31,18 +31,18 @@ module Stream = Reparse.Make (struct
     if len < 0 then raise (invalid_arg "len");
     if pos < 0 || pos < t.committed then invalid_arg "pos";
 
-    let pos' = pos - t.committed in
-    let len' = Buffer.length t.buf - (pos' + len) in
-    if len' >= 0 then
-      Lwt.return (`String (Buffer.sub t.buf pos' len))
+    if Lwt_stream.is_closed t.stream then
+      Lwt.return `Eof
     else
-      Lwt_stream.nget (abs len') t.stream
-      >>= fun chars ->
-      if List.length chars = len' then (
+      let pos' = pos - t.committed in
+      let len' = Buffer.length t.buf - (pos' + len) in
+      if len' >= 0 then
+        Lwt.return (`String (Buffer.sub t.buf pos' len))
+      else
+        Lwt_stream.nget (abs len') t.stream
+        >>= fun chars ->
         String.of_seq (List.to_seq chars) |> Buffer.add_string t.buf;
         Lwt.return (`String (Buffer.sub t.buf pos' len))
-      ) else
-        Lwt.return `Eof
 
   let commit t ~pos =
     Buffer.reset t.buf;
