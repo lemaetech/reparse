@@ -25,11 +25,10 @@
  (depends
   (ocaml
    (>= 4.10.0))
-  (ppx_expect :with-test)
   (mdx :with-test)))
 
 (package
- (name reparse-lwt-unix)
+ (name reparse-lwt)
  (synopsis "lwt-unix support for reparse")
  (description "Lwt_stream.t and Lwt_io.input_channel support for 'reparse'.")
  (depends
