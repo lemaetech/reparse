@@ -4,6 +4,7 @@
 - Remove `reparse-unix` package
 - Remove base dependency
 - Facilitate IO promise monads such as `Lwt` and `Async`
+- Add package `reparse-lwt` which defines `Lwt_stream.t` as one of the input sources.
 
 ## v2.1.0 2021-04-06 UK
 
