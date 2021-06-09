@@ -63,6 +63,10 @@ module type PARSER = sig
   (** [unit] always parses to [():unit] value. *)
   val unit : unit t
 
+  (** [ignore p] ignore any result from [p] upon success and return [()]
+      instead. *)
+  val ignore : _ t -> unit t
+
   (** [fail err_msg] returns a parser that always fails with [err_msg].
 
       {4:fail_examples Examples}
@@ -637,6 +641,10 @@ module type PARSER = sig
       successful parse result. All of the [parsers] must succeed for [all] to
       succeed. *)
   val all : 'a t list -> 'a list t
+
+  (** [all_unit parsers] parses [parsers] and discards their results. All of the
+      [parsers] must succeed for [all_unit] to succeed. *)
+  val all_unit : _ t list -> unit t
 
   (** [skip ~at_least ~up_to p] repeatedly parses [p] and discards its value.
       The lower and upper bound of repetition is specified by arguments

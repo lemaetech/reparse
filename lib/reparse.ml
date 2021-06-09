@@ -23,6 +23,8 @@ module type PARSER = sig
 
   val unit : unit t
 
+  val ignore : _ t -> unit t
+
   val fail : string -> 'a t
 
   val bind : ('a -> 'b t) -> 'a t -> 'b t
@@ -137,6 +139,8 @@ module type PARSER = sig
 
   val all : 'a t list -> 'a list t
 
+  val all_unit : _ t list -> unit t
+
   val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 
   val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
@@ -244,6 +248,10 @@ struct
   let return : 'a -> 'a t = fun v _inp ~pos ~succ ~fail:_ -> succ ~pos v
 
   let unit = return ()
+
+  let ignore : _ t -> unit t =
+   fun p inp ~pos ~succ ~fail ->
+    p inp ~pos ~succ:(fun ~pos _ -> succ ~pos ()) ~fail
 
   let fail : string -> 'a t = fun msg _inp ~pos ~succ:_ ~fail -> fail ~pos msg
 
@@ -453,6 +461,18 @@ struct
           ~succ:(fun ~pos a ->
             items := a :: !items;
             (loop [@tailcall]) pos parsers)
+          ~fail:(fun ~pos e ->
+            fail ~pos (Format.sprintf "[all] one of the parsers failed: %s" e))
+    in
+    loop pos parsers
+
+  let all_unit : _ t list -> unit t =
+   fun parsers inp ~pos ~succ ~fail ->
+    let rec loop pos = function
+      | [] -> succ ~pos ()
+      | p :: parsers ->
+        p inp ~pos
+          ~succ:(fun ~pos _ -> (loop [@tailcall]) pos parsers)
           ~fail:(fun ~pos e ->
             fail ~pos (Format.sprintf "[all] one of the parsers failed: %s" e))
     in
