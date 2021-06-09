@@ -12,9 +12,9 @@ type stream =
   { stream : char Lwt_stream.t
   ; buf : Buffer.t
   ; mutable committed_pos : int
-        (* input position marker which denotes that the parser is unable to
-           backtrack beyound this point. The parser will raise an exception if
-           an attempt is made to do so. *)
+        (* An input position marker. The marker restricts the parser from
+           backtracking beyound this point. Any attempt to do so will raise an
+           exception. *)
   }
 
 let create_stream stream = { stream; buf = Buffer.create 0; committed_pos = 0 }
