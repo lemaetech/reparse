@@ -21,6 +21,8 @@ module type PARSER = sig
 
   val return : 'a -> 'a t
 
+  val unit : unit t
+
   val fail : string -> 'a t
 
   val bind : ('a -> 'b t) -> 'a t -> 'b t
@@ -240,6 +242,8 @@ struct
   (*+++++ Monadic operators +++++*)
 
   let return : 'a -> 'a t = fun v _inp ~pos ~succ ~fail:_ -> succ ~pos v
+
+  let unit = return ()
 
   let fail : string -> 'a t = fun msg _inp ~pos ~succ:_ ~fail -> fail ~pos msg
 

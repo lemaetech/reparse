@@ -60,6 +60,9 @@ module type PARSER = sig
       ]} *)
   val return : 'a -> 'a t
 
+  (** [unit] always parses to [():unit] value. *)
+  val unit : unit t
+
   (** [fail err_msg] returns a parser that always fails with [err_msg].
 
       {4:fail_examples Examples}
