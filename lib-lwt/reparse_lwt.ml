@@ -43,12 +43,12 @@ module Stream = Reparse.Make (struct
     let pos' = pos - t.committed_pos in
     let len' = Buffer.length t.buf - (pos' + len) in
     if len' >= 0 then
-      Lwt.return (`String (Buffer.sub t.buf pos' len))
+      Lwt.return (`Cstruct (Cstruct.of_string @@ Buffer.sub t.buf pos' len))
     else
       Lwt_stream.nget (abs len') t.stream
       >>= fun chars ->
       let s = String.of_seq (List.to_seq chars) in
-      Lwt.return (`String s)
+      Lwt.return (`Cstruct (Cstruct.of_string s))
 
   let get t ~pos ~len =
     if len < 0 then raise (invalid_arg "len");
@@ -58,12 +58,12 @@ module Stream = Reparse.Make (struct
     let pos' = pos - t.committed_pos in
     let len' = Buffer.length t.buf - (pos' + len) in
     if len' >= 0 then
-      Lwt.return (`String (Buffer.sub t.buf pos' len))
+      Lwt.return (`Cstruct (Cstruct.of_string @@ Buffer.sub t.buf pos' len))
     else
       Lwt_stream.nget (abs len') t.stream
       >>= fun chars ->
       String.of_seq (List.to_seq chars) |> Buffer.add_string t.buf;
-      Lwt.return (`String (Buffer.sub t.buf pos' len))
+      Lwt.return (`Cstruct (Cstruct.of_string @@ Buffer.sub t.buf pos' len))
 
   let committed_pos t = return t.committed_pos
 end)
