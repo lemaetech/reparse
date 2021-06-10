@@ -64,4 +64,6 @@ module Stream = Reparse.Make (struct
       >>= fun chars ->
       String.of_seq (List.to_seq chars) |> Buffer.add_string t.buf;
       Lwt.return (`String (Buffer.sub t.buf pos' len))
+
+  let committed_pos t = return t.committed_pos
 end)

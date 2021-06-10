@@ -1159,6 +1159,10 @@ module type PARSER = sig
 
   (** [pos] returns the current parser position. *)
   val pos : int t
+
+  (** [committed_pos] returns the input position marker of the count of bytes
+      committed by the parser. *)
+  val committed_pos : int t
 end
 
 module type INPUT = sig
@@ -1184,11 +1188,17 @@ module type INPUT = sig
       doesn't buffer the taken [len] bytes. *)
   val get_unbuffered :
     t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
+
+  val committed_pos : t -> int promise
 end
 
 (** A functor to create parsers based on the given [Input] module. *)
 module Make : functor (Input : INPUT) ->
   PARSER with type 'a promise = 'a Input.promise with type input = Input.t
 
+type string_input
+
+val create_string_input : string -> string_input
+
 (** A parser when the input is a [string]. *)
-module String : PARSER with type 'a promise = 'a with type input = string
+module String : PARSER with type 'a promise = 'a with type input = string_input

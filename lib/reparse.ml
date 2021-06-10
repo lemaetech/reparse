@@ -203,6 +203,8 @@ module type PARSER = sig
   val commit : unit -> unit t
 
   val pos : int t
+
+  val committed_pos : int t
 end
 
 module type INPUT = sig
@@ -220,6 +222,8 @@ module type INPUT = sig
 
   val get_unbuffered :
     t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
+
+  val committed_pos : t -> int promise
 end
 
 module Make (Input : INPUT) :
@@ -722,24 +726,44 @@ struct
            | `String _ ->
              fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
            | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n)))
+
+  let committed_pos : int t =
+   fun inp ~pos ~succ ~fail:_ ->
+    Input.(
+      committed_pos inp |> bind (fun commited_pos' -> succ ~pos commited_pos'))
 end
+
+type string_input =
+  { input : string
+  ; mutable committed_pos : int
+  }
+
+let create_string_input input = { input; committed_pos = 0 }
 
 module String = Make (struct
   type 'a promise = 'a
 
-  type t = string
+  type t = string_input
 
   let return a = a
 
   let bind f promise = f promise
 
-  let commit _ ~pos:_ = return ()
+  let commit t ~pos =
+    t.committed_pos <- pos;
+    return ()
 
   let get t ~pos ~len =
-    if pos + len <= String.length t then
-      `String (String.sub t pos len)
+    if len < 0 then raise (invalid_arg "len");
+    if pos < 0 || pos < t.committed_pos then
+      invalid_arg (Format.sprintf "pos: %d" pos);
+
+    if pos + len <= String.length t.input then
+      `String (String.sub t.input pos len)
     else
       `Eof
 
   let get_unbuffered t ~pos ~len = get t ~pos ~len
+
+  let committed_pos t = return t.committed_pos
 end)
