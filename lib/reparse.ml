@@ -117,6 +117,8 @@ module type PARSER = sig
 
   val take_string : int -> string t
 
+  val take_cstruct : int -> Cstruct.t t
+
   val unsafe_take_cstruct : int -> Cstruct.t t
 
   (** {2 Alternate parsers} *)
@@ -408,10 +410,11 @@ struct
 
   let string_of_chars chars = return (String.of_seq @@ List.to_seq chars)
 
+  let take_cstruct : int -> Cstruct.t t =
+   fun n -> input n >>= fun s _ ~pos ~succ ~fail:_ -> succ ~pos:(pos + n) s
+
   let take_string : int -> string t =
-   fun n ->
-    input n
-    >>= fun s _ ~pos ~succ ~fail:_ -> succ ~pos:(pos + n) (Cstruct.to_string s)
+   fun n -> take_cstruct n >>| fun cs -> Cstruct.to_string cs
 
   (*++++++ Alternates +++++*)
 

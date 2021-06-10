@@ -513,6 +513,11 @@ module type PARSER = sig
   (** [take_string n] returns a string of length [n] exactly from input. *)
   val take_string : int -> string t
 
+  (** [take_cstruct n] returns a [Cstruct.t] of length [n] exactly from input.
+      This is usually a zeor copy - depending on input of course - version of
+      [take_string]. *)
+  val take_cstruct : int -> Cstruct.t t
+
   (** [unsafe_take_unbuffered n] is similar to [take_string n] except the parser
       calls [INPUT.get_unbuffered] to retrieve bytes of length [n]. Additionally
       the parser is unable to backtrack beyond position [pos + n] where [pos] is
