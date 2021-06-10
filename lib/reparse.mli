@@ -513,6 +513,15 @@ module type PARSER = sig
   (** [take_string n] returns a string of length [n] exactly from input. *)
   val take_string : int -> string t
 
+  (** [unsafe_take_unbuffered n] is similar to [take_string n] except the parser
+      calls [INPUT.get_unbuffered] to retrieve bytes of length [n]. Additionally
+      the parser is unable to backtrack beyond position [pos + n] where [pos] is
+      the current input position of the parser.
+
+      [Note:] Ensure that [unsafe_take_unbuffered] is not being run as part of
+      combinators that required backtracking such as [<|>, any]. *)
+  val unsafe_take : int -> string t
+
   (** {2 Alternate parsers} *)
 
   (** [any l] parses the value of the first successful parser in list [l].
@@ -1163,11 +1172,18 @@ module type INPUT = sig
 
   val bind : ('a -> 'b promise) -> 'a promise -> 'b promise
 
+  (** [commit t ~pos] ensures that the parser will not backtrack on input [t]
+      beyond [pos]. *)
+  val commit : t -> pos:int -> unit promise
+
   (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
       [`Eof] if [EOI] is reached. *)
   val get : t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
 
-  val commit : t -> pos:int -> unit promise
+  (** [get_unbuffered t ~pos ~len] similar to [get t ~pos ~len] except it
+      doesn't buffer the taken [len] bytes. *)
+  val get_unbuffered :
+    t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
 end
 
 (** A functor to create parsers based on the given [Input] module. *)

@@ -117,6 +117,8 @@ module type PARSER = sig
 
   val take_string : int -> string t
 
+  val unsafe_take : int -> string t
+
   (** {2 Alternate parsers} *)
 
   val any : ?failure_msg:string -> 'a t list -> 'a t
@@ -212,9 +214,12 @@ module type INPUT = sig
 
   val bind : ('a -> 'b promise) -> 'a promise -> 'b promise
 
+  val commit : t -> pos:int -> unit promise
+
   val get : t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
 
-  val commit : t -> pos:int -> unit promise
+  val get_unbuffered :
+    t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
 end
 
 module Make (Input : INPUT) :
@@ -702,9 +707,21 @@ struct
 
   let commit : unit -> unit t =
    fun () inp ~pos ~succ ~fail:_ ->
-    Input.(commit inp ~pos |> bind (fun _ -> succ ~pos ()))
+    Input.(commit inp ~pos |> bind (fun () -> succ ~pos ()))
 
   let pos : int t = fun _inp ~pos ~succ ~fail:_ -> succ ~pos pos
+
+  let unsafe_take : int -> string t =
+   fun n inp ~pos ~succ ~fail ->
+    Input.(
+      get_unbuffered inp ~pos ~len:n
+      |> bind (function
+           | `String s when String.length s = n ->
+             let pos = pos + n in
+             commit inp ~pos |> bind (fun () -> succ ~pos s)
+           | `String _ ->
+             fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
+           | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n)))
 end
 
 module String = Make (struct
@@ -716,11 +733,13 @@ module String = Make (struct
 
   let bind f promise = f promise
 
+  let commit _ ~pos:_ = return ()
+
   let get t ~pos ~len =
     if pos + len <= String.length t then
       `String (String.sub t pos len)
     else
       `Eof
 
-  let commit _ ~pos:_ = return ()
+  let get_unbuffered t ~pos ~len = get t ~pos ~len
 end)
