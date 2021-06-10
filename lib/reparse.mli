@@ -1203,4 +1203,6 @@ module String : sig
   val of_string : string -> input
 
   val of_bigstring : ?off:int -> ?len:int -> Cstruct.buffer -> input
+
+  val of_cstruct : Cstruct.t -> input
 end

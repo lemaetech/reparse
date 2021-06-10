@@ -11,7 +11,7 @@
 module Stream = struct
   type stream =
     { stream : char Lwt_stream.t
-    ; buf : Buffer.t
+    ; mutable buf : Cstruct.t
     ; mutable committed_pos : int
           (* An input position marker. The marker restricts the parser from
              backtracking beyound this point. Any attempt to do so will raise an
@@ -30,7 +30,7 @@ module Stream = struct
     let bind f p = Lwt.bind p f
 
     let commit t ~pos =
-      Buffer.reset t.buf;
+      t.buf <- Cstruct.empty;
       t.committed_pos <- pos;
       Lwt.return_unit
 
@@ -40,14 +40,20 @@ module Stream = struct
         invalid_arg (Format.sprintf "pos: %d" pos);
 
       let pos' = pos - t.committed_pos in
-      let len' = Buffer.length t.buf - (pos' + len) in
+      let len' = Cstruct.length t.buf - (pos' + len) in
       if len' >= 0 then
-        Lwt.return (`Cstruct (Cstruct.of_string @@ Buffer.sub t.buf pos' len))
+        Lwt.return (`Cstruct (Cstruct.sub t.buf pos' len))
       else
         Lwt_stream.nget (abs len') t.stream
         >>= fun chars ->
-        let s = String.of_seq (List.to_seq chars) in
-        Lwt.return (`Cstruct (Cstruct.of_string s))
+        let s1 =
+          chars
+          |> List.to_seq
+          |> String.of_seq
+          |> Cstruct.of_string
+          |> Cstruct.append (Cstruct.sub t.buf pos' len)
+        in
+        Lwt.return (`Cstruct s1)
 
     let get t ~pos ~len =
       if len < 0 then raise (invalid_arg "len");
@@ -55,18 +61,24 @@ module Stream = struct
         invalid_arg (Format.sprintf "pos: %d" pos);
 
       let pos' = pos - t.committed_pos in
-      let len' = Buffer.length t.buf - (pos' + len) in
+      let len' = Cstruct.length t.buf - (pos' + len) in
       if len' >= 0 then
-        Lwt.return (`Cstruct (Cstruct.of_string @@ Buffer.sub t.buf pos' len))
+        Lwt.return (`Cstruct (Cstruct.sub t.buf pos' len))
       else
         Lwt_stream.nget (abs len') t.stream
         >>= fun chars ->
-        String.of_seq (List.to_seq chars) |> Buffer.add_string t.buf;
-        Lwt.return (`Cstruct (Cstruct.of_string @@ Buffer.sub t.buf pos' len))
+        let s1 =
+          chars
+          |> List.to_seq
+          |> String.of_seq
+          |> Cstruct.of_string
+          |> Cstruct.append t.buf
+        in
+        t.buf <- s1;
+        Lwt.return (`Cstruct (Cstruct.sub t.buf pos' len))
 
     let committed_pos t = return t.committed_pos
   end)
 
-  let of_char_stream stream =
-    { stream; buf = Buffer.create 0; committed_pos = 0 }
+  let of_char_stream stream = { stream; buf = Cstruct.empty; committed_pos = 0 }
 end
