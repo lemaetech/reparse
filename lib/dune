@@ -1,3 +1,4 @@
 (library
  (name reparse)
- (public_name reparse))
+ (public_name reparse)
+ (libraries cstruct))

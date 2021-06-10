@@ -513,6 +513,11 @@ module type PARSER = sig
   (** [take_string n] returns a string of length [n] exactly from input. *)
   val take_string : int -> string t
 
+  (** [take_cstruct n] returns a [Cstruct.t] of length [n] exactly from input.
+      This is usually a zeor copy - depending on input of course - version of
+      [take_string]. *)
+  val take_cstruct : int -> Cstruct.t t
+
   (** [unsafe_take_unbuffered n] is similar to [take_string n] except the parser
       calls [INPUT.get_unbuffered] to retrieve bytes of length [n]. Additionally
       the parser is unable to backtrack beyond position [pos + n] where [pos] is
@@ -520,7 +525,7 @@ module type PARSER = sig
 
       [Note:] Ensure that [unsafe_take_unbuffered] is not being run as part of
       combinators that required backtracking such as [<|>, any]. *)
-  val unsafe_take : int -> string t
+  val unsafe_take_cstruct : int -> Cstruct.t t
 
   (** {2 Alternate parsers} *)
 
@@ -1182,12 +1187,12 @@ module type INPUT = sig
 
   (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
       [`Eof] if [EOI] is reached. *)
-  val get : t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
+  val get : t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   (** [get_unbuffered t ~pos ~len] similar to [get t ~pos ~len] except it
       doesn't buffer the taken [len] bytes. *)
   val get_unbuffered :
-    t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
+    t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   val committed_pos : t -> int promise
 end
@@ -1196,9 +1201,13 @@ end
 module Make : functor (Input : INPUT) ->
   PARSER with type 'a promise = 'a Input.promise with type input = Input.t
 
-type string_input
-
-val create_string_input : string -> string_input
-
 (** A parser when the input is a [string]. *)
-module String : PARSER with type 'a promise = 'a with type input = string_input
+module String : sig
+  include PARSER with type 'a promise = 'a
+
+  val of_string : string -> input
+
+  val of_bigstring : ?off:int -> ?len:int -> Cstruct.buffer -> input
+
+  val of_cstruct : Cstruct.t -> input
+end

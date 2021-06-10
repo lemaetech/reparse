@@ -117,7 +117,9 @@ module type PARSER = sig
 
   val take_string : int -> string t
 
-  val unsafe_take : int -> string t
+  val take_cstruct : int -> Cstruct.t t
+
+  val unsafe_take_cstruct : int -> Cstruct.t t
 
   (** {2 Alternate parsers} *)
 
@@ -218,10 +220,10 @@ module type INPUT = sig
 
   val commit : t -> pos:int -> unit promise
 
-  val get : t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
+  val get : t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   val get_unbuffered :
-    t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
+    t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   val committed_pos : t -> int promise
 end
@@ -345,13 +347,13 @@ struct
       ~fail:(fun ~pos:_ e -> Input.return (v := Error e))
     |> Input.bind (fun () -> Input.return !v)
 
-  let input : int -> string t =
+  let input : int -> Cstruct.t t =
    fun n inp ~pos ~succ ~fail ->
     Input.(
       get inp ~pos ~len:n
       |> bind (function
-           | `String s when String.length s = n -> succ ~pos s
-           | `String _ ->
+           | `Cstruct s when Cstruct.length s = n -> succ ~pos s
+           | `Cstruct _ ->
              fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
            | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n)))
 
@@ -359,42 +361,46 @@ struct
 
   let peek_char : char t =
    fun inp ~pos ~succ ~fail ->
-    input 1 inp ~pos ~succ:(fun ~pos s -> succ ~pos s.[0]) ~fail
+    input 1 inp ~pos
+      ~succ:(fun ~pos s -> succ ~pos (Cstruct.get_char s 0))
+      ~fail
 
   let peek_char_opt : char option t =
    fun inp ~pos ~succ ~fail:_ ->
     input 1 inp ~pos
-      ~succ:(fun ~pos c -> succ ~pos (Some c.[0]))
+      ~succ:(fun ~pos c -> succ ~pos (Some (Cstruct.get_char c 0)))
       ~fail:(fun ~pos _ -> succ ~pos None)
 
-  let peek_string : int -> string t = input
+  let peek_string : int -> string t = fun n -> input n >>| Cstruct.to_string
 
   let any_char : char t =
-    input 1 >>= fun s _ ~pos ~succ ~fail:_ -> succ ~pos:(pos + 1) s.[0]
+    input 1
+    >>= fun s _ ~pos ~succ ~fail:_ -> succ ~pos:(pos + 1) (Cstruct.get_char s 0)
 
   let char : char -> char t =
    fun c ->
     input 1
     >>= fun s _ ~pos ~succ ~fail ->
-    if s.[0] = c then
+    let c' = Cstruct.get_char s 0 in
+    if c' = c then
       succ ~pos:(pos + 1) c
     else
-      fail ~pos
-        (Format.sprintf "[char] pos: %d, expected %C, got %C" pos c s.[0])
+      fail ~pos (Format.sprintf "[char] pos: %d, expected %C, got %C" pos c c')
 
   let char_if f =
     input 1
     >>= fun s _ ~pos ~succ ~fail ->
-    let c = s.[0] in
+    let c = Cstruct.get_char s 0 in
     if f c then
       succ ~pos:(pos + 1) c
     else
-      fail ~pos (Format.sprintf "[char_if] pos:%d %C" pos s.[0])
+      fail ~pos (Format.sprintf "[char_if] pos:%d %C" pos c)
 
   let string ?(case_sensitive = true) s =
     let len = String.length s in
     input len
     >>= fun s' _ ~pos ~succ ~fail ->
+    let s' = Cstruct.to_string s' in
     if case_sensitive && String.equal s s' then
       succ ~pos:(pos + len) s
     else if String.(equal (lowercase_ascii s) (lowercase_ascii s')) then
@@ -404,8 +410,11 @@ struct
 
   let string_of_chars chars = return (String.of_seq @@ List.to_seq chars)
 
-  let take_string : int -> string t =
+  let take_cstruct : int -> Cstruct.t t =
    fun n -> input n >>= fun s _ ~pos ~succ ~fail:_ -> succ ~pos:(pos + n) s
+
+  let take_string : int -> string t =
+   fun n -> take_cstruct n >>| fun cs -> Cstruct.to_string cs
 
   (*++++++ Alternates +++++*)
 
@@ -706,7 +715,8 @@ struct
     Input.(
       get inp ~pos ~len:1
       |> bind (function
-           | `String _ -> fail ~pos (Format.sprintf "[eof] pos:%d, not eof" pos)
+           | `Cstruct _ ->
+             fail ~pos (Format.sprintf "[eof] pos:%d, not eof" pos)
            | `Eof -> succ ~pos ()))
 
   let commit : unit -> unit t =
@@ -715,15 +725,15 @@ struct
 
   let pos : int t = fun _inp ~pos ~succ ~fail:_ -> succ ~pos pos
 
-  let unsafe_take : int -> string t =
+  let unsafe_take_cstruct : int -> Cstruct.t t =
    fun n inp ~pos ~succ ~fail ->
     Input.(
       get_unbuffered inp ~pos ~len:n
       |> bind (function
-           | `String s when String.length s = n ->
+           | `Cstruct s when Cstruct.length s = n ->
              let pos = pos + n in
              commit inp ~pos |> bind (fun () -> succ ~pos s)
-           | `String _ ->
+           | `Cstruct _ ->
              fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
            | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n)))
 
@@ -733,37 +743,44 @@ struct
       committed_pos inp |> bind (fun commited_pos' -> succ ~pos commited_pos'))
 end
 
-type string_input =
-  { input : string
-  ; mutable committed_pos : int
-  }
+module String = struct
+  type t' =
+    { input : Cstruct.t
+    ; mutable committed_pos : int
+    }
 
-let create_string_input input = { input; committed_pos = 0 }
+  include Make (struct
+    type 'a promise = 'a
 
-module String = Make (struct
-  type 'a promise = 'a
+    type t = t'
 
-  type t = string_input
+    let return a = a
 
-  let return a = a
+    let bind f promise = f promise
 
-  let bind f promise = f promise
+    let commit t ~pos =
+      t.committed_pos <- pos;
+      return ()
 
-  let commit t ~pos =
-    t.committed_pos <- pos;
-    return ()
+    let get_unbuffered t ~pos ~len =
+      if len < 0 then raise (invalid_arg "len");
+      if pos < 0 || pos < t.committed_pos then
+        invalid_arg (Format.sprintf "pos: %d" pos);
 
-  let get t ~pos ~len =
-    if len < 0 then raise (invalid_arg "len");
-    if pos < 0 || pos < t.committed_pos then
-      invalid_arg (Format.sprintf "pos: %d" pos);
+      if pos + len <= Cstruct.length t.input then
+        `Cstruct (Cstruct.sub t.input pos len)
+      else
+        `Eof
 
-    if pos + len <= String.length t.input then
-      `String (String.sub t.input pos len)
-    else
-      `Eof
+    let get t ~pos ~len = get_unbuffered t ~pos ~len
 
-  let get_unbuffered t ~pos ~len = get t ~pos ~len
+    let committed_pos t = return t.committed_pos
+  end)
 
-  let committed_pos t = return t.committed_pos
-end)
+  let of_string s = { input = Cstruct.of_string s; committed_pos = 0 }
+
+  let of_bigstring ?off ?len ba =
+    { input = Cstruct.of_bigarray ?off ?len ba; committed_pos = 0 }
+
+  let of_cstruct input = { input; committed_pos = 0 }
+end

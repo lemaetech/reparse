@@ -8,9 +8,8 @@
  * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
 
-type stream
+module Stream : sig
+  include Reparse.PARSER with type 'a promise = 'a Lwt.t
 
-val create_stream : char Lwt_stream.t -> stream
-
-module Stream :
-  Reparse.PARSER with type 'a promise = 'a Lwt.t with type input = stream
+  val of_char_stream : char Lwt_stream.t -> input
+end
