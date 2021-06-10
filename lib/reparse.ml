@@ -740,7 +740,7 @@ struct
       committed_pos inp |> bind (fun commited_pos' -> succ ~pos commited_pos'))
 end
 
-module Bigstring = struct
+module String = struct
   type t' =
     { input : Cstruct.t
     ; mutable committed_pos : int
@@ -776,6 +776,6 @@ module Bigstring = struct
 
   let of_string s = { input = Cstruct.of_string s; committed_pos = 0 }
 
-  let of_bigarray ?off ?len ba =
+  let of_bigstring ?off ?len ba =
     { input = Cstruct.of_bigarray ?off ?len ba; committed_pos = 0 }
 end

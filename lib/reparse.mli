@@ -1197,10 +1197,10 @@ module Make : functor (Input : INPUT) ->
   PARSER with type 'a promise = 'a Input.promise with type input = Input.t
 
 (** A parser when the input is a [string]. *)
-module Bigstring : sig
-  include PARSER
+module String : sig
+  include PARSER with type 'a promise = 'a
 
   val of_string : string -> input
 
-  val of_bigarray : ?off:int -> ?len:int -> Cstruct.buffer -> input
+  val of_bigstring : ?off:int -> ?len:int -> Cstruct.buffer -> input
 end
