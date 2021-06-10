@@ -520,7 +520,7 @@ module type PARSER = sig
 
       [Note:] Ensure that [unsafe_take_unbuffered] is not being run as part of
       combinators that required backtracking such as [<|>, any]. *)
-  val unsafe_take : int -> string t
+  val unsafe_take_cstruct : int -> Cstruct.t t
 
   (** {2 Alternate parsers} *)
 
@@ -1182,12 +1182,12 @@ module type INPUT = sig
 
   (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
       [`Eof] if [EOI] is reached. *)
-  val get : t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
+  val get : t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   (** [get_unbuffered t ~pos ~len] similar to [get t ~pos ~len] except it
       doesn't buffer the taken [len] bytes. *)
   val get_unbuffered :
-    t -> pos:int -> len:int -> [ `String of string | `Eof ] promise
+    t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   val committed_pos : t -> int promise
 end
@@ -1196,9 +1196,11 @@ end
 module Make : functor (Input : INPUT) ->
   PARSER with type 'a promise = 'a Input.promise with type input = Input.t
 
-type string_input
-
-val create_string_input : string -> string_input
-
 (** A parser when the input is a [string]. *)
-module String : PARSER with type 'a promise = 'a with type input = string_input
+module Bigstring : sig
+  include PARSER
+
+  val of_string : string -> input
+
+  val of_bigarray : ?off:int -> ?len:int -> Cstruct.buffer -> input
+end
