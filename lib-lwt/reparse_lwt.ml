@@ -29,9 +29,11 @@ module Stream = struct
 
     let bind f p = Lwt.bind p f
 
+    let pos_err pos fn =
+      invalid_arg @@ Format.sprintf "pos: %d when calling [%s]" pos fn
+
     let commit t ~pos =
-      if pos < 0 || pos < t.committed_pos then
-        invalid_arg (Format.sprintf "pos: %d" pos);
+      if pos < 0 || pos < t.committed_pos then pos_err pos "commit";
 
       let bytes_to_trim = pos - t.committed_pos in
       let new_buf_sz = Cstruct.length t.buf - bytes_to_trim in
@@ -49,8 +51,7 @@ module Stream = struct
 
     let get_unbuffered t ~pos ~len =
       if len < 0 then raise (invalid_arg "len");
-      if pos < 0 || pos < t.committed_pos then
-        invalid_arg (Format.sprintf "pos: %d" pos);
+      if pos < 0 || pos < t.committed_pos then pos_err pos "get_unbuffered";
 
       let pos' = pos - t.committed_pos in
       let len' = Cstruct.length t.buf - (pos' + len) in
@@ -70,8 +71,7 @@ module Stream = struct
 
     let get t ~pos ~len =
       if len < 0 then raise (invalid_arg "len");
-      if pos < 0 || pos < t.committed_pos then
-        invalid_arg (Format.sprintf "pos: %d" pos);
+      if pos < 0 || pos < t.committed_pos then pos_err pos "get";
 
       let pos' = pos - t.committed_pos in
       let len' = Cstruct.length t.buf - (pos' + len) in
