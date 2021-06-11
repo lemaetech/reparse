@@ -30,10 +30,19 @@ module Stream = struct
     let bind f p = Lwt.bind p f
 
     let commit t ~pos =
+      if pos < 0 || pos < t.committed_pos then
+        invalid_arg (Format.sprintf "pos: %d" pos);
+
       let bytes_to_trim = pos - t.committed_pos in
       let new_buf_sz = Cstruct.length t.buf - bytes_to_trim in
-      let buf = Cstruct.create new_buf_sz in
-      Cstruct.blit t.buf pos buf 0 bytes_to_trim;
+      let buf =
+        if new_buf_sz = 0 then
+          Cstruct.empty
+        else
+          let buf = Cstruct.create new_buf_sz in
+          Cstruct.blit t.buf pos buf 0 bytes_to_trim;
+          buf
+      in
       t.buf <- buf;
       t.committed_pos <- pos;
       Lwt.return_unit
