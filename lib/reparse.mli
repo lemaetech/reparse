@@ -1158,13 +1158,12 @@ module type PARSER = sig
       ]} *)
   val eoi : unit t
 
-  (** [commit ()] commits the parser such that the parser will not backtrack
-      from the current parser position. Use this function to trim memory
-      consumed by the input. However, note that any user defined parsers which
-      use [commit ()] may not work correctly when used with [<|>] parsers.
+  (** [commit ()] calls [INPUT.commit] with the current parser position.
 
-      Only use this function if you are sure that the parsing will not backtrack
-      from the position that [commit()] is called. *)
+      {b Note} Once [committed] the parser is unable to backtrack beyond the
+      position of the last [commit()] call. This may affect a correct
+      functioning of [<|>] parser as it backtracks when trying various
+      alternatives. *)
   val commit : unit -> unit t
 
   (** [pos] returns the current parser position. *)
@@ -1186,8 +1185,11 @@ module type INPUT = sig
 
   val bind : ('a -> 'b promise) -> 'a promise -> 'b promise
 
-  (** [commit t ~pos] ensures that the parser will not backtrack on input [t]
-      beyond [pos]. *)
+  (** [commit t ~pos] trims the input buffer up till the current position - if
+      the input uses it - and marks the position as [committed_pos].
+
+      [committed_pos] ensures that the parser will not backtrack on input [t]
+      beyond the [committed_pos] marker. *)
   val commit : t -> pos:int -> unit promise
 
   (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
