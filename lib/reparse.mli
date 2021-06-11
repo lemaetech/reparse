@@ -1159,7 +1159,12 @@ module type PARSER = sig
   val eoi : unit t
 
   (** [commit ()] commits the parser such that the parser will not backtrack
-      from the current parser position. *)
+      from the current parser position. Use this function to trim memory
+      consumed by the input. However, note that any user defined parsers which
+      use [commit ()] may not work correctly when used with [<|>] parsers.
+
+      Only use this function if you are sure that the parsing will not backtrack
+      from the position that [commit()] is called. *)
   val commit : unit -> unit t
 
   (** [pos] returns the current parser position. *)
