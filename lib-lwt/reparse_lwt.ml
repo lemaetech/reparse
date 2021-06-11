@@ -30,7 +30,7 @@ module Stream = struct
     let bind f p = Lwt.bind p f
 
     let pos_err pos fn =
-      invalid_arg @@ Format.sprintf "pos: %d when calling [%s]" pos fn
+      invalid_arg @@ Format.sprintf "invalid arg [pos: %d] in [%s]" pos fn
 
     let commit t ~pos =
       if pos < 0 || pos < t.committed_pos then pos_err pos "commit";
