@@ -777,10 +777,10 @@ module String = struct
     let committed_pos t = return t.committed_pos
   end)
 
-  let of_string s = { input = Cstruct.of_string s; committed_pos = 0 }
+  let input_of_string s = { input = Cstruct.of_string s; committed_pos = 0 }
 
-  let of_bigstring ?off ?len ba =
+  let input_of_bigstring ?off ?len ba =
     { input = Cstruct.of_bigarray ?off ?len ba; committed_pos = 0 }
 
-  let of_cstruct input = { input; committed_pos = 0 }
+  let input_of_cstruct input = { input; committed_pos = 0 }
 end

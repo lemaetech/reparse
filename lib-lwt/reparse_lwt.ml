@@ -80,5 +80,6 @@ module Stream = struct
     let committed_pos t = return t.committed_pos
   end)
 
-  let of_char_stream stream = { stream; buf = Cstruct.empty; committed_pos = 0 }
+  let input_of_stream stream =
+    { stream; buf = Cstruct.empty; committed_pos = 0 }
 end

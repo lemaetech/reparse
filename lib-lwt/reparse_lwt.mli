@@ -11,5 +11,5 @@
 module Stream : sig
   include Reparse.PARSER with type 'a promise = 'a Lwt.t
 
-  val of_char_stream : char Lwt_stream.t -> input
+  val input_of_stream : char Lwt_stream.t -> input
 end
