@@ -25,7 +25,8 @@
  (depends
   (ocaml
    (>= 4.10.0))
-  (mdx :with-test)))
+  (mdx :with-test)
+  (popper :with-test)))
 
 (package
  (name reparse-lwt)
