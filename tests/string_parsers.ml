@@ -195,6 +195,35 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                   (Error "pos:0, n:12 eof")) )
         ])
 
+  let unsafe_take_cstruct =
+    let p = P.unsafe_take_cstruct 5 in
+    let inp () = P.of_string "hello world" in
+    let p2 =
+      let p1 = P.unsafe_take_cstruct 6 in
+      let p2 = P.take_cstruct 5 in
+      P.map2 (fun a b -> Cstruct.append a b) p1 p2
+    in
+    Popper.(
+      suite
+        [ ( "value is 'hello'"
+          , test (fun () ->
+                equal cstruct_result_comparator (P.run p inp)
+                  (Ok (Cstruct.of_string "hello"))) )
+        ; pos_test p 5 inp
+        ; committed_pos_test p 5 inp
+        ; ( "fail"
+          , test (fun () ->
+                let p = P.unsafe_take_cstruct 12 in
+                equal cstruct_result_comparator (P.run p inp)
+                  (Error "pos:0, n:12 eof")) )
+        ; ( "value is 'hello world'"
+          , test (fun () ->
+                equal cstruct_result_comparator (P.run p2 inp)
+                  (Ok (Cstruct.of_string "hello world"))) )
+        ; pos_test p2 11 inp
+        ; committed_pos_test p2 6 inp
+        ])
+
   let suites =
     Popper.suite
       [ ("peek_char", peek_char)
@@ -208,6 +237,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       ; ("string_of_chars", string_of_chars)
       ; ("take_string", take_string)
       ; ("take_cstruct", take_cstruct)
+      ; ("unsafe_take_cstruct", unsafe_take_cstruct)
       ]
 end
 
