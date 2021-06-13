@@ -65,6 +65,19 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                   (Ok None)) )
         ])
 
+  let peek_string =
+    let p = P.peek_string 5 in
+    let inp () = P.of_string "hello" in
+    Popper.(
+      suite
+        [ ( "value is \"hello\""
+          , test (fun () ->
+                equal string_result_comparator (P.run p @@ inp ()) (Ok "hello"))
+          )
+        ; pos_test p 0 inp
+        ; committed_pos_test p 0 inp
+        ])
+
   let take_string =
     let p = P.take_string 5 in
     let inp () = P.of_string "hello world" in
@@ -83,6 +96,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       [ ("take_string", take_string)
       ; ("peek_char", peek_char)
       ; ("peek_char_opt", peek_char_opt)
+      ; ("peek_string", peek_string)
       ]
 end
 
