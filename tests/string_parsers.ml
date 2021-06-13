@@ -1,30 +1,7 @@
 module Make_test (P : Test_parser.TEST_PARSER) = struct
-  type int_result = (int, string) result [@@deriving show, ord, popper]
-
-  type string_result = (string, string) result [@@deriving show, ord, popper]
-
-  type string_opt_result = (string option, string) result
-  [@@deriving show, ord, popper]
+  open Test_parser.Make_helper (P)
 
   open P.Infix
-
-  let pos_test p pos inp =
-    ( Format.sprintf "pos is %d" pos
-    , Popper.(
-        test (fun () ->
-            let p = p *> P.pos in
-            equal int_result_comparator (P.run p inp) (Ok pos))) )
-
-  let committed_pos_test p pos inp =
-    ( Format.sprintf "committed_pos is %d" pos
-    , Popper.(
-        test (fun () ->
-            let p = p *> P.committed_pos in
-            equal int_result_comparator (P.run p inp) (Ok pos))) )
-
-  let to_string c = Format.sprintf "%c" c
-
-  let empty () = P.of_string ""
 
   let peek_char =
     let p = P.peek_char >>= fun c -> P.string_of_chars [ c ] in
