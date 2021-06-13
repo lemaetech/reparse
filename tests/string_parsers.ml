@@ -169,10 +169,35 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                   (Error "pos:0, n:5 eof")) )
         ])
 
+  let cstruct_result_comparator =
+    let cstruct =
+      Popper.Comparator.make Cstruct.compare (fun fmt t ->
+          Format.fprintf fmt "[%d,%d](%d)" t.off t.len
+            (Bigarray_compat.Array1.dim t.buffer))
+    in
+    Popper.Comparator.(result ~ok:cstruct ~error:string)
+
+  let take_cstruct =
+    let p = P.take_cstruct 5 in
+    let inp () = P.of_string "hello world" in
+    Popper.(
+      suite
+        [ ( "value is 'hello'"
+          , test (fun () ->
+                equal cstruct_result_comparator (P.run p inp)
+                  (Ok (Cstruct.of_string "hello"))) )
+        ; pos_test p 5 inp
+        ; committed_pos_test p 0 inp
+        ; ( "fail on eof"
+          , test (fun () ->
+                let p = P.take_cstruct 12 in
+                equal cstruct_result_comparator (P.run p inp)
+                  (Error "pos:0, n:12 eof")) )
+        ])
+
   let suites =
     Popper.suite
-      [ ("take_string", take_string)
-      ; ("peek_char", peek_char)
+      [ ("peek_char", peek_char)
       ; ("peek_char_opt", peek_char_opt)
       ; ("peek_string", peek_string)
       ; ("any_char", any_char)
@@ -181,6 +206,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       ; ("char_if", char_if)
       ; ("string", string)
       ; ("string_of_chars", string_of_chars)
+      ; ("take_string", take_string)
+      ; ("take_cstruct", take_cstruct)
       ]
 end
 

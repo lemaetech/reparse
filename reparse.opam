@@ -11,8 +11,12 @@ bug-reports: "https://github.com/lemaetech/reparse/issues"
 depends: [
   "dune" {>= "2.8"}
   "ocaml" {>= "4.10.0"}
+  "cstruct" {>= "6.0.0"}
   "mdx" {with-test}
   "popper" {with-test}
+  "bigarray-compat" {with-test}
+  "fmt" {with-test}
+  "ppx_deriving" {with-test}
   "odoc" {with-doc}
 ]
 build: [
