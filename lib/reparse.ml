@@ -385,7 +385,7 @@ struct
     if c' = c then
       succ ~pos:(pos + 1) c
     else
-      fail ~pos (Format.sprintf "[char] pos: %d, expected %C, got %C" pos c c')
+      fail ~pos (Format.sprintf "[char] pos:%d, expected %C, got %C" pos c c')
 
   let char_if f =
     input 1

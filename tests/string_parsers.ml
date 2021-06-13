@@ -91,6 +91,23 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                   (Error "pos:0, n:1 eof")) )
         ])
 
+  let char =
+    let p = P.char 'h' >>| to_string in
+    let inp () = P.of_string "hello" in
+    Popper.(
+      suite
+        [ ( "value is 'h'"
+          , test (fun () ->
+                equal string_result_comparator (P.run p inp) (Ok "h")) )
+        ; pos_test p 1 inp
+        ; committed_pos_test p 0 inp
+        ; ( "fail on 'c'"
+          , test (fun () ->
+                let p = P.char 'c' >>| to_string in
+                equal string_result_comparator (P.run p inp)
+                  (Error "[char] pos:0, expected 'c', got 'h'")) )
+        ])
+
   let take_string =
     let p = P.take_string 5 in
     let inp () = P.of_string "hello world" in
@@ -114,6 +131,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       ; ("peek_char_opt", peek_char_opt)
       ; ("peek_string", peek_string)
       ; ("any_char", any_char)
+      ; ("char", char)
       ]
 end
 
