@@ -79,11 +79,11 @@ let rec eval : expr -> int = function
 ```
 
 ```ocaml
-# let ast = parse expr "1*2-4+3";;
+# let ast = parse expr (input_of_string "1*2-4+3");;
 val ast : (expr, string) result =
   Ok (Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)))
 
-# eval @@ Result.get_ok (parse expr "12+1*10")
+# eval @@ Result.get_ok (parse expr (input_of_string "12+1*10"));;
 - : int = 22
 ```
 
