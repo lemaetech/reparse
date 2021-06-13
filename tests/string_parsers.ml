@@ -125,6 +125,23 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                   (Error "[char_if] pos:0 'h'")) )
         ])
 
+  let string =
+    let p = P.string "hello" in
+    let inp () = P.of_string "hello world" in
+    Popper.(
+      suite
+        [ ( "value is 'hello'"
+          , test (fun () ->
+                equal string_result_comparator (P.run p inp) (Ok "hello")) )
+        ; pos_test p 5 inp
+        ; committed_pos_test p 0 inp
+        ; ( "fail"
+          , test (fun () ->
+                let p = P.string "bye" in
+                equal string_result_comparator (P.run p inp)
+                  (Error "[string] \"bye\"")) )
+        ])
+
   let take_string =
     let p = P.take_string 5 in
     let inp () = P.of_string "hello world" in
@@ -151,6 +168,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       ; ("char", char)
       ; ("any_char", any_char)
       ; ("char_if", char_if)
+      ; ("string", string)
       ]
 end
 
