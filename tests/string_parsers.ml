@@ -5,6 +5,20 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
 
   open P.Infix
 
+  let pos_test p pos inp =
+    ( "pos"
+    , Popper.(
+        test (fun () ->
+            let p = p *> P.pos in
+            equal int_result_comparator (P.run p inp) (Ok pos))) )
+
+  let committed_pos_test p pos inp =
+    ( "committed_pos"
+    , Popper.(
+        test (fun () ->
+            let p = p *> P.committed_pos in
+            equal int_result_comparator (P.run p inp) (Ok pos))) )
+
   let peek_char =
     let p = P.peek_char >>= fun c -> P.string_of_chars [ c ] in
     let inp () = P.of_string "hello world" in
@@ -13,14 +27,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         [ ( "value"
           , test (fun () ->
                 equal string_result_comparator (P.run p @@ inp ()) (Ok "h")) )
-        ; ( "pos"
-          , test (fun () ->
-                let p = p *> P.pos in
-                equal int_result_comparator (P.run p @@ inp ()) (Ok 0)) )
-        ; ( "committed_pos"
-          , test (fun () ->
-                let p = p *> P.committed_pos in
-                equal int_result_comparator (P.run p @@ inp ()) (Ok 0)) )
+        ; pos_test p 0 @@ inp ()
+        ; committed_pos_test p 0 @@ inp ()
         ])
 
   let take_string =
@@ -32,14 +40,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal string_result_comparator (P.run p @@ inp ()) (Ok "hello"))
           )
-        ; ( "pos"
-          , test (fun () ->
-                let p = p *> P.pos in
-                equal int_result_comparator (P.run p @@ inp ()) (Ok 5)) )
-        ; ( "committed_pos"
-          , test (fun () ->
-                let p = p *> P.committed_pos in
-                equal int_result_comparator (P.run p @@ inp ()) (Ok 0)) )
+        ; pos_test p 5 @@ inp ()
+        ; committed_pos_test p 0 @@ inp ()
         ])
 
   let suites =
