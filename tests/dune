@@ -1,3 +1,5 @@
 (test
- (name tests)
- (libraries reparse reparse-lwt))
+ (name run)
+ (libraries lwt lwt.unix popper reparse reparse-lwt)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.ord ppx_deriving_popper)))
