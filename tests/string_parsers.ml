@@ -3,32 +3,66 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
 
   type string_result = (string, string) result [@@deriving show, ord, popper]
 
+  type string_opt_result = (string option, string) result
+  [@@deriving show, ord, popper]
+
   open P.Infix
 
   let pos_test p pos inp =
-    ( "pos"
+    ( Format.sprintf "pos is %d" pos
     , Popper.(
         test (fun () ->
             let p = p *> P.pos in
             equal int_result_comparator (P.run p @@ inp ()) (Ok pos))) )
 
   let committed_pos_test p pos inp =
-    ( "committed_pos"
+    ( Format.sprintf "committed_pos is %d" pos
     , Popper.(
         test (fun () ->
             let p = p *> P.committed_pos in
             equal int_result_comparator (P.run p @@ inp ()) (Ok pos))) )
+
+  let to_string c = Format.sprintf "%c" c
 
   let peek_char =
     let p = P.peek_char >>= fun c -> P.string_of_chars [ c ] in
     let inp () = P.of_string "hello world" in
     Popper.(
       suite
-        [ ( "value"
+        [ ( "value is 'h'"
           , test (fun () ->
                 equal string_result_comparator (P.run p @@ inp ()) (Ok "h")) )
         ; pos_test p 0 inp
         ; committed_pos_test p 0 inp
+        ; ( "fail on eof"
+          , test (fun () ->
+                equal string_result_comparator
+                  (P.run p (P.of_string ""))
+                  (Error "pos:0, n:1 eof")) )
+        ])
+
+  let peek_char_opt =
+    let p =
+      P.peek_char_opt
+      >>| function
+      | Some c -> Some (to_string c)
+      | None -> None
+    in
+    let inp () = P.of_string "hello world" in
+    Popper.(
+      suite
+        [ ( "value is 'h'"
+          , test (fun () ->
+                equal string_opt_result_comparator
+                  (P.run p @@ inp ())
+                  (Ok (Some "h"))) )
+        ; pos_test p 0 inp
+        ; committed_pos_test p 0 inp
+        ; ( "fail on eof"
+          , test (fun () ->
+                equal string_opt_result_comparator
+                  (P.run p (P.of_string ""))
+                  (Ok None)) )
         ])
 
   let take_string =
@@ -36,7 +70,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let inp () = P.of_string "hello world" in
     Popper.(
       suite
-        [ ( "value"
+        [ ( Format.sprintf "value is \"%s\"" "hello"
           , test (fun () ->
                 equal string_result_comparator (P.run p @@ inp ()) (Ok "hello"))
           )
@@ -45,7 +79,11 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ])
 
   let suites =
-    Popper.suite [ ("take_string", take_string); ("peek_char", peek_char) ]
+    Popper.suite
+      [ ("take_string", take_string)
+      ; ("peek_char", peek_char)
+      ; ("peek_char_opt", peek_char_opt)
+      ]
 end
 
 let suite =
