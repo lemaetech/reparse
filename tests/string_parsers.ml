@@ -3,6 +3,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
 
   type string_result = (string, string) result [@@deriving show, ord, popper]
 
+  open P.Infix
+
   let take_string =
     let p = P.take_string 5 in
     let inp () = P.of_string "hello world" in
@@ -11,13 +13,16 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       suite
         [ ( "value"
           , test (fun () ->
-                equal string_result_comparator (P.run p (inp ())) (Ok "hello"))
+                equal string_result_comparator (P.run p @@ inp ()) (Ok "hello"))
           )
         ; ( "pos"
           , test (fun () ->
-                equal int_result_comparator
-                  (P.(run (p *> P.pos)) (inp ()))
-                  (Ok 5)) )
+                let p = p *> P.pos in
+                equal int_result_comparator (P.run p @@ inp ()) (Ok 5)) )
+        ; ( "committed_pos"
+          , test (fun () ->
+                let p = p *> P.committed_pos in
+                equal int_result_comparator (P.run p @@ inp ()) (Ok 0)) )
         ])
 
   let suites = Popper.suite [ ("take_string", take_string) ]
