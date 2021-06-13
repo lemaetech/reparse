@@ -1,4 +1,4 @@
-module Make_test (P : Helper.TEST_PARSER) = struct
+module Make_test (P : Test_parser.TEST_PARSER) = struct
   type int_result = (int, string) result [@@deriving show, ord, popper]
 
   type string_result = (string, string) result [@@deriving show, ord, popper]
@@ -24,6 +24,6 @@ module Make_test (P : Helper.TEST_PARSER) = struct
 end
 
 let suite =
-  let module S = Make_test (Helper.String_parser_tester) in
-  let module L = Make_test (Helper.Lwt_parser_tester) in
+  let module S = Make_test (Test_parser.String) in
+  let module L = Make_test (Test_parser.Lwt) in
   Popper.suite [ ("Reparse.String", S.suites); ("Lwt.Stream", S.suites) ]
