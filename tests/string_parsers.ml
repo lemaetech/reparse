@@ -5,10 +5,27 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
 
   open P.Infix
 
+  let peek_char =
+    let p = P.peek_char >>= fun c -> P.string_of_chars [ c ] in
+    let inp () = P.of_string "hello world" in
+    Popper.(
+      suite
+        [ ( "value"
+          , test (fun () ->
+                equal string_result_comparator (P.run p @@ inp ()) (Ok "h")) )
+        ; ( "pos"
+          , test (fun () ->
+                let p = p *> P.pos in
+                equal int_result_comparator (P.run p @@ inp ()) (Ok 0)) )
+        ; ( "committed_pos"
+          , test (fun () ->
+                let p = p *> P.committed_pos in
+                equal int_result_comparator (P.run p @@ inp ()) (Ok 0)) )
+        ])
+
   let take_string =
     let p = P.take_string 5 in
     let inp () = P.of_string "hello world" in
-
     Popper.(
       suite
         [ ( "value"
@@ -25,7 +42,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                 equal int_result_comparator (P.run p @@ inp ()) (Ok 0)) )
         ])
 
-  let suites = Popper.suite [ ("take_string", take_string) ]
+  let suites =
+    Popper.suite [ ("take_string", take_string); ("peek_char", peek_char) ]
 end
 
 let suite =
