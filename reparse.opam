@@ -15,7 +15,6 @@ depends: [
   "mdx" {with-test}
   "popper" {with-test}
   "bigarray-compat" {with-test}
-  "fmt" {with-test}
   "ppx_deriving" {with-test}
   "odoc" {with-doc}
 ]
