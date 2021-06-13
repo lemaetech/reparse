@@ -13,14 +13,14 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     , Popper.(
         test (fun () ->
             let p = p *> P.pos in
-            equal int_result_comparator (P.run p @@ inp ()) (Ok pos))) )
+            equal int_result_comparator (P.run p inp) (Ok pos))) )
 
   let committed_pos_test p pos inp =
     ( Format.sprintf "committed_pos is %d" pos
     , Popper.(
         test (fun () ->
             let p = p *> P.committed_pos in
-            equal int_result_comparator (P.run p @@ inp ()) (Ok pos))) )
+            equal int_result_comparator (P.run p inp) (Ok pos))) )
 
   let to_string c = Format.sprintf "%c" c
 
@@ -31,13 +31,13 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       suite
         [ ( "value is 'h'"
           , test (fun () ->
-                equal string_result_comparator (P.run p @@ inp ()) (Ok "h")) )
+                equal string_result_comparator (P.run p inp) (Ok "h")) )
         ; pos_test p 0 inp
         ; committed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
                 equal string_result_comparator
-                  (P.run p (P.of_string ""))
+                  (P.run p (fun () -> P.of_string ""))
                   (Error "pos:0, n:1 eof")) )
         ])
 
@@ -49,20 +49,18 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       | None -> None
     in
     let inp () = P.of_string "hello world" in
+    let inp2 () = P.of_string "" in
     Popper.(
       suite
         [ ( "value is 'h'"
           , test (fun () ->
-                equal string_opt_result_comparator
-                  (P.run p @@ inp ())
-                  (Ok (Some "h"))) )
+                equal string_opt_result_comparator (P.run p inp) (Ok (Some "h")))
+          )
         ; pos_test p 0 inp
         ; committed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
-                equal string_opt_result_comparator
-                  (P.run p (P.of_string ""))
-                  (Ok None)) )
+                equal string_opt_result_comparator (P.run p inp2) (Ok None)) )
         ])
 
   let peek_string =
@@ -72,8 +70,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       suite
         [ ( "value is \"hello\""
           , test (fun () ->
-                equal string_result_comparator (P.run p @@ inp ()) (Ok "hello"))
-          )
+                equal string_result_comparator (P.run p inp) (Ok "hello")) )
         ; pos_test p 0 inp
         ; committed_pos_test p 0 inp
         ])
@@ -85,8 +82,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       suite
         [ ( Format.sprintf "value is \"%s\"" "hello"
           , test (fun () ->
-                equal string_result_comparator (P.run p @@ inp ()) (Ok "hello"))
-          )
+                equal string_result_comparator (P.run p inp) (Ok "hello")) )
         ; pos_test p 5 inp
         ; committed_pos_test p 0 inp
         ])

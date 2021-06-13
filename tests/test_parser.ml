@@ -3,7 +3,7 @@ module type TEST_PARSER = sig
 
   val of_string : string -> input
 
-  val run : 'a t -> input -> ('a, string) result
+  val run : 'a t -> (unit -> input) -> ('a, string) result
 end
 
 module String : TEST_PARSER = struct
@@ -11,7 +11,7 @@ module String : TEST_PARSER = struct
 
   let of_string = input_of_string
 
-  let run = parse
+  let run p i = parse p (i ())
 end
 
 module Lwt : TEST_PARSER = struct
@@ -19,5 +19,5 @@ module Lwt : TEST_PARSER = struct
 
   let of_string s = input_of_stream (Lwt_stream.of_string s)
 
-  let run p inp = Lwt_main.run (parse p inp)
+  let run p inp = Lwt_main.run (parse p @@ inp ())
 end
