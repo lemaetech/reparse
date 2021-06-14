@@ -37,6 +37,8 @@ module Make_helper (P : TEST_PARSER) = struct
 
   type unit_result = (unit, string) result [@@deriving show, ord, popper]
 
+  type bool_result = (bool, string) result [@@deriving show, ord, popper]
+
   open P.Infix
 
   let pos_test p pos inp =

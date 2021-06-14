@@ -454,8 +454,8 @@ struct
   let is : 'a t -> bool t =
    fun p inp ~pos ~succ ~fail:_ ->
     p inp ~pos
-      ~succ:(fun ~pos _ -> succ ~pos true)
-      ~fail:(fun ~pos _ -> succ ~pos false)
+      ~succ:(fun ~pos:_ _ -> succ ~pos true)
+      ~fail:(fun ~pos:_ _ -> succ ~pos false)
 
   let is_not : 'a t -> bool t =
    fun p inp ~pos ~succ ~fail:_ ->
