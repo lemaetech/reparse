@@ -30,6 +30,13 @@ module Make_helper (P : TEST_PARSER) = struct
   type string_opt_result = (string option, string) result
   [@@deriving show, ord, popper]
 
+  type char_result = (char, string) result [@@deriving show, ord, popper]
+
+  type char_opt_result = (char option, string) result
+  [@@deriving show, ord, popper]
+
+  type unit_result = (unit, string) result [@@deriving show, ord, popper]
+
   open P.Infix
 
   let pos_test p pos inp =
@@ -46,7 +53,7 @@ module Make_helper (P : TEST_PARSER) = struct
             let p = p *> P.committed_pos in
             equal int_result_comparator (P.run p inp) (Ok pos))) )
 
-  let to_string c = Format.sprintf "%c" c
+  (* let to_string c = Format.sprintf "%c" c *)
 
   let empty () = P.of_string ""
 end

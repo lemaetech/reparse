@@ -20,24 +20,19 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ])
 
   let peek_char_opt =
-    let p =
-      P.peek_char_opt
-      >>| function
-      | Some c -> Some (to_string c)
-      | None -> None
-    in
+    let p = P.peek_char_opt in
     let inp () = P.of_string "hello world" in
     Popper.(
       suite
         [ ( "value is 'h'"
           , test (fun () ->
-                equal string_opt_result_comparator (P.run p inp) (Ok (Some "h")))
+                equal char_opt_result_comparator (P.run p inp) (Ok (Some 'h')))
           )
         ; pos_test p 0 inp
         ; committed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
-                equal string_opt_result_comparator (P.run p empty) (Ok None)) )
+                equal char_opt_result_comparator (P.run p empty) (Ok None)) )
         ])
 
   let peek_string =
@@ -53,52 +48,52 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ])
 
   let any_char =
-    let p = P.any_char >>| to_string in
+    let p = P.any_char in
     let inp () = P.of_string "hello" in
     Popper.(
       suite
         [ ( "value is 'h'"
-          , test (fun () ->
-                equal string_result_comparator (P.run p inp) (Ok "h")) )
+          , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
+          )
         ; pos_test p 1 inp
         ; committed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
-                equal string_result_comparator (P.run p empty)
+                equal char_result_comparator (P.run p empty)
                   (Error "pos:0, n:1 eof")) )
         ])
 
   let char =
-    let p = P.char 'h' >>| to_string in
+    let p = P.char 'h' in
     let inp () = P.of_string "hello" in
     Popper.(
       suite
         [ ( "value is 'h'"
-          , test (fun () ->
-                equal string_result_comparator (P.run p inp) (Ok "h")) )
+          , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
+          )
         ; pos_test p 1 inp
         ; committed_pos_test p 0 inp
         ; ( "fail on 'c'"
           , test (fun () ->
-                let p = P.char 'c' >>| to_string in
-                equal string_result_comparator (P.run p inp)
+                let p = P.char 'c' in
+                equal char_result_comparator (P.run p inp)
                   (Error "[char] pos:0, expected 'c', got 'h'")) )
         ])
 
   let char_if =
-    let p = P.char_if (fun c -> Char.equal 'h' c) >>| to_string in
+    let p = P.char_if (fun c -> Char.equal 'h' c) in
     let inp () = P.of_string "hello" in
     Popper.(
       suite
         [ ( "value is 'h'"
-          , test (fun () ->
-                equal string_result_comparator (P.run p inp) (Ok "h")) )
+          , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
+          )
         ; pos_test p 1 inp
         ; committed_pos_test p 0 inp
         ; ( "fail on 'c'"
           , test (fun () ->
-                let p = P.char_if (fun c -> Char.equal 'c' c) >>| to_string in
-                equal string_result_comparator (P.run p inp)
+                let p = P.char_if (fun c -> Char.equal 'c' c) in
+                equal char_result_comparator (P.run p inp)
                   (Error "[char_if] pos:0 'h'")) )
         ])
 
