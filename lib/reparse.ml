@@ -150,7 +150,7 @@ module type PARSER = sig
   val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
 
   val take_while_cb :
-    ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> int t
+    ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> unit t
 
   val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 
@@ -566,27 +566,28 @@ struct
     loop pos 0
 
   let take_while_cb :
-      ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> int t =
+      ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> unit t
+      =
    fun ?sep_by ~while_ ~on_take_cb p inp ~pos ~succ ~fail:_ ->
     let sep_by = sep_by_to_bool ?sep_by in
-    let rec loop pos taken_count =
+    let p' = map2 (fun v sep_by_ok -> (v, sep_by_ok)) p sep_by in
+    let rec loop pos =
       while_ inp ~pos
         ~succ:(fun ~pos:_ continue ->
           if continue then
-            let p = map2 (fun v sep_by_ok -> (v, sep_by_ok)) p sep_by in
-            p inp ~pos
+            p' inp ~pos
               ~succ:(fun ~pos (v, sep_by_ok) ->
                 on_take_cb v;
                 if sep_by_ok then
-                  (loop [@tailcall]) pos (taken_count + 1)
+                  (loop [@tailcall]) pos
                 else
-                  succ ~pos taken_count)
-              ~fail:(fun ~pos _ -> succ ~pos taken_count)
+                  succ ~pos ())
+              ~fail:(fun ~pos _ -> succ ~pos ())
           else
-            succ ~pos taken_count)
-        ~fail:(fun ~pos:_ _ -> succ ~pos taken_count)
+            succ ~pos ())
+        ~fail:(fun ~pos:_ _ -> succ ~pos ())
     in
-    loop pos 0
+    loop pos
 
   let take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t =
    fun ?sep_by ~while_ p inp ~pos ~succ ~fail ->

@@ -791,7 +791,7 @@ module type PARSER = sig
         v = 3 && s = "aaa"
       ]} *)
   val take_while_cb :
-    ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> int t
+    ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> unit t
 
   (** [take_while ~sep_by p ~while_ p] repeatedly parses [p] and returns its
       value. [p] is evaluated if and only if [while_] evaluates to [true]. If
