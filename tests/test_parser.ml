@@ -48,14 +48,12 @@ module Make_helper (P : TEST_PARSER) = struct
             let p = p *> P.pos in
             equal int_result_comparator (P.run p inp) (Ok pos))) )
 
-  let committed_pos_test p pos inp =
-    ( Format.sprintf "committed_pos is %d" pos
+  let last_trimmed_pos_test p pos inp =
+    ( Format.sprintf "last_trimmed_pos is %d" pos
     , Popper.(
         test (fun () ->
-            let p = p *> P.committed_pos in
+            let p = p *> P.last_trimmed_pos in
             equal int_result_comparator (P.run p inp) (Ok pos))) )
-
-  (* let to_string c = Format.sprintf "%c" c *)
 
   let empty () = P.of_string ""
 end

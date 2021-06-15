@@ -14,7 +14,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal string_result_comparator (P.run p inp) (Ok "h")) )
         ; pos_test p 1 inp
-        ; committed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail"
           , test (fun () ->
                 let p = P.(any [ string "a"; string "b" ]) in
@@ -24,12 +24,12 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal string_result_comparator (P.run p2 inp) (Ok "hello")) )
         ; pos_test p2 5 inp
-        ; committed_pos_test p2 0 inp
+        ; last_trimmed_pos_test p2 0 inp
         ; ( {|first success value is "he"|}
           , test (fun () ->
                 equal string_result_comparator (P.run p3 inp) (Ok "he")) )
         ; pos_test p3 2 inp
-        ; committed_pos_test p3 0 inp
+        ; last_trimmed_pos_test p3 0 inp
         ])
 
   let alt =
@@ -42,7 +42,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal string_result_comparator (P.run p inp) (Ok "hello")) )
         ; pos_test p 5 inp
-        ; committed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail"
           , test (fun () ->
                 equal string_result_comparator (P.run p2 inp)
@@ -52,9 +52,9 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                 let p = p2 *> P.pos in
                 equal int_result_comparator (P.run p inp)
                   (Error {|[string] "how"|})) )
-        ; ( "committed_pos is fail"
+        ; ( "last_trimmed_pos is fail"
           , test (fun () ->
-                let p = p2 *> P.committed_pos in
+                let p = p2 *> P.last_trimmed_pos in
                 equal int_result_comparator (P.run p inp)
                   (Error {|[string] "how"|})) )
         ])
@@ -70,12 +70,12 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                 equal string_opt_result_comparator (P.run p inp)
                   (Ok (Some "hello"))) )
         ; pos_test p 5 inp
-        ; committed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( {|value is 'None'|}
           , test (fun () ->
                 equal string_opt_result_comparator (P.run p inp2) (Ok None)) )
         ; pos_test p 0 inp2
-        ; committed_pos_test p 0 inp2
+        ; last_trimmed_pos_test p 0 inp2
         ; ( {|value when eof is 'None'|}
           , test (fun () ->
                 equal string_opt_result_comparator (P.run p empty) (Ok None)) )

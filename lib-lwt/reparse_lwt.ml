@@ -12,7 +12,7 @@ module Stream = struct
   type stream =
     { stream : char Lwt_stream.t
     ; mutable buf : Cstruct.t
-    ; mutable committed_pos : int
+    ; mutable last_trimmed_pos : int
           (* An input position marker. The marker restricts the parser from
              backtracking beyound this point. Any attempt to do so will raise an
              exception. *)
@@ -32,10 +32,10 @@ module Stream = struct
     let pos_err pos fn =
       invalid_arg @@ Format.sprintf "invalid arg [pos: %d] in [%s]" pos fn
 
-    let commit t ~pos =
-      if pos < 0 || pos < t.committed_pos then pos_err pos "commit";
+    let trim_buffer t ~pos =
+      if pos < 0 || pos < t.last_trimmed_pos then pos_err pos "trim_buffer";
 
-      let bytes_to_trim = pos - t.committed_pos in
+      let bytes_to_trim = pos - t.last_trimmed_pos in
       let new_buf_sz = Cstruct.length t.buf - bytes_to_trim in
       let buf =
         if new_buf_sz = 0 then
@@ -46,14 +46,14 @@ module Stream = struct
           buf
       in
       t.buf <- buf;
-      t.committed_pos <- pos;
+      t.last_trimmed_pos <- pos;
       Lwt.return_unit
 
     let get_unbuffered t ~pos ~len =
       if len < 0 then raise (invalid_arg "len");
-      if pos < 0 || pos < t.committed_pos then pos_err pos "get_unbuffered";
+      if pos < 0 || pos < t.last_trimmed_pos then pos_err pos "get_unbuffered";
 
-      let pos' = pos - t.committed_pos in
+      let pos' = pos - t.last_trimmed_pos in
       let len' = Cstruct.length t.buf - (pos' + len) in
       if len' >= 0 then
         Lwt.return (`Cstruct (Cstruct.sub t.buf pos' len))
@@ -71,9 +71,9 @@ module Stream = struct
 
     let get t ~pos ~len =
       if len < 0 then raise (invalid_arg "len");
-      if pos < 0 || pos < t.committed_pos then pos_err pos "get";
+      if pos < 0 || pos < t.last_trimmed_pos then pos_err pos "get";
 
-      let pos' = pos - t.committed_pos in
+      let pos' = pos - t.last_trimmed_pos in
       let len' = Cstruct.length t.buf - (pos' + len) in
       if len' >= 0 then
         Lwt.return (`Cstruct (Cstruct.sub t.buf pos' len))
@@ -90,9 +90,9 @@ module Stream = struct
         t.buf <- s1;
         Lwt.return (`Cstruct (Cstruct.sub t.buf pos' len))
 
-    let committed_pos t = return t.committed_pos
+    let last_trimmed_pos t = return t.last_trimmed_pos
   end)
 
   let input_of_stream stream =
-    { stream; buf = Cstruct.empty; committed_pos = 0 }
+    { stream; buf = Cstruct.empty; last_trimmed_pos = 0 }
 end

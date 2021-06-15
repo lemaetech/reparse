@@ -12,7 +12,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal string_result_comparator (P.run p inp) (Ok "h")) )
         ; pos_test p 0 inp
-        ; committed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
                 equal string_result_comparator (P.run p empty)
@@ -29,7 +29,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                 equal char_opt_result_comparator (P.run p inp) (Ok (Some 'h')))
           )
         ; pos_test p 0 inp
-        ; committed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
                 equal char_opt_result_comparator (P.run p empty) (Ok None)) )
@@ -44,7 +44,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal string_result_comparator (P.run p inp) (Ok "hello")) )
         ; pos_test p 0 inp
-        ; committed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ])
 
   let any_char =
@@ -56,7 +56,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
           )
         ; pos_test p 1 inp
-        ; committed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
                 equal char_result_comparator (P.run p empty)
@@ -72,7 +72,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
           )
         ; pos_test p 1 inp
-        ; committed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on 'c'"
           , test (fun () ->
                 let p = P.char 'c' in
@@ -89,7 +89,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
           )
         ; pos_test p 1 inp
-        ; committed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on 'c'"
           , test (fun () ->
                 let p = P.char_if (fun c -> Char.equal 'c' c) in
@@ -106,7 +106,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal string_result_comparator (P.run p inp) (Ok "hello")) )
         ; pos_test p 5 inp
-        ; committed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail"
           , test (fun () ->
                 let p = P.string "bye" in
@@ -122,7 +122,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal string_result_comparator (P.run p empty) (Ok "hello")) )
         ; pos_test p 0 empty
-        ; committed_pos_test p 0 empty
+        ; last_trimmed_pos_test p 0 empty
         ])
 
   let take_string =
@@ -134,7 +134,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal string_result_comparator (P.run p inp) (Ok "hello")) )
         ; pos_test p 5 inp
-        ; committed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
                 equal string_result_comparator (P.run p empty)
@@ -159,7 +159,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                 equal cstruct_result_comparator (P.run p inp)
                   (Ok (Cstruct.of_string "hello"))) )
         ; pos_test p 5 inp
-        ; committed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
                 let p = P.take_cstruct 12 in
@@ -182,7 +182,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                 equal cstruct_result_comparator (P.run p inp)
                   (Ok (Cstruct.of_string "hello"))) )
         ; pos_test p 5 inp
-        ; committed_pos_test p 5 inp
+        ; last_trimmed_pos_test p 5 inp
         ; ( "fail"
           , test (fun () ->
                 let p = P.unsafe_take_cstruct 12 in
@@ -193,7 +193,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                 equal cstruct_result_comparator (P.run p2 inp)
                   (Ok (Cstruct.of_string "hello world"))) )
         ; pos_test p2 11 inp
-        ; committed_pos_test p2 6 inp
+        ; last_trimmed_pos_test p2 6 inp
         ])
 
   let suites =

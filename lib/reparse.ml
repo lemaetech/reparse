@@ -202,11 +202,11 @@ module type PARSER = sig
 
   val eoi : unit t
 
-  val commit : unit -> unit t
+  val trim_input_buffer : unit -> unit t
 
   val pos : int t
 
-  val committed_pos : int t
+  val last_trimmed_pos : int t
 end
 
 module type INPUT = sig
@@ -218,14 +218,14 @@ module type INPUT = sig
 
   val bind : ('a -> 'b promise) -> 'a promise -> 'b promise
 
-  val commit : t -> pos:int -> unit promise
+  val trim_buffer : t -> pos:int -> unit promise
 
   val get : t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   val get_unbuffered :
     t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
-  val committed_pos : t -> int promise
+  val last_trimmed_pos : t -> int promise
 end
 
 module Make (Input : INPUT) :
@@ -719,9 +719,9 @@ struct
              fail ~pos (Format.sprintf "[eof] pos:%d, not eof" pos)
            | `Eof -> succ ~pos ()))
 
-  let commit : unit -> unit t =
+  let trim_input_buffer : unit -> unit t =
    fun () inp ~pos ~succ ~fail:_ ->
-    Input.(commit inp ~pos |> bind (fun () -> succ ~pos ()))
+    Input.(trim_buffer inp ~pos |> bind (fun () -> succ ~pos ()))
 
   let pos : int t = fun _inp ~pos ~succ ~fail:_ -> succ ~pos pos
 
@@ -732,21 +732,22 @@ struct
       |> bind (function
            | `Cstruct s when Cstruct.length s = n ->
              let pos = pos + n in
-             commit inp ~pos |> bind (fun () -> succ ~pos s)
+             trim_buffer inp ~pos |> bind (fun () -> succ ~pos s)
            | `Cstruct _ ->
              fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
            | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n)))
 
-  let committed_pos : int t =
+  let last_trimmed_pos : int t =
    fun inp ~pos ~succ ~fail:_ ->
     Input.(
-      committed_pos inp |> bind (fun commited_pos' -> succ ~pos commited_pos'))
+      last_trimmed_pos inp
+      |> bind (fun last_trimmed_pos' -> succ ~pos last_trimmed_pos'))
 end
 
 module String = struct
   type t' =
     { input : Cstruct.t
-    ; mutable committed_pos : int
+    ; mutable last_trimmed_pos : int
     }
 
   include Make (struct
@@ -758,13 +759,13 @@ module String = struct
 
     let bind f promise = f promise
 
-    let commit t ~pos =
-      t.committed_pos <- pos;
+    let trim_buffer t ~pos =
+      t.last_trimmed_pos <- pos;
       return ()
 
     let get_unbuffered t ~pos ~len =
       if len < 0 then raise (invalid_arg "len");
-      if pos < 0 || pos < t.committed_pos then
+      if pos < 0 || pos < t.last_trimmed_pos then
         invalid_arg (Format.sprintf "pos: %d" pos);
 
       if pos + len <= Cstruct.length t.input then
@@ -774,13 +775,13 @@ module String = struct
 
     let get t ~pos ~len = get_unbuffered t ~pos ~len
 
-    let committed_pos t = return t.committed_pos
+    let last_trimmed_pos t = return t.last_trimmed_pos
   end)
 
-  let input_of_string s = { input = Cstruct.of_string s; committed_pos = 0 }
+  let input_of_string s = { input = Cstruct.of_string s; last_trimmed_pos = 0 }
 
   let input_of_bigstring ?off ?len ba =
-    { input = Cstruct.of_bigarray ?off ?len ba; committed_pos = 0 }
+    { input = Cstruct.of_bigarray ?off ?len ba; last_trimmed_pos = 0 }
 
-  let input_of_cstruct input = { input; committed_pos = 0 }
+  let input_of_cstruct input = { input; last_trimmed_pos = 0 }
 end

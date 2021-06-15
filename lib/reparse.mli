@@ -1158,20 +1158,20 @@ module type PARSER = sig
       ]} *)
   val eoi : unit t
 
-  (** [commit ()] calls [INPUT.commit] with the current parser position.
+  (** [trim_input_buffer ()] calls [INPUT.trim_buffer] with the current parser
+      position. Use this function to control the memory consumption of the input
+      buffer.
 
-      {b Note} Once [committed] the parser is unable to backtrack beyond the
-      position of the last [commit()] call. This may affect a correct
-      functioning of [<|>] parser as it backtracks when trying various
-      alternatives. *)
-  val commit : unit -> unit t
+      {b Note} Once trimmed the parser is unable to backtrack beyond the
+      position of [last_trimmed_pos]. This may affect a correct functioning of
+      [<|>] parser as it backtracks when trying various alternatives. *)
+  val trim_input_buffer : unit -> unit t
 
   (** [pos] returns the current parser position. *)
   val pos : int t
 
-  (** [committed_pos] returns the input position marker of the count of bytes
-      committed by the parser. *)
-  val committed_pos : int t
+  (** [last_trimmed_pos] returns the last trimmed input position marker. *)
+  val last_trimmed_pos : int t
 end
 
 module type INPUT = sig
@@ -1185,12 +1185,11 @@ module type INPUT = sig
 
   val bind : ('a -> 'b promise) -> 'a promise -> 'b promise
 
-  (** [commit t ~pos] trims the input buffer up till the current position - if
-      the input uses it - and marks the position as [committed_pos].
+  (** [trim_buffer t ~pos] removes data from the input buffer up till [pos].
 
-      [committed_pos] ensures that the parser will not backtrack on input [t]
-      beyond the [committed_pos] marker. *)
-  val commit : t -> pos:int -> unit promise
+      {b Note} After the input buffer is trimmed the parser is unable to
+      backtrack to [pos] less than [pos]. *)
+  val trim_buffer : t -> pos:int -> unit promise
 
   (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
       [`Eof] if [EOI] is reached. *)
@@ -1201,7 +1200,7 @@ module type INPUT = sig
   val get_unbuffered :
     t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
-  val committed_pos : t -> int promise
+  val last_trimmed_pos : t -> int promise
 end
 
 (** A functor to create parsers based on the given [Input] module. *)
