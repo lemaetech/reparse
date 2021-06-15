@@ -4,8 +4,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
   open P.Infix
 
   let not_ =
-    let p = P.(not_ (string "hello")) in
-    let p2 = P.(not_ (string "world")) in
+    let p = P.(not_ (string_cs "hello")) in
+    let p2 = P.(not_ (string_cs "world")) in
     let inp () = P.of_string "world" in
     Popper.(
       suite
@@ -26,8 +26,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ])
 
   let is =
-    let p = P.(is (string "hello")) in
-    let p2 = P.(is (string "world")) in
+    let p = P.(is (string_cs "hello")) in
+    let p2 = P.(is (string_cs "world")) in
     let inp () = P.of_string "hello" in
     Popper.(
       suite
@@ -44,8 +44,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ])
 
   let is_not =
-    let p = P.(is_not (string "hello")) in
-    let p2 = P.(is_not (string "world")) in
+    let p = P.(is_not (string_cs "hello")) in
+    let p2 = P.(is_not (string_cs "world")) in
     let inp () = P.of_string "world" in
     Popper.(
       suite

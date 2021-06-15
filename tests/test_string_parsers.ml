@@ -1,21 +1,19 @@
 module Make_test (P : Test_parser.TEST_PARSER) = struct
   open Test_parser.Make_helper (P)
 
-  open P.Infix
-
   let peek_char =
-    let p = P.peek_char >>= fun c -> P.string_of_chars [ c ] in
+    let p = P.peek_char in
     let inp () = P.of_string "hello world" in
     Popper.(
       suite
         [ ( "value is 'h'"
-          , test (fun () ->
-                equal string_result_comparator (P.run p inp) (Ok "h")) )
+          , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
+          )
         ; pos_test p 0 inp
         ; last_trimmed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
-                equal string_result_comparator (P.run p empty)
+                equal char_result_comparator (P.run p empty)
                   (Error "pos:0, n:1 eof")) )
         ])
 
@@ -97,8 +95,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                   (Error "[char_if] pos:0 'h'")) )
         ])
 
-  let string =
-    let p = P.string "hello" in
+  let string_cs =
+    let p = P.string_cs "hello" in
     let inp () = P.of_string "hello world" in
     Popper.(
       suite
@@ -109,9 +107,35 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ; last_trimmed_pos_test p 0 inp
         ; ( "fail"
           , test (fun () ->
-                let p = P.string "bye" in
+                let p = P.string_cs "bye" in
                 equal string_result_comparator (P.run p inp)
-                  (Error "[string] \"bye\"")) )
+                  (Error "[string_cs] \"bye\"")) )
+        ; ( "case sensitive"
+          , test (fun () ->
+                let inp () = P.of_string "HELLO world" in
+                equal string_result_comparator (P.run p inp)
+                  (Error {|[string_cs] "hello"|})) )
+        ])
+
+  let string_ci =
+    let p = P.string_ci "hello" in
+    let inp () = P.of_string "HELLO world" in
+    Popper.(
+      suite
+        [ ( "value is 'hello'"
+          , test (fun () ->
+                equal string_result_comparator (P.run p inp) (Ok "hello")) )
+        ; pos_test p 5 inp
+        ; last_trimmed_pos_test p 0 inp
+        ; ( "fail"
+          , test (fun () ->
+                let p = P.string_ci "bye" in
+                equal string_result_comparator (P.run p inp)
+                  (Error "[string_ci] \"bye\"")) )
+        ; ( "case sensitive"
+          , test (fun () ->
+                let inp () = P.of_string "hello world" in
+                equal string_result_comparator (P.run p inp) (Ok "hello")) )
         ])
 
   let string_of_chars =
@@ -205,7 +229,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       ; ("char", char)
       ; ("any_char", any_char)
       ; ("char_if", char_if)
-      ; ("string", string)
+      ; ("string_cs", string_cs)
+      ; ("string_ci", string_ci)
       ; ("string_of_chars", string_of_chars)
       ; ("take_string", take_string)
       ; ("take_cstruct", take_cstruct)

@@ -111,7 +111,9 @@ module type PARSER = sig
 
   val char_if : (char -> bool) -> char t
 
-  val string : ?case_sensitive:bool -> string -> string t
+  val string_cs : string -> string t
+
+  val string_ci : string -> string t
 
   val string_of_chars : char list -> string t
 
@@ -403,17 +405,25 @@ struct
     else
       fail ~pos (Format.sprintf "[char_if] pos:%d %C" pos c)
 
-  let string ?(case_sensitive = true) s =
+  let string_ci s =
     let len = String.length s in
     input len
     >>= fun s' _ ~pos ~succ ~fail ->
     let s' = Cstruct.to_string s' in
-    if case_sensitive && String.equal s s' then
-      succ ~pos:(pos + len) s
-    else if String.(equal (lowercase_ascii s) (lowercase_ascii s')) then
+    if String.(equal (lowercase_ascii s) (lowercase_ascii s')) then
       succ ~pos:(pos + len) s
     else
-      fail ~pos (Format.sprintf "[string] %S" s)
+      fail ~pos (Format.sprintf "[string_ci] %S" s)
+
+  let string_cs s =
+    let len = String.length s in
+    input len
+    >>= fun cstr _ ~pos ~succ ~fail ->
+    let cstr' = Cstruct.of_string s in
+    if Cstruct.equal cstr cstr' then
+      succ ~pos:(pos + len) s
+    else
+      fail ~pos (Format.sprintf "[string_cs] %S" s)
 
   let string_of_chars chars = return (String.of_seq @@ List.to_seq chars)
 
@@ -680,7 +690,7 @@ struct
       | '\r' -> true
       | _ -> false)
 
-  let crlf = string "\r\n" <?> "[crlf]"
+  let crlf = string_ci "\r\n" <?> "[crlf]"
 
   let digit = named_ch "DIGIT" is_digit
 

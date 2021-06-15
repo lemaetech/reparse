@@ -480,9 +480,8 @@ module type PARSER = sig
       ]} *)
   val char_if : (char -> bool) -> char t
 
-  (** [string ~case_sensitive s] parses a string [s] exactly. If
-      [case_sensitive] is [false] then comparison is done without character case
-      consideration. Default value is [true].
+  (** [string_cs s] parses a string [s] exactly. String comparison is case
+      sensitive.
 
       {4:string_examples Examples}
 
@@ -490,11 +489,13 @@ module type PARSER = sig
         module P = Reparse.String
 
         ;;
-        let p = P.string "hello" in
-        let v = P.parse_string p "hello world" in
+        let p = P.string_cs "hello" in
+        let v = P.parse p (P.of_string "hello world") in
         v = "hello"
       ]} *)
-  val string : ?case_sensitive:bool -> string -> string t
+  val string_cs : string -> string t
+
+  val string_ci : string -> string t
 
   (** [string_of_chars l] converts [char list] [l] to string
 

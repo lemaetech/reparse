@@ -4,9 +4,9 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
   open P.Infix
 
   let any =
-    let p = P.(any [ string "c"; string "h" ]) in
-    let p2 = P.(any [ string "hello"; take_string 11 ]) in
-    let p3 = P.(any [ take_string 2; string "hello" ]) in
+    let p = P.(any [ string_cs "c"; string_cs "h" ]) in
+    let p2 = P.(any [ string_cs "hello"; take_string 11 ]) in
+    let p3 = P.(any [ take_string 2; string_cs "hello" ]) in
     let inp () = P.of_string "hello" in
     Popper.(
       suite
@@ -17,7 +17,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ; last_trimmed_pos_test p 0 inp
         ; ( "fail"
           , test (fun () ->
-                let p = P.(any [ string "a"; string "b" ]) in
+                let p = P.(any [ string_cs "a"; string_cs "b" ]) in
                 equal string_result_comparator (P.run p inp)
                   (Error "[any] all parsers failed")) )
         ; ( {|first success value is "hello"|}
@@ -33,8 +33,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ])
 
   let alt =
-    let p = P.(alt (string "world") (string "hello")) in
-    let p2 = P.(alt (string "world") (string "how")) in
+    let p = P.(alt (string_cs "world") (string_cs "hello")) in
+    let p2 = P.(alt (string_cs "world") (string_cs "how")) in
     let inp () = P.of_string "hello" in
     Popper.(
       suite
@@ -46,21 +46,21 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ; ( "fail"
           , test (fun () ->
                 equal string_result_comparator (P.run p2 inp)
-                  (Error {|[string] "how"|})) )
+                  (Error {|[string_cs] "how"|})) )
         ; ( "pos is fail"
           , test (fun () ->
                 let p = p2 *> P.pos in
                 equal int_result_comparator (P.run p inp)
-                  (Error {|[string] "how"|})) )
+                  (Error {|[string_cs] "how"|})) )
         ; ( "last_trimmed_pos is fail"
           , test (fun () ->
                 let p = p2 *> P.last_trimmed_pos in
                 equal int_result_comparator (P.run p inp)
-                  (Error {|[string] "how"|})) )
+                  (Error {|[string_cs] "how"|})) )
         ])
 
   let optional =
-    let p = P.(optional (string "hello")) in
+    let p = P.(optional (string_cs "hello")) in
     let inp () = P.of_string "hello" in
     let inp2 () = P.of_string "world" in
     Popper.(
