@@ -119,7 +119,7 @@ module type PARSER = sig
 
   val take_cstruct : int -> Cstruct.t t
 
-  val unsafe_take_cstruct : int -> Cstruct.t t
+  val take_unbuffered : int -> Cstruct.t t
 
   (** {2 Alternate parsers} *)
 
@@ -761,7 +761,7 @@ struct
 
   let pos : int t = fun _inp ~pos ~succ ~fail:_ -> succ ~pos pos
 
-  let unsafe_take_cstruct : int -> Cstruct.t t =
+  let take_unbuffered : int -> Cstruct.t t =
    fun n inp ~pos ~succ ~fail ->
     Input.(
       get_unbuffered inp ~pos ~len:n

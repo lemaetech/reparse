@@ -167,11 +167,11 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                   (Error "pos:0, n:12 eof")) )
         ])
 
-  let unsafe_take_cstruct =
-    let p = P.unsafe_take_cstruct 5 in
+  let take_unbuffered =
+    let p = P.take_unbuffered 5 in
     let inp () = P.of_string "hello world" in
     let p2 =
-      let p1 = P.unsafe_take_cstruct 6 in
+      let p1 = P.take_unbuffered 6 in
       let p2 = P.take_cstruct 5 in
       P.map2 (fun a b -> Cstruct.append a b) p1 p2
     in
@@ -185,7 +185,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ; last_trimmed_pos_test p 5 inp
         ; ( "fail"
           , test (fun () ->
-                let p = P.unsafe_take_cstruct 12 in
+                let p = P.take_unbuffered 12 in
                 equal cstruct_result_comparator (P.run p inp)
                   (Error "pos:0, n:12 eof")) )
         ; ( "value is 'hello world'"
@@ -209,11 +209,11 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       ; ("string_of_chars", string_of_chars)
       ; ("take_string", take_string)
       ; ("take_cstruct", take_cstruct)
-      ; ("unsafe_take_cstruct", unsafe_take_cstruct)
+      ; ("take_unbuffered", take_unbuffered)
       ]
 end
 
 let suite =
   let module S = Make_test (Test_parser.String) in
   let module L = Make_test (Test_parser.Lwt) in
-  Popper.suite [ ("Reparse.String", S.suites); ("Lwt.Stream", S.suites) ]
+  Popper.suite [ ("String", S.suites); ("Lwt.Stream", S.suites) ]

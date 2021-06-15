@@ -518,14 +518,14 @@ module type PARSER = sig
       [take_string]. *)
   val take_cstruct : int -> Cstruct.t t
 
-  (** [unsafe_take_unbuffered n] is similar to [take_string n] except the parser
-      calls [INPUT.get_unbuffered] to retrieve bytes of length [n]. Additionally
-      the parser is unable to backtrack beyond position [pos + n] where [pos] is
-      the current input position of the parser.
+  (** [take_unbuffered n] is similar to [take_string n] except the parser calls
+      [INPUT.get_unbuffered] to retrieve bytes of length [n]. Additionally the
+      parser is unable to backtrack beyond position [pos + n] where [pos] is the
+      current input position of the parser.
 
-      [Note:] Ensure that [unsafe_take_unbuffered] is not being run as part of
-      combinators that required backtracking such as [<|>, any]. *)
-  val unsafe_take_cstruct : int -> Cstruct.t t
+      [Note:] Ensure that [take_unbuffered] is not being run as part of
+      combinators that require backtracking such as [<|>, any]. *)
+  val take_unbuffered : int -> Cstruct.t t
 
   (** {2 Alternate parsers} *)
 
