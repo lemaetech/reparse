@@ -744,7 +744,7 @@ struct
   (*+++++ Parser State +++++*)
 
   let advance : int -> unit t =
-   fun n _inp ~pos ~succ ~fail:_ -> succ ~pos:(pos + n) ()
+   fun n -> input n >>= fun _s _ ~pos ~succ ~fail:_ -> succ ~pos:(pos + n) ()
 
   let eoi : unit t =
    fun inp ~pos ~succ ~fail ->
