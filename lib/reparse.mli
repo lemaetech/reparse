@@ -1182,6 +1182,8 @@ module type PARSER = sig
 
   (** [last_trimmed_pos] returns the last trimmed input position marker. *)
   val last_trimmed_pos : int t
+
+  val of_promise : 'a promise -> 'a t
 end
 
 module type INPUT = sig

@@ -49,11 +49,11 @@ let ws =
 
 let struct_char c = ws *> char c <* ws
 
-let null_value = ws *> string "null" *> ws *> return Null
+let null_value = ws *> string_cs "null" *> ws *> return Null
 
-let false_value = ws *> string "false" *> ws *> return False
+let false_value = ws *> string_cs "false" *> ws *> return False
 
-let true_value = ws *> string "true" *> ws *> return True
+let true_value = ws *> string_cs "true" *> ws *> return True
 
 let number_value =
   let* negative =
@@ -73,7 +73,7 @@ let number_value =
         (fun first_ch digits -> Format.sprintf "%c%s" first_ch digits)
         digits1_to_9 digits
     in
-    any [ string "0"; num ]
+    any [ string_cs "0"; num ]
   in
   let* frac = optional (char '.' *> digits) in
   let+ exponent =
@@ -109,7 +109,8 @@ let string =
     in
     let hex4digit =
       let+ hex =
-        string "\\u" *> take ~at_least:4 ~up_to:4 hex_digit >>= string_of_chars
+        string_cs "\\u" *> take ~at_least:4 ~up_to:4 hex_digit
+        >>= string_of_chars
       in
       Format.sprintf "\\u%s" hex
     in

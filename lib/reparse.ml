@@ -216,6 +216,8 @@ module type PARSER = sig
   val pos : int t
 
   val last_trimmed_pos : int t
+
+  val of_promise : 'a promise -> 'a t
 end
 
 module type INPUT = sig
@@ -788,6 +790,9 @@ struct
     Input.(
       last_trimmed_pos inp
       |> bind (fun last_trimmed_pos' -> succ ~pos last_trimmed_pos'))
+
+  let of_promise : 'a promise -> 'a t =
+   fun prom _inp ~pos ~succ ~fail:_ -> Input.bind (fun a -> succ ~pos a) prom
 end
 
 module String = struct
