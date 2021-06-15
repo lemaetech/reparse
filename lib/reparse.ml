@@ -542,10 +542,10 @@ struct
     let sep_by = sep_by_to_bool ?sep_by in
     let items = ref [] in
     let up_to = Option.value ~default:(-1) up_to in
+    let p' = map2 (fun v sep_by_ok -> (v, sep_by_ok)) p sep_by in
     let rec loop pos taken_count =
       if up_to = -1 || taken_count < up_to then
-        let p = map2 (fun v sep_by_ok -> (v, sep_by_ok)) p sep_by in
-        p inp ~pos
+        p' inp ~pos
           ~succ:(fun ~pos (a, sep_by_ok) ->
             items := a :: !items;
             if sep_by_ok then
