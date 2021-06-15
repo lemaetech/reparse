@@ -152,6 +152,13 @@ module type PARSER = sig
   val take_while_cb :
     ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> unit t
 
+  val take_while_cbp :
+       ?sep_by:_ t
+    -> while_:bool t
+    -> on_take_cb:('a -> unit promise)
+    -> 'a t
+    -> unit t
+
   val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 
   val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
@@ -582,6 +589,34 @@ struct
                   (loop [@tailcall]) pos
                 else
                   succ ~pos ())
+              ~fail:(fun ~pos _ -> succ ~pos ())
+          else
+            succ ~pos ())
+        ~fail:(fun ~pos:_ _ -> succ ~pos ())
+    in
+    loop pos
+
+  let take_while_cbp :
+         ?sep_by:_ t
+      -> while_:bool t
+      -> on_take_cb:('a -> unit promise)
+      -> 'a t
+      -> unit t =
+   fun ?sep_by ~while_ ~on_take_cb p inp ~pos ~succ ~fail:_ ->
+    let sep_by = sep_by_to_bool ?sep_by in
+    let p' = map2 (fun v sep_by_ok -> (v, sep_by_ok)) p sep_by in
+    let rec loop pos =
+      while_ inp ~pos
+        ~succ:(fun ~pos:_ continue ->
+          if continue then
+            p' inp ~pos
+              ~succ:(fun ~pos (v, sep_by_ok) ->
+                on_take_cb v
+                |> Input.bind (fun () ->
+                       if sep_by_ok then
+                         (loop [@tailcall]) pos
+                       else
+                         succ ~pos ()))
               ~fail:(fun ~pos _ -> succ ~pos ())
           else
             succ ~pos ())

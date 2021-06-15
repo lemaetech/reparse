@@ -793,6 +793,15 @@ module type PARSER = sig
   val take_while_cb :
     ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> unit t
 
+  (** [take_while_db_promise] is same as [take_while_cb] except [on_take_cb]
+      returns [unit t] instead of [unit]. *)
+  val take_while_cbp :
+       ?sep_by:_ t
+    -> while_:bool t
+    -> on_take_cb:('a -> unit promise)
+    -> 'a t
+    -> unit t
+
   (** [take_while ~sep_by p ~while_ p] repeatedly parses [p] and returns its
       value. [p] is evaluated if and only if [while_] evaluates to [true]. If
       [sep_by] is specified then the evaluation of [p] must be followed by a
