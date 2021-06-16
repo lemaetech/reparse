@@ -42,7 +42,7 @@ module Stream = struct
       in
       t.buf <- buf;
       t.last_trimmed_pos <- pos;
-      Lwt.return_unit
+      return ()
 
     let buffer_pos_len t ~pos ~len =
       let pos' = pos - t.last_trimmed_pos in
@@ -52,7 +52,7 @@ module Stream = struct
     let get_char_common t ~pos =
       let pos', len' = buffer_pos_len t ~pos ~len:1 in
       if len' >= 0 then
-        Lwt.return (`Char (Cstruct.get_char t.buf pos'), `Buf_not_exceeded)
+        return (`Char (Cstruct.get_char t.buf pos'), `Buf_not_exceeded)
       else
         Lwt_stream.get t.stream
         >|= function
@@ -80,7 +80,7 @@ module Stream = struct
     let get_cstruct_common t ~pos ~len =
       let pos', len' = buffer_pos_len t ~pos ~len in
       if len' >= 0 then
-        Lwt.return (`Cstruct (Cstruct.sub t.buf pos' len), `Buf_not_exceeded)
+        return (`Cstruct (Cstruct.sub t.buf pos' len), `Buf_not_exceeded)
       else
         Lwt_stream.nget (abs len') t.stream
         >|= fun chars ->
