@@ -68,7 +68,7 @@ module Stream = struct
           `Char c
         | None -> `Eof
 
-    let get_unbuffered t ~pos ~len =
+    let get_cstruct_unbuffered t ~pos ~len =
       if len < 0 then raise (invalid_arg "len");
       if pos < 0 || pos < t.last_trimmed_pos then pos_err pos "get_unbuffered";
 
@@ -88,7 +88,7 @@ module Stream = struct
         in
         `Cstruct s1
 
-    let get t ~pos ~len =
+    let get_cstruct t ~pos ~len =
       if len < 0 then raise (invalid_arg "len");
       if pos < 0 || pos < t.last_trimmed_pos then pos_err pos "get";
 

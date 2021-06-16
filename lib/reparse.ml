@@ -233,9 +233,10 @@ module type INPUT = sig
 
   val get_char : t -> pos:int -> [ `Char of char | `Eof ] promise
 
-  val get : t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
+  val get_cstruct :
+    t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
-  val get_unbuffered :
+  val get_cstruct_unbuffered :
     t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   val last_trimmed_pos : t -> int promise
@@ -369,12 +370,12 @@ struct
   let input : int -> Cstruct.t t =
    fun n inp ~pos ~succ ~fail ->
     Input.(
-      get inp ~pos ~len:n
-      |> bind (function
-           | `Cstruct s when Cstruct.length s = n -> succ ~pos s
-           | `Cstruct _ ->
-             fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
-           | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n)))
+      get_cstruct inp ~pos ~len:n
+      >>= function
+      | `Cstruct s when Cstruct.length s = n -> succ ~pos s
+      | `Cstruct _ ->
+        fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
+      | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n))
 
   (*+++++ String/Char parsers ++++++*)
 
@@ -776,11 +777,10 @@ struct
   let eoi : unit t =
    fun inp ~pos ~succ ~fail ->
     Input.(
-      get inp ~pos ~len:1
-      |> bind (function
-           | `Cstruct _ ->
-             fail ~pos (Format.sprintf "[eof] pos:%d, not eof" pos)
-           | `Eof -> succ ~pos ()))
+      get_cstruct inp ~pos ~len:1
+      >>= function
+      | `Cstruct _ -> fail ~pos (Format.sprintf "[eof] pos:%d, not eof" pos)
+      | `Eof -> succ ~pos ())
 
   let trim_input_buffer : unit -> unit t =
    fun () inp ~pos ~succ ~fail:_ ->
@@ -791,14 +791,14 @@ struct
   let take_unbuffered : int -> Cstruct.t t =
    fun n inp ~pos ~succ ~fail ->
     Input.(
-      get_unbuffered inp ~pos ~len:n
-      |> bind (function
-           | `Cstruct s when Cstruct.length s = n ->
-             let pos = pos + n in
-             trim_buffer inp ~pos |> bind (fun () -> succ ~pos s)
-           | `Cstruct _ ->
-             fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
-           | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n)))
+      get_cstruct_unbuffered inp ~pos ~len:n
+      >>= function
+      | `Cstruct s when Cstruct.length s = n ->
+        let pos = pos + n in
+        trim_buffer inp ~pos |> bind (fun () -> succ ~pos s)
+      | `Cstruct _ ->
+        fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
+      | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n))
 
   let last_trimmed_pos : int t =
    fun inp ~pos ~succ ~fail:_ ->
@@ -838,7 +838,7 @@ module String = struct
       else
         `Eof
 
-    let get_unbuffered t ~pos ~len =
+    let get_cstruct_unbuffered t ~pos ~len =
       if len < 0 then raise (invalid_arg "len");
       if pos < 0 || pos < t.last_trimmed_pos then
         invalid_arg (Format.sprintf "pos: %d" pos);
@@ -848,7 +848,7 @@ module String = struct
       else
         `Eof
 
-    let get t ~pos ~len = get_unbuffered t ~pos ~len
+    let get_cstruct t ~pos ~len = get_cstruct_unbuffered t ~pos ~len
 
     let last_trimmed_pos t = return t.last_trimmed_pos
   end)

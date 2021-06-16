@@ -1207,11 +1207,12 @@ module type INPUT = sig
 
   (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
       [`Eof] if [EOI] is reached. *)
-  val get : t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
+  val get_cstruct :
+    t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   (** [get_unbuffered t ~pos ~len] similar to [get t ~pos ~len] except it
       doesn't buffer the taken [len] bytes. *)
-  val get_unbuffered :
+  val get_cstruct_unbuffered :
     t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   val last_trimmed_pos : t -> int promise
