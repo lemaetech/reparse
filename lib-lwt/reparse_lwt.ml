@@ -29,12 +29,7 @@ module Stream = struct
 
     let bind f p = Lwt.bind p f
 
-    let pos_err pos fn =
-      invalid_arg @@ Format.sprintf "invalid arg [pos: %d] in [%s]" pos fn
-
     let trim_buffer t ~pos =
-      if pos < 0 || pos < t.last_trimmed_pos then pos_err pos "trim_buffer";
-
       let bytes_to_trim = pos - t.last_trimmed_pos in
       let new_buf_sz = Cstruct.length t.buf - bytes_to_trim in
       let buf =
@@ -50,8 +45,6 @@ module Stream = struct
       Lwt.return_unit
 
     let get_char t ~pos =
-      if pos < 0 || pos < t.last_trimmed_pos then pos_err pos "get";
-
       let len = 1 in
       let pos' = pos - t.last_trimmed_pos in
       let len' = Cstruct.length t.buf - (pos' + len) in
@@ -68,10 +61,19 @@ module Stream = struct
           `Char c
         | None -> `Eof
 
-    let get_cstruct_unbuffered t ~pos ~len =
-      if len < 0 then raise (invalid_arg "len");
-      if pos < 0 || pos < t.last_trimmed_pos then pos_err pos "get_unbuffered";
+    let get_char_unbuffered t ~pos =
+      let len = 1 in
+      let pos' = pos - t.last_trimmed_pos in
+      let len' = Cstruct.length t.buf - (pos' + len) in
+      if len' >= 0 then
+        Lwt.return (`Char (Cstruct.get_char t.buf pos'))
+      else
+        Lwt_stream.get t.stream
+        >|= function
+        | Some c -> `Char c
+        | None -> `Eof
 
+    let get_cstruct_unbuffered t ~pos ~len =
       let pos' = pos - t.last_trimmed_pos in
       let len' = Cstruct.length t.buf - (pos' + len) in
       if len' >= 0 then
@@ -89,9 +91,6 @@ module Stream = struct
         `Cstruct s1
 
     let get_cstruct t ~pos ~len =
-      if len < 0 then raise (invalid_arg "len");
-      if pos < 0 || pos < t.last_trimmed_pos then pos_err pos "get";
-
       let pos' = pos - t.last_trimmed_pos in
       let len' = Cstruct.length t.buf - (pos' + len) in
       if len' >= 0 then

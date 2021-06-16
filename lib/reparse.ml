@@ -233,6 +233,8 @@ module type INPUT = sig
 
   val get_char : t -> pos:int -> [ `Char of char | `Eof ] promise
 
+  val get_char_unbuffered : t -> pos:int -> [ `Char of char | `Eof ] promise
+
   val get_cstruct :
     t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
@@ -367,25 +369,46 @@ struct
       ~fail:(fun ~pos:_ e -> Input.return (v := Error e))
     |> Input.bind (fun () -> Input.return !v)
 
-  let input : int -> Cstruct.t t =
+  (* Parser invariant: pos should not be less than the last_trimmed_pos. *)
+  let check_last_trimmed : unit t =
+   fun inp ~pos ~succ ~fail ->
+    Input.(
+      last_trimmed_pos inp
+      >>= fun last_trimmed_pos' ->
+      if pos < last_trimmed_pos' then
+        fail ~pos
+          (Format.sprintf
+             "Invalid pos: %d. Parser position should not be less than \
+              last_trimmed_pos:%d"
+             pos last_trimmed_pos')
+      else
+        succ ~pos ())
+
+  let get_input : int -> Cstruct.t t =
    fun n inp ~pos ~succ ~fail ->
     Input.(
-      get_cstruct inp ~pos ~len:n
-      >>= function
-      | `Cstruct s when Cstruct.length s = n -> succ ~pos s
-      | `Cstruct _ ->
-        fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
-      | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n))
+      check_last_trimmed inp ~pos
+        ~succ:(fun ~pos () ->
+          get_cstruct inp ~pos ~len:n
+          >>= function
+          | `Cstruct s when Cstruct.length s = n -> succ ~pos s
+          | `Cstruct _ ->
+            fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
+          | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n))
+        ~fail)
 
   (*+++++ String/Char parsers ++++++*)
 
   let peek_char : char t =
    fun inp ~pos ~succ ~fail ->
     Input.(
-      get_char inp ~pos
-      >>= function
-      | `Char c -> succ ~pos c
-      | `Eof -> fail ~pos (Format.sprintf "[peek_char] pos:%d eof" pos))
+      check_last_trimmed inp ~pos
+        ~succ:(fun ~pos () ->
+          get_char inp ~pos
+          >>= function
+          | `Char c -> succ ~pos c
+          | `Eof -> fail ~pos (Format.sprintf "[peek_char] pos:%d eof" pos))
+        ~fail)
 
   let peek_char_opt : char option t =
    fun inp ~pos ~succ ~fail:_ ->
@@ -395,7 +418,7 @@ struct
       | `Char c -> succ ~pos (Some c)
       | `Eof -> succ ~pos None)
 
-  let peek_string : int -> string t = fun n -> input n >>| Cstruct.to_string
+  let peek_string : int -> string t = fun n -> get_input n >>| Cstruct.to_string
 
   let any_char : char t =
    fun inp ~pos ~succ ~fail ->
@@ -405,17 +428,18 @@ struct
         fail ~pos (Format.sprintf "[any_char] pos:%d eof" pos))
 
   let char : char -> char t =
-   fun c ->
-    input 1
-    >>= fun s _ ~pos ~succ ~fail ->
-    let c' = Cstruct.get_char s 0 in
-    if c' = c then
-      succ ~pos:(pos + 1) c
-    else
-      fail ~pos (Format.sprintf "[char] pos:%d, expected %C, got %C" pos c c')
+   fun c inp ~pos ~succ ~fail ->
+    peek_char inp ~pos
+      ~succ:(fun ~pos c' ->
+        if c' = c then
+          succ ~pos:(pos + 1) c
+        else
+          fail ~pos
+            (Format.sprintf "[char] pos:%d, expected %C, got %C" pos c c'))
+      ~fail
 
   let char_if f =
-    input 1
+    get_input 1
     >>= fun s _ ~pos ~succ ~fail ->
     let c = Cstruct.get_char s 0 in
     if f c then
@@ -425,7 +449,7 @@ struct
 
   let string_ci s =
     let len = String.length s in
-    input len
+    get_input len
     >>= fun s' _ ~pos ~succ ~fail ->
     let s' = Cstruct.to_string s' in
     if String.(equal (lowercase_ascii s) (lowercase_ascii s')) then
@@ -435,7 +459,7 @@ struct
 
   let string_cs s =
     let len = String.length s in
-    input len
+    get_input len
     >>= fun cstr _ ~pos ~succ ~fail ->
     let cstr' = Cstruct.of_string s in
     if Cstruct.equal cstr cstr' then
@@ -446,7 +470,7 @@ struct
   let string_of_chars chars = return (String.of_seq @@ List.to_seq chars)
 
   let take_cstruct : int -> Cstruct.t t =
-   fun n -> input n >>= fun s _ ~pos ~succ ~fail:_ -> succ ~pos:(pos + n) s
+   fun n -> get_input n >>= fun s _ ~pos ~succ ~fail:_ -> succ ~pos:(pos + n) s
 
   let take_string : int -> string t =
    fun n -> take_cstruct n >>| fun cs -> Cstruct.to_string cs
@@ -772,7 +796,8 @@ struct
   (*+++++ Parser State +++++*)
 
   let advance : int -> unit t =
-   fun n -> input n >>= fun _s _ ~pos ~succ ~fail:_ -> succ ~pos:(pos + n) ()
+   fun n ->
+    get_input n >>= fun _s _ ~pos ~succ ~fail:_ -> succ ~pos:(pos + n) ()
 
   let eoi : unit t =
    fun inp ~pos ~succ ~fail ->
@@ -830,19 +855,14 @@ module String = struct
       return ()
 
     let get_char t ~pos =
-      if pos < 0 || pos < t.last_trimmed_pos then
-        invalid_arg (Format.sprintf "pos: %d" pos);
-
       if pos + 1 <= Cstruct.length t.input then
         `Char (Cstruct.get_char t.input pos)
       else
         `Eof
 
-    let get_cstruct_unbuffered t ~pos ~len =
-      if len < 0 then raise (invalid_arg "len");
-      if pos < 0 || pos < t.last_trimmed_pos then
-        invalid_arg (Format.sprintf "pos: %d" pos);
+    let get_char_unbuffered = get_char
 
+    let get_cstruct_unbuffered t ~pos ~len =
       if pos + len <= Cstruct.length t.input then
         `Cstruct (Cstruct.sub t.input pos len)
       else

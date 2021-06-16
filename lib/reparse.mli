@@ -1205,6 +1205,8 @@ module type INPUT = sig
 
   val get_char : t -> pos:int -> [ `Char of char | `Eof ] promise
 
+  val get_char_unbuffered : t -> pos:int -> [ `Char of char | `Eof ] promise
+
   (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
       [`Eof] if [EOI] is reached. *)
   val get_cstruct :
