@@ -104,6 +104,8 @@ module Stream = struct
         `Cstruct (Cstruct.sub t.buf pos' len)
 
     let last_trimmed_pos t = return t.last_trimmed_pos
+
+    let buffer_size t = return (Some (Cstruct.length t.buf))
   end)
 
   let input_of_stream stream =

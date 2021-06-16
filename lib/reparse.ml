@@ -207,7 +207,7 @@ module type PARSER = sig
 
   val whitespace : char t
 
-  (** {2 Parser manipulation} *)
+  (** {2 Input manipulation} *)
 
   val advance : int -> unit t
 
@@ -218,6 +218,8 @@ module type PARSER = sig
   val pos : int t
 
   val last_trimmed_pos : int t
+
+  val input_buffer_size : int option t
 
   val of_promise : 'a promise -> 'a t
 end
@@ -244,6 +246,8 @@ module type INPUT = sig
     t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   val last_trimmed_pos : t -> int promise
+
+  val buffer_size : t -> int option promise
 end
 
 module Make (Input : INPUT) :
@@ -844,6 +848,10 @@ struct
 
   let of_promise : 'a promise -> 'a t =
    fun prom _inp ~pos ~succ ~fail:_ -> Input.bind (fun a -> succ ~pos a) prom
+
+  let input_buffer_size : int option t =
+   fun inp ~pos ~succ ~fail:_ ->
+    Input.(buffer_size inp >>= fun sz_opt -> succ ~pos sz_opt)
 end
 
 module String = struct
@@ -882,6 +890,8 @@ module String = struct
     let get_cstruct t ~pos ~len = get_cstruct_unbuffered t ~pos ~len
 
     let last_trimmed_pos t = return t.last_trimmed_pos
+
+    let buffer_size _ = return None
   end)
 
   let input_of_string s = { input = Cstruct.of_string s; last_trimmed_pos = 0 }

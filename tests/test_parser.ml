@@ -39,6 +39,9 @@ module Make_helper (P : TEST_PARSER) = struct
 
   type bool_result = (bool, string) result [@@deriving show, ord, popper]
 
+  type int_opt_result = (int option, string) result
+  [@@deriving show, ord, popper]
+
   open P.Infix
 
   let pos_test p pos inp =
@@ -49,11 +52,23 @@ module Make_helper (P : TEST_PARSER) = struct
             equal int_result_comparator (P.run p inp) (Ok pos))) )
 
   let last_trimmed_pos_test p pos inp =
-    ( Format.sprintf "last_trimmed_pos is %d" pos
+    ( Format.asprintf "last_trimmed_pos is %d" pos
     , Popper.(
         test (fun () ->
             let p = p *> P.last_trimmed_pos in
             equal int_result_comparator (P.run p inp) (Ok pos))) )
+
+  let buffer_size_test p sz inp =
+    let pp_int_opt fmt =
+      Format.pp_print_option
+        ~none:(fun fmt () -> Format.fprintf fmt "'None'")
+        Format.pp_print_int fmt
+    in
+    ( Format.asprintf "buffer size is %a" pp_int_opt sz
+    , Popper.(
+        test (fun () ->
+            let p = p *> P.input_buffer_size in
+            equal int_opt_result_comparator (P.run p inp) (Ok sz))) )
 
   let empty () = P.of_string ""
 end

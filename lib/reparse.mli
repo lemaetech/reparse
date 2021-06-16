@@ -1147,7 +1147,7 @@ module type PARSER = sig
       ]} *)
   val whitespace : char t
 
-  (** {2 Parser manipulation} *)
+  (** {2 Input manipulation} *)
 
   (** [advance n] advances input by [n] bytes. *)
   val advance : int -> unit t
@@ -1190,6 +1190,10 @@ module type PARSER = sig
   (** [last_trimmed_pos] returns the last trimmed input position marker. *)
   val last_trimmed_pos : int t
 
+  (** [input_buffer_size] returns current input buffer size in bytes if input is
+      a buffered input otherwise it returns [None] for unbuffered input. *)
+  val input_buffer_size : int option t
+
   val of_promise : 'a promise -> 'a t
 end
 
@@ -1225,6 +1229,8 @@ module type INPUT = sig
     t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   val last_trimmed_pos : t -> int promise
+
+  val buffer_size : t -> int option promise
 end
 
 (** A functor to create parsers based on the given [Input] module. *)
