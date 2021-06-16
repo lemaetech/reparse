@@ -38,7 +38,7 @@ module Stream = struct
       let bytes_to_trim = pos - t.last_trimmed_pos in
       let new_buf_sz = Cstruct.length t.buf - bytes_to_trim in
       let buf =
-        if new_buf_sz = 0 then
+        if new_buf_sz <= 0 then
           Cstruct.empty
         else
           let buf = Cstruct.create new_buf_sz in
@@ -48,6 +48,25 @@ module Stream = struct
       t.buf <- buf;
       t.last_trimmed_pos <- pos;
       Lwt.return_unit
+
+    let get_char t ~pos =
+      if pos < 0 || pos < t.last_trimmed_pos then pos_err pos "get";
+
+      let len = 1 in
+      let pos' = pos - t.last_trimmed_pos in
+      let len' = Cstruct.length t.buf - (pos' + len) in
+      if len' >= 0 then
+        Lwt.return (`Char (Cstruct.get_char t.buf pos'))
+      else
+        Lwt_stream.get t.stream
+        >|= function
+        | Some c ->
+          let s1 = Cstruct.create_unsafe (Cstruct.length t.buf + 1) in
+          Cstruct.blit t.buf 0 s1 0 (Cstruct.length t.buf);
+          Cstruct.set_char s1 (Cstruct.length s1 - 1) c;
+          t.buf <- s1;
+          `Char c
+        | None -> `Eof
 
     let get_unbuffered t ~pos ~len =
       if len < 0 then raise (invalid_arg "len");
@@ -59,7 +78,7 @@ module Stream = struct
         Lwt.return (`Cstruct (Cstruct.sub t.buf pos' len))
       else
         Lwt_stream.nget (abs len') t.stream
-        >>= fun chars ->
+        >|= fun chars ->
         let s1 =
           chars
           |> List.to_seq
@@ -67,7 +86,7 @@ module Stream = struct
           |> Cstruct.of_string
           |> Cstruct.append (Cstruct.sub t.buf pos' len)
         in
-        Lwt.return (`Cstruct s1)
+        `Cstruct s1
 
     let get t ~pos ~len =
       if len < 0 then raise (invalid_arg "len");
@@ -79,7 +98,7 @@ module Stream = struct
         Lwt.return (`Cstruct (Cstruct.sub t.buf pos' len))
       else
         Lwt_stream.nget (abs len') t.stream
-        >>= fun chars ->
+        >|= fun chars ->
         let s1 =
           chars
           |> List.to_seq
@@ -88,7 +107,7 @@ module Stream = struct
           |> Cstruct.append t.buf
         in
         t.buf <- s1;
-        Lwt.return (`Cstruct (Cstruct.sub t.buf pos' len))
+        `Cstruct (Cstruct.sub t.buf pos' len)
 
     let last_trimmed_pos t = return t.last_trimmed_pos
   end)

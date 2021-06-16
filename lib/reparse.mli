@@ -1140,7 +1140,7 @@ module type PARSER = sig
       ]} *)
   val whitespace : char t
 
-  (** {2 Parser state} *)
+  (** {2 Parser manipulation} *)
 
   (** [advance n] advances input by [n] bytes. *)
   val advance : int -> unit t
@@ -1202,6 +1202,8 @@ module type INPUT = sig
       {b Note} After the input buffer is trimmed the parser is unable to
       backtrack to [pos] less than [pos]. *)
   val trim_buffer : t -> pos:int -> unit promise
+
+  val get_char : t -> pos:int -> [ `Char of char | `Eof ] promise
 
   (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
       [`Eof] if [EOI] is reached. *)

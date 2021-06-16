@@ -205,7 +205,7 @@ module type PARSER = sig
 
   val whitespace : char t
 
-  (** {2 Parser State} *)
+  (** {2 Parser manipulation} *)
 
   val advance : int -> unit t
 
@@ -231,6 +231,8 @@ module type INPUT = sig
 
   val trim_buffer : t -> pos:int -> unit promise
 
+  val get_char : t -> pos:int -> [ `Char of char | `Eof ] promise
+
   val get : t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   val get_unbuffered :
@@ -252,6 +254,12 @@ struct
     -> succ:(pos:int -> 'a -> unit Input.promise)
     -> fail:(pos:int -> string -> unit Input.promise)
     -> unit Input.promise
+
+  module Input = struct
+    include Input
+
+    let ( >>= ) b f = bind f b
+  end
 
   (** Variable names:
 
@@ -372,21 +380,28 @@ struct
 
   let peek_char : char t =
    fun inp ~pos ~succ ~fail ->
-    input 1 inp ~pos
-      ~succ:(fun ~pos s -> succ ~pos (Cstruct.get_char s 0))
-      ~fail
+    Input.(
+      get_char inp ~pos
+      >>= function
+      | `Char c -> succ ~pos c
+      | `Eof -> fail ~pos (Format.sprintf "[peek_char] pos:%d eof" pos))
 
   let peek_char_opt : char option t =
    fun inp ~pos ~succ ~fail:_ ->
-    input 1 inp ~pos
-      ~succ:(fun ~pos c -> succ ~pos (Some (Cstruct.get_char c 0)))
-      ~fail:(fun ~pos _ -> succ ~pos None)
+    Input.(
+      get_char inp ~pos
+      >>= function
+      | `Char c -> succ ~pos (Some c)
+      | `Eof -> succ ~pos None)
 
   let peek_string : int -> string t = fun n -> input n >>| Cstruct.to_string
 
   let any_char : char t =
-    input 1
-    >>= fun s _ ~pos ~succ ~fail:_ -> succ ~pos:(pos + 1) (Cstruct.get_char s 0)
+   fun inp ~pos ~succ ~fail ->
+    peek_char inp ~pos
+      ~succ:(fun ~pos c -> succ ~pos:(pos + 1) c)
+      ~fail:(fun ~pos _ ->
+        fail ~pos (Format.sprintf "[any_char] pos:%d eof" pos))
 
   let char : char -> char t =
    fun c ->
@@ -813,6 +828,15 @@ module String = struct
     let trim_buffer t ~pos =
       t.last_trimmed_pos <- pos;
       return ()
+
+    let get_char t ~pos =
+      if pos < 0 || pos < t.last_trimmed_pos then
+        invalid_arg (Format.sprintf "pos: %d" pos);
+
+      if pos + 1 <= Cstruct.length t.input then
+        `Char (Cstruct.get_char t.input pos)
+      else
+        `Eof
 
     let get_unbuffered t ~pos ~len =
       if len < 0 then raise (invalid_arg "len");

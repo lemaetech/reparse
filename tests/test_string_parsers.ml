@@ -14,7 +14,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ; ( "fail on eof"
           , test (fun () ->
                 equal char_result_comparator (P.run p empty)
-                  (Error "pos:0, n:1 eof")) )
+                  (Error "[peek_char] pos:0 eof")) )
         ])
 
   let peek_char_opt =
@@ -58,7 +58,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ; ( "fail on eof"
           , test (fun () ->
                 equal char_result_comparator (P.run p empty)
-                  (Error "pos:0, n:1 eof")) )
+                  (Error "[any_char] pos:0 eof")) )
         ])
 
   let char =
