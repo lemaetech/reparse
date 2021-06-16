@@ -64,10 +64,10 @@ module Stream = struct
       >|= function
       | `Char c, `Buf_not_exceeded -> `Char c
       | `Char c, `Buf_exceeded ->
-        let s1 = Cstruct.create_unsafe (Cstruct.length t.buf + 1) in
-        Cstruct.blit t.buf 0 s1 0 (Cstruct.length t.buf);
-        Cstruct.set_char s1 (Cstruct.length s1 - 1) c;
-        t.buf <- s1;
+        let new_buf = Cstruct.create_unsafe (Cstruct.length t.buf + 1) in
+        Cstruct.blit t.buf 0 new_buf 0 (Cstruct.length t.buf);
+        Cstruct.set_char new_buf (Cstruct.length new_buf - 1) c;
+        t.buf <- new_buf;
         `Char c
       | `Eof, _ -> `Eof
 
@@ -84,8 +84,8 @@ module Stream = struct
       else
         Lwt_stream.nget (abs len') t.stream
         >|= fun chars ->
-        let s1 = chars |> List.to_seq |> String.of_seq |> Cstruct.of_string in
-        (`Cstruct s1, `Buf_exceeded (pos', abs len'))
+        let buf = chars |> List.to_seq |> String.of_seq |> Cstruct.of_string in
+        (`Cstruct buf, `Buf_exceeded (pos', abs len'))
 
     let get_cstruct_unbuffered t ~pos ~len =
       get_cstruct_common t ~pos ~len
