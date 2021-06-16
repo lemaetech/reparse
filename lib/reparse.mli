@@ -448,6 +448,13 @@ module type PARSER = sig
       ]} *)
   val any_char : char t
 
+  (** [any_char_unbuffered] is same as [any_char] except the returned char value
+      is not buffered by the input.
+
+      {b Important} don't use this parser with backtracking parsers such as
+      [<|>], [alt], [any] etc. *)
+  val any_char_unbuffered : char t
+
   (** [char c] parses character [c] exactly.
 
       {4:char_examples Examples}

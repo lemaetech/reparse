@@ -107,6 +107,8 @@ module type PARSER = sig
 
   val any_char : char t
 
+  val any_char_unbuffered : char t
+
   val char : char -> char t
 
   val char_if : (char -> bool) -> char t
@@ -426,6 +428,15 @@ struct
       ~succ:(fun ~pos c -> succ ~pos:(pos + 1) c)
       ~fail:(fun ~pos _ ->
         fail ~pos (Format.sprintf "[any_char] pos:%d eof" pos))
+
+  let any_char_unbuffered : char t =
+   fun inp ~pos ~succ ~fail ->
+    Input.(
+      get_char_unbuffered inp ~pos
+      >>= function
+      | `Char c -> succ ~pos:(pos + 1) c
+      | `Eof ->
+        fail ~pos (Format.sprintf "[any_char_unbuffered] pos:%d eof" pos))
 
   let char : char -> char t =
    fun c inp ~pos ~succ ~fail ->

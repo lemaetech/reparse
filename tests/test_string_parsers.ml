@@ -61,6 +61,22 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                   (Error "[any_char] pos:0 eof")) )
         ])
 
+  let any_char_unbuffered =
+    let p = P.any_char_unbuffered in
+    let inp () = P.of_string "hello" in
+    Popper.(
+      suite
+        [ ( "value is 'h'"
+          , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
+          )
+        ; pos_test p 1 inp
+        ; last_trimmed_pos_test p 0 inp
+        ; ( "fail on eof"
+          , test (fun () ->
+                equal char_result_comparator (P.run p empty)
+                  (Error "[any_char_unbuffered] pos:0 eof")) )
+        ])
+
   let char =
     let p = P.char 'h' in
     let inp () = P.of_string "hello" in
@@ -226,8 +242,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       ; ("peek_char_opt", peek_char_opt)
       ; ("peek_string", peek_string)
       ; ("any_char", any_char)
+      ; ("any_char_unbuffered", any_char_unbuffered)
       ; ("char", char)
-      ; ("any_char", any_char)
       ; ("char_if", char_if)
       ; ("string_cs", string_cs)
       ; ("string_ci", string_ci)
