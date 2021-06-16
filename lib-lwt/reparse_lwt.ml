@@ -52,30 +52,31 @@ module Stream = struct
     let get_char_common t ~pos =
       let pos', len' = buffer_pos_len t ~pos ~len:1 in
       if len' >= 0 then
-        return (`Char (Cstruct.get_char t.buf pos'), `Buf_not_exceeded)
+        return (`Return (Cstruct.get_char t.buf pos'))
       else
         Lwt_stream.get t.stream
         >|= function
-        | Some c -> (`Char c, `Buf_exceeded)
-        | None -> (`Eof, `Buf_not_exceeded)
+        | Some c -> `Additional_byte_read c
+        | None -> `Eof
 
     let get_char t ~pos =
       get_char_common t ~pos
       >|= function
-      | `Char c, `Buf_not_exceeded -> `Char c
-      | `Char c, `Buf_exceeded ->
+      | `Return c -> `Char c
+      | `Additional_byte_read c ->
         let new_buf = Cstruct.create_unsafe (Cstruct.length t.buf + 1) in
         Cstruct.blit t.buf 0 new_buf 0 (Cstruct.length t.buf);
         Cstruct.set_char new_buf (Cstruct.length new_buf - 1) c;
         t.buf <- new_buf;
         `Char c
-      | `Eof, _ -> `Eof
+      | `Eof -> `Eof
 
     let get_char_unbuffered t ~pos =
       get_char_common t ~pos
       >|= function
-      | `Char c, _ -> `Char c
-      | `Eof, _ -> `Eof
+      | `Return c -> `Char c
+      | `Additional_byte_read c -> `Char c
+      | `Eof -> `Eof
 
     let get_cstruct_common t ~pos ~len =
       let pos', len' = buffer_pos_len t ~pos ~len in
