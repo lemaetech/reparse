@@ -88,4 +88,4 @@ end
 let suite =
   let module S = Make_test (Test_parser.String) in
   let module L = Make_test (Test_parser.Lwt) in
-  Popper.suite [ ("String", S.suites); ("Lwt.Stream", S.suites) ]
+  Popper.suite [ ("String", S.suites); ("Lwt.Stream", L.suites) ]

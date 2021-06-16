@@ -882,10 +882,13 @@ module String = struct
     let get_char_unbuffered = get_char
 
     let get_cstruct_unbuffered t ~pos ~len =
-      if pos + len <= Cstruct.length t.input then
+      let len' = Cstruct.length t.input - pos in
+      if len' <= 0 then
+        `Eof
+      else if len' > len then
         `Cstruct (Cstruct.sub t.input pos len)
       else
-        `Eof
+        `Cstruct (Cstruct.sub t.input pos len')
 
     let get_cstruct t ~pos ~len = get_cstruct_unbuffered t ~pos ~len
 

@@ -80,32 +80,54 @@ module Stream = struct
     let get_cstruct_common t ~pos ~len =
       let pos', len' = buffer_pos_len t ~pos ~len in
       if len' >= 0 then
-        return (`Cstruct (Cstruct.sub t.buf pos' len), `Buf_not_exceeded)
+        return (`Return (Cstruct.sub t.buf pos' len))
       else
-        Lwt_stream.nget (abs len') t.stream
+        let len' = abs len' in
+        Lwt_stream.nget len' t.stream
         >|= fun chars ->
-        let buf = chars |> List.to_seq |> String.of_seq |> Cstruct.of_string in
-        (`Cstruct buf, `Buf_exceeded (pos', abs len'))
+        let len'' = List.length chars in
+        if len'' > 0 then
+          chars
+          |> List.to_seq
+          |> String.of_seq
+          |> Cstruct.of_string
+          |> fun bytes -> `Additional_bytes_read (bytes, pos')
+        else
+          `Eof
 
     let get_cstruct_unbuffered t ~pos ~len =
       get_cstruct_common t ~pos ~len
       >|= function
-      | `Cstruct buf, `Buf_not_exceeded -> `Cstruct buf
-      | `Cstruct buf, `Buf_exceeded (pos', len) ->
-        `Cstruct (Cstruct.append (Cstruct.sub t.buf pos' len) buf)
+      | `Eof -> `Eof
+      | `Return bytes -> `Cstruct bytes
+      | `Additional_bytes_read (additional_bytes, pos') ->
+        let b1 =
+          let len' = Cstruct.length t.buf - pos' in
+          Cstruct.sub t.buf pos' len'
+        in
+        let bytes = Cstruct.(append b1 additional_bytes) in
+        `Cstruct bytes
 
     let get_cstruct t ~pos ~len =
       get_cstruct_common t ~pos ~len
       >|= function
-      | `Cstruct buf, `Buf_not_exceeded -> `Cstruct buf
-      | `Cstruct buf, `Buf_exceeded (pos', len) ->
-        let new_buf = Cstruct.append t.buf buf in
+      | `Eof -> `Eof
+      | `Return buf -> `Cstruct buf
+      | `Additional_bytes_read (additional_bytes, pos') ->
+        let new_buf = Cstruct.append t.buf additional_bytes in
+        let len' = Cstruct.length new_buf - pos' in
+        let len =
+          if len' < len then
+            len'
+          else
+            len
+        in
         t.buf <- new_buf;
         `Cstruct (Cstruct.sub t.buf pos' len)
 
     let last_trimmed_pos t = return t.last_trimmed_pos
 
-    let buffer_size t = return (Some (Cstruct.length t.buf))
+    let buffer_size t = return @@ Some (Cstruct.length t.buf)
   end)
 
   let input_of_stream stream =

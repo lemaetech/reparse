@@ -1,3 +1,5 @@
+let () = Printexc.record_backtrace true
+
 let () =
   Popper.suite
     [ ("String parsers", Test_string_parsers.suite)

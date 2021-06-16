@@ -75,6 +75,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal char_result_comparator (P.run p empty)
                   (Error "[any_char_unbuffered] pos:0 eof")) )
+          (* ; buffer_size_test p (Some 0) inp *)
         ])
 
   let char =
@@ -204,7 +205,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 let p = P.take_cstruct 12 in
                 equal cstruct_result_comparator (P.run p inp)
-                  (Error "pos:0, n:12 eof")) )
+                  (Error "pos:0, n:12 not enough input")) )
         ])
 
   let take_unbuffered =
@@ -227,7 +228,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 let p = P.take_unbuffered 12 in
                 equal cstruct_result_comparator (P.run p inp)
-                  (Error "pos:0, n:12 eof")) )
+                  (Error "pos:0, n:12 not enough input")) )
         ; ( "value is 'hello world'"
           , test (fun () ->
                 equal cstruct_result_comparator (P.run p2 inp)
@@ -257,4 +258,4 @@ end
 let suite =
   let module S = Make_test (Test_parser.String) in
   let module L = Make_test (Test_parser.Lwt) in
-  Popper.suite [ ("String", S.suites); ("Lwt.Stream", S.suites) ]
+  Popper.suite [ ("String", S.suites); ("Lwt.Stream", L.suites) ]
