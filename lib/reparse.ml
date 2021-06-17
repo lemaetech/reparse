@@ -438,7 +438,9 @@ struct
     Input.(
       get_char_unbuffered inp ~pos
       >>= function
-      | `Char c -> succ ~pos:(pos + 1) c
+      | `Char c ->
+        let pos = pos + 1 in
+        trim_buffer inp ~pos |> bind (fun () -> succ ~pos c)
       | `Eof ->
         fail ~pos (Format.sprintf "[any_char_unbuffered] pos:%d eof" pos))
 

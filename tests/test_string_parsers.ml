@@ -64,18 +64,29 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
   let any_char_unbuffered =
     let p = P.any_char_unbuffered in
     let inp () = P.of_string "hello" in
+    let p2 =
+      let p1 = P.any_char_unbuffered in
+      let p2 = P.any_char in
+      let ( <$$> ) = P.map2 in
+      (* P.map2 (fun c1 c2 -> List.to_seq [ c1; c2 ] |> String.of_seq) p1 p2 *)
+      ((fun c1 c2 -> List.to_seq [ c1; c2 ] |> String.of_seq) <$$> p1) p2
+    in
     Popper.(
       suite
         [ ( "value is 'h'"
           , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
           )
         ; pos_test p 1 inp
-        ; last_trimmed_pos_test p 0 inp
+        ; last_trimmed_pos_test p 1 inp
         ; ( "fail on eof"
           , test (fun () ->
                 equal char_result_comparator (P.run p empty)
                   (Error "[any_char_unbuffered] pos:0 eof")) )
-          (* ; buffer_size_test p (Some 0) inp *)
+        ; ( {|value is "he"|}
+          , test (fun () ->
+                equal string_result_comparator (P.run p2 inp) (Ok "he")) )
+        ; pos_test p2 2 inp
+        ; last_trimmed_pos_test p 1 inp
         ])
 
   let char =
