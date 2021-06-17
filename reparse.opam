@@ -14,7 +14,7 @@ depends: [
   "cstruct" {>= "6.0.0"}
   "mdx" {with-test}
   "popper" {with-test}
-  "bigarray-compat" {with-test}
+  "ppx_deriving_popper" {with-test}
   "ppx_deriving" {with-test}
   "odoc" {with-doc}
 ]
