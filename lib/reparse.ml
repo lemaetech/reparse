@@ -272,20 +272,7 @@ struct
     let ( >>= ) b f = bind f b
   end
 
-  (** Variable names:
-
-      inp/_inp : Input.t
-
-      pos : int
-
-      p/q/r/s .. : 'a t
-
-      f : function type
-
-      v/a : polymorphic value types *)
-
   (*+++++ Monadic operators +++++*)
-
   let return : 'a -> 'a t = fun v _inp ~pos ~succ ~fail:_ -> succ ~pos v
 
   let unit = return ()
@@ -296,11 +283,27 @@ struct
 
   let fail : string -> 'a t = fun msg _inp ~pos ~succ:_ ~fail -> fail ~pos msg
 
-  let bind f p inp ~pos ~succ ~fail =
+  let bind : ('a -> 'b t) -> 'a t -> 'b t =
+   fun f p inp ~pos ~succ ~fail ->
     p inp ~pos ~succ:(fun ~pos a -> f a inp ~pos ~succ ~fail) ~fail
 
   let map f p inp ~pos ~succ ~fail =
     p inp ~pos ~succ:(fun ~pos a -> succ ~pos (f a)) ~fail
+
+  let map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t =
+   fun f p q -> bind (fun p' -> map (fun q' -> f p' q') q) p
+
+  let map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t =
+   fun f p q r ->
+    bind (fun p' -> bind (fun q' -> map (fun r' -> f p' q' r') r) q) p
+
+  let map4 :
+      ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t =
+   fun f p q r s ->
+    bind
+      (fun p' ->
+        bind (fun q' -> bind (fun r' -> map (fun s' -> f p' q' r' s') s) r) q)
+      p
 
   let apply f g = bind (fun f' -> map f' g) f
 
@@ -341,12 +344,6 @@ struct
   end
 
   include Infix
-
-  let map2 f p q = return f <*> p <*> q
-
-  let map3 f p q r = return f <*> p <*> q <*> r
-
-  let map4 f p q r s = return f <*> p <*> q <*> r <*> s
 
   module Let_syntax = struct
     let return = return
