@@ -31,6 +31,8 @@ module type PARSER = sig
 
   val both : 'a t -> 'b t -> ('a * 'b) t
 
+  val apply : ('a -> 'b) t -> 'a t -> 'b t
+
   val map : ('a -> 'b) -> 'a t -> 'b t
 
   val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
@@ -299,6 +301,8 @@ struct
 
   let map f p inp ~pos ~succ ~fail =
     p inp ~pos ~succ:(fun ~pos a -> succ ~pos (f a)) ~fail
+
+  let apply f g = bind (fun f' -> map f' g) f
 
   module Infix = struct
     let ( >>= ) p f = bind f p

@@ -100,6 +100,8 @@ module type PARSER = sig
       is evaluated from [q]. *)
   val both : 'a t -> 'b t -> ('a * 'b) t
 
+  val apply : ('a -> 'b) t -> 'a t -> 'b t
+
   (** [map f p] is prefix version of [p >>| f]. *)
   val map : ('a -> 'b) -> 'a t -> 'b t
 
