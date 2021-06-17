@@ -34,11 +34,8 @@ let skip_spaces = skip space
 
 let binop : 'a t -> char -> 'b t -> ('a -> 'b -> 'c) -> 'c t =
  fun exp1 op exp2 f ->
-  map3
-    (fun e1 _ e2 -> f e1 e2)
-    exp1
-    (skip_spaces *> char op <* skip_spaces)
-    exp2
+  (exp1, skip_spaces *> char op <* skip_spaces, exp2)
+  <$$$> fun e1 _ e2 -> f e1 e2
 
 let integer : expr t =
   let+ d = skip_spaces *> digits <* skip_spaces in
