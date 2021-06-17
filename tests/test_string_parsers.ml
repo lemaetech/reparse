@@ -1,6 +1,8 @@
 module Make_test (P : Test_parser.TEST_PARSER) = struct
   open Test_parser.Make_helper (P)
 
+  open P.Infix
+
   let peek_char =
     let p = P.peek_char in
     let inp () = P.of_string "hello world" in
@@ -65,11 +67,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let p = P.any_char_unbuffered in
     let inp () = P.of_string "hello" in
     let p2 =
-      let p1 = P.any_char_unbuffered in
-      let p2 = P.any_char in
-      let ( <$$> ) = P.map2 in
-      (* P.map2 (fun c1 c2 -> List.to_seq [ c1; c2 ] |> String.of_seq) p1 p2 *)
-      ((fun c1 c2 -> List.to_seq [ c1; c2 ] |> String.of_seq) <$$> p1) p2
+      (P.any_char_unbuffered, P.any_char, P.any_char)
+      <$$$> fun c1 c2 c3 -> List.to_seq [ c1; c2; c3 ] |> String.of_seq
     in
     Popper.(
       suite
@@ -82,10 +81,10 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal char_result_comparator (P.run p empty)
                   (Error "[any_char_unbuffered] pos:0 eof")) )
-        ; ( {|value is "he"|}
+        ; ( {|value is "hel"|}
           , test (fun () ->
-                equal string_result_comparator (P.run p2 inp) (Ok "he")) )
-        ; pos_test p2 2 inp
+                equal string_result_comparator (P.run p2 inp) (Ok "hel")) )
+        ; pos_test p2 3 inp
         ; last_trimmed_pos_test p 1 inp
         ])
 
@@ -223,9 +222,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let p = P.take_unbuffered 5 in
     let inp () = P.of_string "hello world" in
     let p2 =
-      let p1 = P.take_unbuffered 6 in
-      let p2 = P.take_cstruct 5 in
-      P.map2 (fun a b -> Cstruct.append a b) p1 p2
+      (P.take_unbuffered 6, P.take_cstruct 5) <$$> fun a b -> Cstruct.append a b
     in
     Popper.(
       suite
