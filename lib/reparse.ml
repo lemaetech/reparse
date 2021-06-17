@@ -697,12 +697,13 @@ struct
           if continue then
             p' inp ~pos
               ~succ:(fun ~pos (v, sep_by_ok) ->
-                on_take_cb v
-                |> Input.bind (fun () ->
-                       if sep_by_ok then
-                         (loop [@tailcall]) pos
-                       else
-                         succ ~pos ()))
+                Input.(
+                  on_take_cb v
+                  >>= fun () ->
+                  if sep_by_ok then
+                    (loop [@tailcall]) pos
+                  else
+                    succ ~pos ()))
               ~fail:(fun ~pos _ -> succ ~pos ())
           else
             succ ~pos ())
@@ -843,7 +844,7 @@ struct
 
   let trim_input_buffer : unit -> unit t =
    fun () inp ~pos ~succ ~fail:_ ->
-    Input.(trim_buffer inp ~pos |> bind (fun () -> succ ~pos ()))
+    Input.(trim_buffer inp ~pos >>= fun () -> succ ~pos ())
 
   let pos : int t = fun _inp ~pos ~succ ~fail:_ -> succ ~pos pos
 
@@ -863,10 +864,10 @@ struct
    fun inp ~pos ~succ ~fail:_ ->
     Input.(
       last_trimmed_pos inp
-      |> bind (fun last_trimmed_pos' -> succ ~pos last_trimmed_pos'))
+      >>= fun last_trimmed_pos' -> succ ~pos last_trimmed_pos')
 
   let of_promise : 'a promise -> 'a t =
-   fun prom _inp ~pos ~succ ~fail:_ -> Input.bind (fun a -> succ ~pos a) prom
+   fun prom _inp ~pos ~succ ~fail:_ -> Input.(prom >>= fun a -> succ ~pos a)
 
   let input_buffer_size : int option t =
    fun inp ~pos ~succ ~fail:_ ->
