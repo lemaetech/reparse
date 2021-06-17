@@ -855,7 +855,7 @@ struct
       >>= function
       | `Cstruct s when Cstruct.length s = n ->
         let pos = pos + n in
-        trim_buffer inp ~pos |> bind (fun () -> succ ~pos s)
+        trim_buffer inp ~pos >>= fun () -> succ ~pos s
       | `Cstruct _ ->
         fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
       | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n))
