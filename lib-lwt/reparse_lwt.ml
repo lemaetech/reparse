@@ -134,3 +134,4 @@ module Stream = struct
   let input_of_stream stream =
     { stream; buf = Cstruct.empty; last_trimmed_pos = 0 }
 end
+

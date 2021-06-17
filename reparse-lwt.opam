@@ -1,7 +1,7 @@
 opam-version: "2.0"
 version: "3.0.0"
 synopsis: "Reparse lwt-unix support"
-description: "Lwt_stream.t and Lwt_io.input_channel support for 'reparse'"
+description: "char Lwt_stream.t parsing support for 'reparse'"
 maintainer: ["Bikal Lem"]
 authors: ["Bikal Lem <gbikal@gmail.com>"]
 license: "MPL-2.0"
