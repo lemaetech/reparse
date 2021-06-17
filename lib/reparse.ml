@@ -385,10 +385,11 @@ struct
 
   let parse (p : 'a t) (inp : Input.t) =
     let v = ref (Error "") in
-    p inp ~pos:0
-      ~succ:(fun ~pos:_ a -> Input.return (v := Ok a))
-      ~fail:(fun ~pos:_ e -> Input.return (v := Error e))
-    |> Input.bind (fun () -> Input.return !v)
+    Input.(
+      p inp ~pos:0
+        ~succ:(fun ~pos:_ a -> return (v := Ok a))
+        ~fail:(fun ~pos:_ e -> return (v := Error e))
+      >>= fun () -> return !v)
 
   (* Parser invariant: pos should not be less than the last_trimmed_pos. *)
   let check_last_trimmed : unit t =
