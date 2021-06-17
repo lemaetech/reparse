@@ -174,10 +174,17 @@ module type PARSER = sig
           let v = P.parse_string p "hello" in
           v = 4
         ]} *)
-    val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
+    val ( <*> ) : 'a t -> ('a -> 'b) t -> 'b t
 
     (** [f <$> p] is [return f <*> p]. *)
-    val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
+    val ( <$> ) : 'a t -> ('a -> 'b) -> 'b t
+
+    val ( <$$> ) : 'a t * 'b t -> ('a -> 'b -> 'c) -> 'c t
+
+    val ( <$$$> ) : 'a t * 'b t * 'c t -> ('a -> 'b -> 'c -> 'd) -> 'd t
+
+    val ( <$$$$> ) :
+      'a t * 'b t * 'c t * 'd t -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'e t
 
     (** [v <$ p] replaces the parse value of [p] with [v].
 

@@ -47,9 +47,16 @@ module type PARSER = sig
 
     val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
 
-    val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
+    val ( <*> ) : 'a t -> ('a -> 'b) t -> 'b t
 
-    val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
+    val ( <$> ) : 'a t -> ('a -> 'b) -> 'b t
+
+    val ( <$$> ) : 'a t * 'b t -> ('a -> 'b -> 'c) -> 'c t
+
+    val ( <$$$> ) : 'a t * 'b t * 'c t -> ('a -> 'b -> 'c -> 'd) -> 'd t
+
+    val ( <$$$$> ) :
+      'a t * 'b t * 'c t * 'd t -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'e t
 
     val ( <$ ) : 'a -> 'b t -> 'a t
 
@@ -312,17 +319,24 @@ struct
 
     let ( >>| ) p f = map f p
 
-    let ( <*> ) f q = f >>= fun f' -> map f' q
+    let ( <*> ) p f = apply f p
 
-    let ( <$> ) f p = return f <*> p
+    let ( <$> ) p f = map f p
 
-    let ( <$ ) v p = (fun _ -> v) <$> p
+    let ( <$$> ) (a, b) f = map2 f a b
 
-    let ( $> ) p v = (fun _ -> v) <$> p
+    let ( <$$$> ) (a, b, c) f = map3 f a b c
+
+    let ( <$$$$> ) (a, b, c, d) f = map4 f a b c d
+
+    let ( <$ ) v p = p >>| fun _ -> v
+
+    let ( $> ) p v = p >>| fun _ -> v
 
     let ( *> ) : _ t -> 'b t -> 'b t = fun p q -> p >>= fun _ -> q
 
-    let ( <* ) : 'a t -> _ t -> 'a t = fun p q -> p >>= fun a -> a <$ q
+    let ( <* ) : 'a t -> _ t -> 'a t =
+     fun p q -> p >>= fun a -> q >>| fun _ -> a
 
     let ( <|> ) : 'a t -> 'a t -> 'a t =
      fun p q inp ~pos ~succ ~fail ->
@@ -619,7 +633,7 @@ struct
     let sep_by = sep_by_to_bool ?sep_by in
     let items = ref [] in
     let up_to = Option.value ~default:(-1) up_to in
-    let p' = map2 (fun v sep_by_ok -> (v, sep_by_ok)) p sep_by in
+    let p' = (p, sep_by) <$$> fun v sep_by_ok -> (v, sep_by_ok) in
     let rec loop pos taken_count =
       if up_to = -1 || taken_count < up_to then
         p' inp ~pos
@@ -647,7 +661,7 @@ struct
       =
    fun ?sep_by ~while_ ~on_take_cb p inp ~pos ~succ ~fail:_ ->
     let sep_by = sep_by_to_bool ?sep_by in
-    let p' = map2 (fun v sep_by_ok -> (v, sep_by_ok)) p sep_by in
+    let p' = (p, sep_by) <$$> fun v sep_by_ok -> (v, sep_by_ok) in
     let rec loop pos =
       while_ inp ~pos
         ~succ:(fun ~pos:_ continue ->
@@ -674,7 +688,7 @@ struct
       -> unit t =
    fun ?sep_by ~while_ ~on_take_cb p inp ~pos ~succ ~fail:_ ->
     let sep_by = sep_by_to_bool ?sep_by in
-    let p' = map2 (fun v sep_by_ok -> (v, sep_by_ok)) p sep_by in
+    let p' = (p, sep_by) <$$> fun v sep_by_ok -> (v, sep_by_ok) in
     let rec loop pos =
       while_ inp ~pos
         ~succ:(fun ~pos:_ continue ->
