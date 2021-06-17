@@ -297,6 +297,11 @@ struct
   let map f p inp ~pos ~succ ~fail =
     p inp ~pos ~succ:(fun ~pos a -> succ ~pos (f a)) ~fail
 
+  let both : 'a t -> 'b t -> ('a * 'b) t =
+   fun a b -> bind (fun a' -> map (fun b' -> (a', b')) b) a
+
+  let apply f g = bind (fun f' -> map f' g) f
+
   let map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t =
    fun f p q -> bind (fun p' -> map (fun q' -> f p' q') q) p
 
@@ -311,8 +316,6 @@ struct
       (fun p' ->
         bind (fun q' -> bind (fun r' -> map (fun s' -> f p' q' r' s') s) r) q)
       p
-
-  let apply f g = bind (fun f' -> map f' g) f
 
   module Infix = struct
     let ( >>= ) p f = bind f p
@@ -341,8 +344,6 @@ struct
     let ( <|> ) : 'a t -> 'a t -> 'a t =
      fun p q inp ~pos ~succ ~fail ->
       p inp ~pos ~succ ~fail:(fun ~pos:_ _s -> q inp ~pos ~succ ~fail)
-
-    let both a b = a >>= fun a -> b >>| fun b -> (a, b)
 
     let ( let* ) = ( >>= )
 
