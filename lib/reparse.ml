@@ -483,7 +483,8 @@ struct
       else
         fail (Format.sprintf "[char_if] pos:%d %C" pos c) inp ~pos)
 
-  let string_ci s inp ~pos =
+  let string_ci : string -> string t =
+   fun s inp ~pos ->
     Input.(
       let len = String.length s in
       get_input len inp ~pos
@@ -494,7 +495,8 @@ struct
       else
         fail (Format.sprintf "[string_ci] %S" s) inp ~pos)
 
-  let string_cs s inp ~pos =
+  let string_cs : string -> string t =
+   fun s inp ~pos ->
     Input.(
       let len = String.length s in
       get_input len inp ~pos
@@ -505,7 +507,8 @@ struct
       else
         fail (Format.sprintf "[string_cs] %S" s) inp ~pos)
 
-  let string_of_chars chars = return (String.of_seq @@ List.to_seq chars)
+  let string_of_chars : char list -> string t =
+   fun chars -> return (String.of_seq @@ List.to_seq chars)
 
   let take_cstruct : int -> Cstruct.t t =
    fun n inp ~pos ->
