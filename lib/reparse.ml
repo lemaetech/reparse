@@ -384,7 +384,7 @@ struct
     end
   end
 
-  let parse (p : 'a t) (inp : Input.t) =
+  let parse (p : 'a t) (inp : Input.t) : ('a, string) result promise =
     Input.(
       catch
         (fun () -> p inp ~pos:0 >>| fun (a, _) -> Ok a)
