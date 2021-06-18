@@ -29,6 +29,8 @@ module Stream = struct
 
     let bind f p = Lwt.bind p f
 
+    let catch = Lwt.catch
+
     let trim_buffer t ~pos =
       let bytes_to_trim = pos - t.last_trimmed_pos in
       let new_buf_sz = Cstruct.length t.buf - bytes_to_trim in
@@ -134,4 +136,3 @@ module Stream = struct
   let input_of_stream stream =
     { stream; buf = Cstruct.empty; last_trimmed_pos = 0 }
 end
-

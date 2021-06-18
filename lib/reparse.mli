@@ -1213,6 +1213,8 @@ module type INPUT = sig
   (** Represents an input promise. *)
   type 'a promise
 
+  val catch : (unit -> 'a promise) -> (exn -> 'a promise) -> 'a promise
+
   val return : 'a -> 'a promise
 
   val bind : ('a -> 'b promise) -> 'a promise -> 'b promise
