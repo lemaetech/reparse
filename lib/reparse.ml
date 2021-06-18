@@ -705,7 +705,7 @@ struct
         catch
           (fun () ->
             while_ inp ~pos
-            >>= fun (continue, pos) ->
+            >>= fun (continue, _pos) ->
             if continue then
               catch
                 (fun () ->
@@ -737,7 +737,7 @@ struct
         catch
           (fun () ->
             while_ inp ~pos
-            >>= fun (continue, pos) ->
+            >>= fun (continue, _pos) ->
             if continue then
               catch
                 (fun () ->
@@ -757,13 +757,10 @@ struct
     loop pos
 
   let take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t =
-   fun ?sep_by ~while_ p inp ~pos ->
+   fun ?sep_by ~while_ p ->
     let items = ref [] in
-    Input.(
-      take_while_cb ?sep_by ~while_
-        ~on_take_cb:(fun a -> items := a :: !items)
-        p inp ~pos
-      >>= fun (_, pos) -> return (List.rev !items, pos))
+    take_while_cb ?sep_by ~while_ ~on_take_cb:(fun a -> items := a :: !items) p
+    >>= fun _ -> return (List.rev !items)
 
   let take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t =
    fun ?sep_by ~start ~end_ p ->
