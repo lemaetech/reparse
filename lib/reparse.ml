@@ -238,6 +238,8 @@ module type INPUT = sig
 
   type 'a promise
 
+  val catch : (unit -> 'a promise) -> (exn -> 'a promise) -> 'a promise
+
   val return : 'a -> 'a promise
 
   val bind : ('a -> 'b promise) -> 'a promise -> 'b promise
@@ -266,36 +268,32 @@ struct
 
   type 'a promise = 'a Input.promise
 
-  type 'a t =
-       Input.t
-    -> pos:int
-    -> succ:(pos:int -> 'a -> unit Input.promise)
-    -> fail:(pos:int -> string -> unit Input.promise)
-    -> unit Input.promise
+  type pos = int
+
+  type 'a t = Input.t -> pos:pos -> ('a * pos) Input.promise
 
   module Input = struct
     include Input
 
     let ( >>= ) b f = bind f b
+
+    let ( >>| ) b f = b >>= fun x -> return (f x)
   end
 
   (*+++++ Monadic operators +++++*)
-  let return : 'a -> 'a t = fun v _inp ~pos ~succ ~fail:_ -> succ ~pos v
+  let return : 'a -> 'a t = fun v _inp ~pos -> Input.return (v, pos)
 
   let unit = return ()
 
-  let ignore : _ t -> unit t =
-   fun p inp ~pos ~succ ~fail ->
-    p inp ~pos ~succ:(fun ~pos _ -> succ ~pos ()) ~fail
-
-  let fail : string -> 'a t = fun msg _inp ~pos ~succ:_ ~fail -> fail ~pos msg
+  let fail : string -> 'a t = fun msg _inp ~pos:_ -> failwith msg
 
   let bind : ('a -> 'b t) -> 'a t -> 'b t =
-   fun f p inp ~pos ~succ ~fail ->
-    p inp ~pos ~succ:(fun ~pos a -> f a inp ~pos ~succ ~fail) ~fail
+   fun f p inp ~pos -> Input.(p inp ~pos >>= fun (a, pos) -> f a inp ~pos)
 
-  let map f p inp ~pos ~succ ~fail =
-    p inp ~pos ~succ:(fun ~pos a -> succ ~pos (f a)) ~fail
+  let map : ('a -> 'b) -> 'a t -> 'b t =
+   fun f p -> bind (fun a -> return (f a)) p
+
+  let ignore : _ t -> unit t = fun p -> map (fun _ -> ()) p
 
   let both : 'a t -> 'b t -> ('a * 'b) t =
    fun a b -> bind (fun a' -> map (fun b' -> (a', b')) b) a
@@ -342,8 +340,8 @@ struct
      fun p q -> p >>= fun a -> q >>| fun _ -> a
 
     let ( <|> ) : 'a t -> 'a t -> 'a t =
-     fun p q inp ~pos ~succ ~fail ->
-      p inp ~pos ~succ ~fail:(fun ~pos:_ _s -> q inp ~pos ~succ ~fail)
+     fun p q inp ~pos ->
+      Input.catch (fun () -> p inp ~pos) (fun (_ : exn) -> q inp ~pos)
 
     let ( let* ) = ( >>= )
 
@@ -354,8 +352,8 @@ struct
     let ( and+ ) = both
 
     let ( <?> ) : 'a t -> string -> 'a t =
-     fun p msg inp ~pos ~succ ~fail ->
-      p inp ~pos ~succ ~fail:(fun ~pos _ -> fail ~pos msg)
+     fun p msg inp ~pos ->
+      Input.catch (fun () -> p inp ~pos) (fun (_ : exn) -> fail msg inp ~pos)
   end
 
   include Infix
@@ -385,126 +383,129 @@ struct
   end
 
   let parse (p : 'a t) (inp : Input.t) =
-    let v = ref (Error "") in
     Input.(
-      p inp ~pos:0
-        ~succ:(fun ~pos:_ a -> return (v := Ok a))
-        ~fail:(fun ~pos:_ e -> return (v := Error e))
-      >>= fun () -> return !v)
+      catch
+        (fun () -> p inp ~pos:0 >>| fun a -> Ok a)
+        (fun e -> return (Error (Printexc.to_string e))))
 
   (* Parser invariant: pos should not be less than the last_trimmed_pos. *)
   let check_last_trimmed : unit t =
-   fun inp ~pos ~succ ~fail ->
+   fun inp ~pos ->
     Input.(
       last_trimmed_pos inp
       >>= fun last_trimmed_pos' ->
       if pos < last_trimmed_pos' then
-        fail ~pos
+        fail
           (Format.sprintf
              "Invalid pos: %d. Parser position should not be less than \
               last_trimmed_pos:%d"
              pos last_trimmed_pos')
+          inp ~pos
       else
-        succ ~pos ())
+        return ((), pos))
 
   let get_input : int -> Cstruct.t t =
-   fun n inp ~pos ~succ ~fail ->
+   fun n inp ~pos ->
     Input.(
       check_last_trimmed inp ~pos
-        ~succ:(fun ~pos () ->
-          get_cstruct inp ~pos ~len:n
-          >>= function
-          | `Cstruct s when Cstruct.length s = n -> succ ~pos s
-          | `Cstruct _ ->
-            fail ~pos (Format.sprintf "pos:%d, n:%d not enough input" pos n)
-          | `Eof -> fail ~pos (Format.sprintf "pos:%d, n:%d eof" pos n))
-        ~fail)
+      >>= fun ((), pos) ->
+      get_cstruct inp ~pos ~len:n
+      >>= function
+      | `Cstruct s when Cstruct.length s = n -> return (s, pos)
+      | `Cstruct _ ->
+        fail (Format.sprintf "pos:%d, n:%d not enough input" pos n) inp ~pos
+      | `Eof -> fail (Format.sprintf "pos:%d, n:%d eof" pos n) inp ~pos)
 
   (*+++++ String/Char parsers ++++++*)
 
   let peek_char : char t =
-   fun inp ~pos ~succ ~fail ->
+   fun inp ~pos ->
     Input.(
       check_last_trimmed inp ~pos
-        ~succ:(fun ~pos () ->
-          get_char inp ~pos
-          >>= function
-          | `Char c -> succ ~pos c
-          | `Eof -> fail ~pos (Format.sprintf "[peek_char] pos:%d eof" pos))
-        ~fail)
+      >>= fun ((), pos) ->
+      get_char inp ~pos
+      >>= function
+      | `Char c -> return (c, pos)
+      | `Eof -> fail (Format.sprintf "[peek_char] pos:%d eof" pos) inp ~pos)
 
   let peek_char_opt : char option t =
-   fun inp ~pos ~succ ~fail:_ ->
+   fun inp ~pos ->
     Input.(
       get_char inp ~pos
       >>= function
-      | `Char c -> succ ~pos (Some c)
-      | `Eof -> succ ~pos None)
+      | `Char c -> return (Some c, pos)
+      | `Eof -> return (None, pos))
 
   let peek_string : int -> string t = fun n -> get_input n >>| Cstruct.to_string
 
   let any_char : char t =
-   fun inp ~pos ~succ ~fail ->
-    peek_char inp ~pos
-      ~succ:(fun ~pos c -> succ ~pos:(pos + 1) c)
-      ~fail:(fun ~pos _ ->
-        fail ~pos (Format.sprintf "[any_char] pos:%d eof" pos))
+   fun inp ~pos ->
+    Input.(
+      catch
+        (fun () -> peek_char inp ~pos >>= fun (c, pos) -> return (c, pos + 1))
+        (fun (_ : exn) ->
+          fail (Format.sprintf "[any_char] pos:%d eof" pos) inp ~pos))
 
   let any_char_unbuffered : char t =
-   fun inp ~pos ~succ ~fail ->
+   fun inp ~pos ->
     Input.(
       get_char_unbuffered inp ~pos
       >>= function
       | `Char c ->
         let pos = pos + 1 in
-        trim_buffer inp ~pos |> bind (fun () -> succ ~pos c)
+        trim_buffer inp ~pos >>= fun () -> return (c, pos)
       | `Eof ->
-        fail ~pos (Format.sprintf "[any_char_unbuffered] pos:%d eof" pos))
+        fail (Format.sprintf "[any_char_unbuffered] pos:%d eof" pos) inp ~pos)
 
   let char : char -> char t =
-   fun c inp ~pos ~succ ~fail ->
-    peek_char inp ~pos
-      ~succ:(fun ~pos c' ->
-        if c' = c then
-          succ ~pos:(pos + 1) c
-        else
-          fail ~pos
-            (Format.sprintf "[char] pos:%d, expected %C, got %C" pos c c'))
-      ~fail
+   fun c inp ~pos ->
+    Input.(
+      peek_char inp ~pos
+      >>= fun (c', pos) ->
+      if c' = c then
+        return (c, pos + 1)
+      else
+        fail
+          (Format.sprintf "[char] pos:%d, expected %C, got %C" pos c c')
+          inp ~pos)
 
-  let char_if f =
-    get_input 1
-    >>= fun s _ ~pos ~succ ~fail ->
-    let c = Cstruct.get_char s 0 in
-    if f c then
-      succ ~pos:(pos + 1) c
-    else
-      fail ~pos (Format.sprintf "[char_if] pos:%d %C" pos c)
+  let char_if : (char -> bool) -> char t =
+   fun f inp ~pos ->
+    Input.(
+      peek_char inp ~pos
+      >>= fun (c, pos) ->
+      if f c then
+        return (c, pos + 1)
+      else
+        fail (Format.sprintf "[char_if] pos:%d %C" pos c) inp ~pos)
 
-  let string_ci s =
-    let len = String.length s in
-    get_input len
-    >>= fun s' _ ~pos ~succ ~fail ->
-    let s' = Cstruct.to_string s' in
-    if String.(equal (lowercase_ascii s) (lowercase_ascii s')) then
-      succ ~pos:(pos + len) s
-    else
-      fail ~pos (Format.sprintf "[string_ci] %S" s)
+  let string_ci s inp ~pos =
+    Input.(
+      let len = String.length s in
+      get_input len inp ~pos
+      >>= fun (s', pos) ->
+      let s' = Cstruct.to_string s' in
+      if String.(equal (lowercase_ascii s) (lowercase_ascii s')) then
+        return (s, pos + len)
+      else
+        fail (Format.sprintf "[string_ci] %S" s) inp ~pos)
 
-  let string_cs s =
-    let len = String.length s in
-    get_input len
-    >>= fun cstr _ ~pos ~succ ~fail ->
-    let cstr' = Cstruct.of_string s in
-    if Cstruct.equal cstr cstr' then
-      succ ~pos:(pos + len) s
-    else
-      fail ~pos (Format.sprintf "[string_cs] %S" s)
+  let string_cs s inp ~pos =
+    Input.(
+      let len = String.length s in
+      get_input len inp ~pos
+      >>= fun (cstr, pos) ->
+      let cstr' = Cstruct.of_string s in
+      if Cstruct.equal cstr cstr' then
+        return (s, pos + len)
+      else
+        fail (Format.sprintf "[string_cs] %S" s) inp ~pos)
 
   let string_of_chars chars = return (String.of_seq @@ List.to_seq chars)
 
   let take_cstruct : int -> Cstruct.t t =
-   fun n -> get_input n >>= fun s _ ~pos ~succ ~fail:_ -> succ ~pos:(pos + n) s
+   fun n inp ~pos ->
+    Input.(get_input n inp ~pos >>= fun (s, pos) -> return (s, pos + n))
 
   let take_string : int -> string t =
    fun n -> take_cstruct n >>| fun cs -> Cstruct.to_string cs
@@ -512,85 +513,105 @@ struct
   (*++++++ Alternates +++++*)
 
   let any : ?failure_msg:string -> 'a t list -> 'a t =
-   fun ?failure_msg parsers inp ~pos ~succ ~fail ->
-    let rec loop = function
-      | [] ->
-        let failure_msg =
-          match failure_msg with
-          | Some msg -> msg
-          | None -> "[any] all parsers failed"
-        in
-        fail ~pos failure_msg
-      | p :: parsers ->
-        p inp ~pos
-          ~succ:(fun ~pos a -> succ ~pos a)
-          ~fail:(fun ~pos:_ _ -> (loop [@tailcall]) parsers)
-    in
-    loop parsers
+   fun ?failure_msg parsers inp ~pos ->
+    Input.(
+      let rec loop = function
+        | [] ->
+          let failure_msg =
+            match failure_msg with
+            | Some msg -> msg
+            | None -> "[any] all parsers failed"
+          in
+          fail failure_msg inp ~pos
+        | p :: parsers ->
+          catch
+            (fun () -> p inp ~pos)
+            (fun (_ : exn) -> (loop [@tailcall]) parsers)
+      in
+      loop parsers)
 
   let alt = ( <|> )
 
   let optional : 'a t -> 'a option t =
-   fun p inp ~pos ~succ ~fail:_ ->
-    p inp ~pos
-      ~succ:(fun ~pos a -> succ ~pos (Some a))
-      ~fail:(fun ~pos _ -> succ ~pos None)
+   fun p inp ~pos ->
+    Input.(
+      catch
+        (fun () -> p inp ~pos >>= fun (a, pos) -> return (Some a, pos))
+        (fun (_ : exn) -> return (None, pos)))
 
   (*+++++ Boolean +++++*)
 
   let not_ : 'a t -> unit t =
-   fun p inp ~pos ~succ ~fail ->
-    p inp ~pos
-      ~succ:(fun ~pos:_ _ -> fail ~pos "[not_] expected failure but succeeded")
-      ~fail:(fun ~pos _ -> succ ~pos ())
+   fun p inp ~pos ->
+    Input.(
+      catch
+        (fun () -> p inp ~pos >>| fun _ -> `Fail)
+        (fun (_ : exn) -> return `Success)
+      >>= function
+      | `Fail -> fail "[not_] expected failure but succeeded" inp ~pos
+      | `Success -> return ((), pos))
 
   let is : 'a t -> bool t =
-   fun p inp ~pos ~succ ~fail:_ ->
-    p inp ~pos
-      ~succ:(fun ~pos:_ _ -> succ ~pos true)
-      ~fail:(fun ~pos:_ _ -> succ ~pos false)
+   fun p inp ~pos ->
+    Input.(
+      catch
+        (fun () -> p inp ~pos >>| fun _ -> (true, pos))
+        (fun (_ : exn) -> return (false, pos)))
 
   let is_not : 'a t -> bool t =
-   fun p inp ~pos ~succ ~fail:_ ->
-    p inp ~pos
-      ~succ:(fun ~pos:_ _ -> succ ~pos false)
-      ~fail:(fun ~pos:_ _ -> succ ~pos true)
+   fun p inp ~pos ->
+    Input.(
+      catch
+        (fun () -> p inp ~pos >>| fun _ -> (false, pos))
+        (fun (_ : exn) -> return (true, pos)))
 
   (*+++++ Repetition +++++*)
 
-  let recur f =
-    let rec p inp ~pos ~succ ~fail = f p inp ~pos ~succ ~fail in
+  let recur : ('a t -> 'a t) -> 'a t =
+   fun f ->
+    let rec p inp ~pos = f p inp ~pos in
     p
 
   let all : 'a t list -> 'a list t =
-   fun parsers inp ~pos ~succ ~fail ->
+   fun parsers inp ~pos ->
     let items = ref [] in
     let rec loop pos = function
-      | [] -> succ ~pos (List.rev !items)
+      | [] -> Input.return (List.rev !items, pos)
       | p :: parsers ->
-        p inp ~pos
-          ~succ:(fun ~pos a ->
-            items := a :: !items;
-            (loop [@tailcall]) pos parsers)
-          ~fail:(fun ~pos e ->
-            fail ~pos (Format.sprintf "[all] one of the parsers failed: %s" e))
+        Input.(
+          catch
+            (fun () ->
+              p inp ~pos
+              >>= fun (a, pos) ->
+              items := a :: !items;
+              (loop [@tailcall]) pos parsers)
+            (fun (e : exn) ->
+              fail
+                (Format.sprintf "[all] one of the parsers failed: %s"
+                   (Printexc.to_string e))
+                inp ~pos))
     in
     loop pos parsers
 
   let all_unit : _ t list -> unit t =
-   fun parsers inp ~pos ~succ ~fail ->
+   fun parsers inp ~pos ->
     let rec loop pos = function
-      | [] -> succ ~pos ()
+      | [] -> Input.return ((), pos)
       | p :: parsers ->
-        p inp ~pos
-          ~succ:(fun ~pos _ -> (loop [@tailcall]) pos parsers)
-          ~fail:(fun ~pos e ->
-            fail ~pos (Format.sprintf "[all] one of the parsers failed: %s" e))
+        Input.(
+          catch
+            (fun () ->
+              p inp ~pos >>= fun (_, pos) -> (loop [@tailcall]) pos parsers)
+            (fun (e : exn) ->
+              fail
+                (Format.sprintf "[all] one of the parsers failed: %s"
+                   (Printexc.to_string e))
+                inp ~pos))
     in
     loop pos parsers
 
   let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
-   fun ?(at_least = 0) ?up_to p inp ~pos ~succ ~fail ->
+   fun ?(at_least = 0) ?up_to p inp ~pos ->
     if at_least < 0 then
       invalid_arg "at_least"
     else if Option.is_some up_to && Option.get up_to < 0 then
@@ -888,6 +909,10 @@ module String = struct
     let return a = a
 
     let bind f promise = f promise
+
+    let catch f e =
+      try f () with
+      | exn -> e exn
 
     let trim_buffer t ~pos =
       t.last_trimmed_pos <- pos;
