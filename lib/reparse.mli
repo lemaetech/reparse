@@ -41,7 +41,7 @@ module type PARSER = sig
 
   type input
 
-  val parse : 'a t -> input -> ('a, string) result promise
+  val parse : input -> 'a t -> ('a, string) result promise
 
   (** {2 Monadic operators} *)
 

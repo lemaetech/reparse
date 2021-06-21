@@ -155,7 +155,7 @@ let json_value =
         ; null_value
         ])
 
-let parse s = parse json_value s
+let parse s = parse s json_value
 
 (*------------------------------------------------------------------------- *
   Copyright (c) 2020 Bikal Gurung. All rights reserved. * * This Source Code

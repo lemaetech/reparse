@@ -15,7 +15,7 @@ module type PARSER = sig
 
   type input
 
-  val parse : 'a t -> input -> ('a, string) result promise
+  val parse : input -> 'a t -> ('a, string) result promise
 
   (** {2 Monadic operators} *)
 
@@ -371,7 +371,7 @@ struct
     end
   end
 
-  let parse (p : 'a t) (inp : Input.t) : ('a, string) result promise =
+  let parse (inp : Input.t) (p : 'a t) : ('a, string) result promise =
     Input.(
       catch
         (fun () -> p inp ~pos:0 >>| fun (a, _) -> Ok a)

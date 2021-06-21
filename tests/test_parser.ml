@@ -11,7 +11,7 @@ module String : TEST_PARSER = struct
 
   let of_string = input_of_string
 
-  let run p i = parse p (i ())
+  let run p i = parse (i ()) p
 end
 
 module Lwt : TEST_PARSER = struct
@@ -19,7 +19,7 @@ module Lwt : TEST_PARSER = struct
 
   let of_string s = input_of_stream (Lwt_stream.of_string s)
 
-  let run p inp = Lwt_main.run (parse p @@ inp ())
+  let run p inp = Lwt_main.run (parse (inp ()) p)
 end
 
 module Make_helper (P : TEST_PARSER) = struct
