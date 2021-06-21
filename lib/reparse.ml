@@ -165,12 +165,8 @@ module type PARSER = sig
   val take_while_cb :
     ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> unit t
 
-  val take_while_cbp :
-       ?sep_by:_ t
-    -> while_:bool t
-    -> on_take_cb:('a -> unit promise)
-    -> 'a t
-    -> unit t
+  val take_while_cbt :
+    ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit t) -> 'a t -> unit t
 
   val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 
@@ -363,9 +359,9 @@ struct
   module Let_syntax = struct
     let return = return
 
-    let ( >>| ) = ( >>| )
+    let ( >>= ) p f = bind f p
 
-    let ( >>= ) = ( >>= )
+    let ( >>| ) p f = map f p
 
     module Let_syntax = struct
       let return = return
@@ -702,59 +698,58 @@ struct
     let p' = (p, sep_by) <$$> fun v sep_by_ok -> (v, sep_by_ok) in
     let rec loop pos =
       Input.(
-        catch
-          (fun () ->
-            while_ inp ~pos
-            >>= fun (continue, _pos) ->
-            if continue then
-              catch
-                (fun () ->
-                  p' inp ~pos
-                  >>= fun ((v, sep_by_ok), pos) ->
-                  on_take_cb v;
-                  if sep_by_ok then
-                    (loop [@tailcall]) pos
-                  else
-                    return ((), pos))
-                (fun (_ : exn) -> return ((), pos))
-            else
-              return ((), pos))
-          (fun (_ : exn) -> return ((), pos)))
+        while_ inp ~pos
+        >>= fun (continue, _pos) ->
+        if continue then
+          catch
+            (fun () ->
+              p' inp ~pos
+              >>= fun ((v, sep_by_ok), pos) ->
+              on_take_cb v;
+              if sep_by_ok then
+                (loop [@tailcall]) pos
+              else
+                return ((), pos))
+            (function
+              | Parse_failure _ -> return ((), pos)
+              | e -> raise e)
+        else
+          return ((), pos))
     in
     loop pos
 
-  let take_while_cbp :
+  let take_while_cbt :
          ?sep_by:_ t
       -> while_:bool t
-      -> on_take_cb:('a -> unit promise)
+      -> on_take_cb:('a -> unit t)
       -> 'a t
       -> unit t =
    fun ?sep_by ~while_ ~on_take_cb p inp ~pos ->
     let sep_by = sep_by_to_bool ?sep_by in
     let p' = (p, sep_by) <$$> fun v sep_by_ok -> (v, sep_by_ok) in
-    let rec loop pos =
+    let rec loop : unit -> unit t =
+     fun () inp ~pos ->
       Input.(
-        catch
-          (fun () ->
-            while_ inp ~pos
-            >>= fun (continue, _pos) ->
-            if continue then
-              catch
-                (fun () ->
-                  p' inp ~pos
-                  >>= fun ((v, sep_by_ok), pos) ->
-                  on_take_cb v
-                  >>= fun () ->
-                  if sep_by_ok then
-                    (loop [@tailcall]) pos
-                  else
-                    return ((), pos))
-                (fun (_ : exn) -> return ((), pos))
-            else
-              return ((), pos))
-          (fun (_ : exn) -> return ((), pos)))
+        while_ inp ~pos
+        >>= fun (continue, _pos) ->
+        if continue then
+          catch
+            (fun () ->
+              p' inp ~pos
+              >>= fun ((v, sep_by_ok), pos) ->
+              on_take_cb v inp ~pos
+              >>= fun ((), pos) ->
+              if sep_by_ok then
+                (loop [@tailcall]) () inp ~pos
+              else
+                return ((), pos))
+            (function
+              | Parse_failure _ -> return ((), pos)
+              | e -> raise e)
+        else
+          return ((), pos))
     in
-    loop pos
+    loop () inp ~pos
 
   let take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t =
    fun ?sep_by ~while_ p ->
