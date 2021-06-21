@@ -116,8 +116,6 @@ module type PARSER = sig
 
   val any_char : char t
 
-  val any_char_unbuffered : char t
-
   val char : char -> char t
 
   val char_if : (char -> bool) -> char t
@@ -131,8 +129,6 @@ module type PARSER = sig
   val take_string : int -> string t
 
   val take_cstruct : int -> Cstruct.t t
-
-  val take_unbuffered : int -> Cstruct.t t
 
   (** {2 Alternate parsers} *)
 
@@ -244,12 +240,7 @@ module type INPUT = sig
 
   val get_char : t -> pos:int -> [ `Char of char | `Eof ] promise
 
-  val get_char_unbuffered : t -> pos:int -> [ `Char of char | `Eof ] promise
-
   val get_cstruct :
-    t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
-
-  val get_cstruct_unbuffered :
     t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   val last_trimmed_pos : t -> int promise
@@ -445,17 +436,6 @@ struct
         (fun () -> peek_char inp ~pos >>= fun (c, pos) -> return (c, pos + 1))
         (fun (_ : exn) ->
           fail (Format.sprintf "[any_char] pos:%d eof" pos) inp ~pos))
-
-  let any_char_unbuffered : char t =
-   fun inp ~pos ->
-    Input.(
-      get_char_unbuffered inp ~pos
-      >>= function
-      | `Char c ->
-        let pos = pos + 1 in
-        trim_buffer inp ~pos >>= fun () -> return (c, pos)
-      | `Eof ->
-        fail (Format.sprintf "[any_char_unbuffered] pos:%d eof" pos) inp ~pos)
 
   let char : char -> char t =
    fun c inp ~pos ->
@@ -896,18 +876,6 @@ struct
 
   let pos : int t = fun _inp ~pos -> Input.return (pos, pos)
 
-  let take_unbuffered : int -> Cstruct.t t =
-   fun n inp ~pos ->
-    Input.(
-      get_cstruct_unbuffered inp ~pos ~len:n
-      >>= function
-      | `Cstruct s when Cstruct.length s = n ->
-        let pos = pos + n in
-        trim_buffer inp ~pos >>= fun () -> return (s, pos)
-      | `Cstruct _ ->
-        fail (Format.sprintf "pos:%d, n:%d not enough input" pos n) inp ~pos
-      | `Eof -> fail (Format.sprintf "pos:%d, n:%d eof" pos n) inp ~pos)
-
   let last_trimmed_pos : int t =
    fun inp ~pos ->
     Input.(
@@ -950,9 +918,7 @@ module String = struct
       else
         `Eof
 
-    let get_char_unbuffered = get_char
-
-    let get_cstruct_unbuffered t ~pos ~len =
+    let get_cstruct t ~pos ~len =
       let len' = Cstruct.length t.input - pos in
       if len' <= 0 then
         `Eof
@@ -960,8 +926,6 @@ module String = struct
         `Cstruct (Cstruct.sub t.input pos len)
       else
         `Cstruct (Cstruct.sub t.input pos len')
-
-    let get_cstruct t ~pos ~len = get_cstruct_unbuffered t ~pos ~len
 
     let last_trimmed_pos t = return t.last_trimmed_pos
 

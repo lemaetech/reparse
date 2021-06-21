@@ -457,13 +457,6 @@ module type PARSER = sig
       ]} *)
   val any_char : char t
 
-  (** [any_char_unbuffered] is same as [any_char] except the returned char value
-      is not buffered by the input.
-
-      {b Important} don't use this parser with backtracking parsers such as
-      [<|>], [alt], [any] etc. *)
-  val any_char_unbuffered : char t
-
   (** [char c] parses character [c] exactly.
 
       {4:char_examples Examples}
@@ -534,15 +527,6 @@ module type PARSER = sig
       This is usually a zeor copy - depending on input of course - version of
       [take_string]. *)
   val take_cstruct : int -> Cstruct.t t
-
-  (** [take_unbuffered n] is similar to [take_string n] except the parser calls
-      [INPUT.get_unbuffered] to retrieve bytes of length [n]. Additionally the
-      parser is unable to backtrack beyond position [pos + n] where [pos] is the
-      current input position of the parser.
-
-      [Note:] Ensure that [take_unbuffered] is not being run as part of
-      combinators that require backtracking such as [<|>, any]. *)
-  val take_unbuffered : int -> Cstruct.t t
 
   (** {2 Alternate parsers} *)
 
@@ -1223,16 +1207,9 @@ module type INPUT = sig
 
   val get_char : t -> pos:int -> [ `Char of char | `Eof ] promise
 
-  val get_char_unbuffered : t -> pos:int -> [ `Char of char | `Eof ] promise
-
   (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
       [`Eof] if [EOI] is reached. *)
   val get_cstruct :
-    t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
-
-  (** [get_unbuffered t ~pos ~len] similar to [get t ~pos ~len] except it
-      doesn't buffer the taken [len] bytes. *)
-  val get_cstruct_unbuffered :
     t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
 
   val last_trimmed_pos : t -> int promise
