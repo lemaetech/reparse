@@ -214,7 +214,7 @@ module type PARSER = sig
 
   val eoi : unit t
 
-  val trim_input_buffer : unit -> unit t
+  val trim_input_buffer : unit t
 
   val pos : int t
 
@@ -870,9 +870,8 @@ struct
       | `Cstruct _ -> fail (Format.sprintf "[eoi] pos:%d, not eoi" pos) inp ~pos
       | `Eof -> return ((), pos))
 
-  let trim_input_buffer : unit -> unit t =
-   fun () inp ~pos ->
-    Input.(trim_buffer inp ~pos >>= fun () -> return ((), pos))
+  let trim_input_buffer : unit t =
+   fun inp ~pos -> Input.(trim_buffer inp ~pos >>= fun () -> return ((), pos))
 
   let pos : int t = fun _inp ~pos -> Input.return (pos, pos)
 

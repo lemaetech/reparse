@@ -4,8 +4,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
   let trim_input_buffer =
     let p =
       P.(
-        string_cs "hello" *> trim_input_buffer ()
-        <* string_cs " world" *> trim_input_buffer ())
+        string_cs "hello" *> trim_input_buffer
+        <* string_cs " world" *> trim_input_buffer)
     in
     let inp () = P.of_string "hello world" in
     Popper.(

@@ -1171,7 +1171,7 @@ module type PARSER = sig
       {b Note} Once trimmed the parser is unable to backtrack beyond the
       position of [last_trimmed_pos]. This may affect a correct functioning of
       [<|>] parser as it backtracks when trying various alternatives. *)
-  val trim_input_buffer : unit -> unit t
+  val trim_input_buffer : unit t
 
   (** [pos] returns the current parser position. *)
   val pos : int t
