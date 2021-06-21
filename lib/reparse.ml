@@ -735,7 +735,7 @@ struct
    fun ?sep_by ~while_ p ->
     let items = ref [] in
     take_while_cb ?sep_by ~while_ ~on_take_cb:(fun a -> items := a :: !items) p
-    >>= fun _ -> return (List.rev !items)
+    *> return (List.rev !items)
 
   let take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t =
    fun ?sep_by ~start ~end_ p ->
