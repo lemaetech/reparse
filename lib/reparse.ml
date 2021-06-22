@@ -116,6 +116,8 @@ module type PARSER = sig
 
   val any_char : char t
 
+  val unsafe_any_char : char t
+
   val char : char -> char t
 
   val char_if : (char -> bool) -> char t
@@ -239,6 +241,8 @@ module type INPUT = sig
   val trim_buffer : t -> pos:int -> unit promise
 
   val get_char : t -> pos:int -> [ `Char of char | `Eof ] promise
+
+  val get_char_unbuffered : t -> pos:int -> [ `Char of char | `Eof ] promise
 
   val get_cstruct :
     t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
@@ -436,6 +440,15 @@ struct
         (fun () -> peek_char inp ~pos >>= fun (c, pos) -> return (c, pos + 1))
         (fun (_ : exn) ->
           fail (Format.sprintf "[any_char] pos:%d eof" pos) inp ~pos))
+
+  let unsafe_any_char : char t =
+   fun inp ~pos ->
+    Input.(
+      get_char_unbuffered inp ~pos
+      >>= function
+      | `Char c -> return (c, pos + 1)
+      | `Eof ->
+        fail (Format.sprintf "[unsafe_any_char] pos:%d eof" pos) inp ~pos)
 
   let char : char -> char t =
    fun c inp ~pos ->
@@ -916,6 +929,8 @@ module String = struct
         `Char (Cstruct.get_char t.input pos)
       else
         `Eof
+
+    let get_char_unbuffered = get_char
 
     let get_cstruct t ~pos ~len =
       let len' = Cstruct.length t.input - pos in

@@ -1,6 +1,8 @@
 module Make_test (P : Test_parser.TEST_PARSER) = struct
   open Test_parser.Make_helper (P)
 
+  open P.Infix
+
   let peek_char =
     let p = P.peek_char in
     let inp () = P.of_string "hello world" in
@@ -59,6 +61,31 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal char_result_comparator (P.run p empty)
                   (Error "[any_char] pos:0 eof")) )
+        ])
+
+  let any_char_unbuffered =
+    let p = P.unsafe_any_char in
+    let inp () = P.of_string "hello" in
+    let p2 =
+      (P.unsafe_any_char, P.any_char, P.any_char)
+      <$$$> fun c1 c2 c3 -> List.to_seq [ c1; c2; c3 ] |> String.of_seq
+    in
+    Popper.(
+      suite
+        [ ( "value is 'h'"
+          , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
+          )
+        ; pos_test p 1 inp
+        ; last_trimmed_pos_test p 0 inp
+        ; ( "fail on eof"
+          , test (fun () ->
+                equal char_result_comparator (P.run p empty)
+                  (Error "[unsafe_any_char] pos:0 eof")) )
+        ; ( {|value is "hel"|}
+          , test (fun () ->
+                equal string_result_comparator (P.run p2 inp) (Ok "hel")) )
+        ; pos_test p2 3 inp
+        ; last_trimmed_pos_test p 0 inp
         ])
 
   let char =
@@ -197,6 +224,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       ; ("peek_char_opt", peek_char_opt)
       ; ("peek_string", peek_string)
       ; ("any_char", any_char)
+      ; ("any_char_unbuffered", any_char_unbuffered)
       ; ("char", char)
       ; ("char_if", char_if)
       ; ("string_cs", string_cs)

@@ -457,6 +457,13 @@ module type PARSER = sig
       ]} *)
   val any_char : char t
 
+  (** [unsafe_any_char] is same as [any_char] except the returned char value is
+      not buffered by the input. {b Important} don't use this parser with
+      backtracking parsers such as [<|>], [alt], [any] etc.
+
+      {b Note} Ensure you call [trim_input_buffer] after calling this parser. *)
+  val unsafe_any_char : char t
+
   (** [char c] parses character [c] exactly.
 
       {4:char_examples Examples}
@@ -1206,6 +1213,8 @@ module type INPUT = sig
   val trim_buffer : t -> pos:int -> unit promise
 
   val get_char : t -> pos:int -> [ `Char of char | `Eof ] promise
+
+  val get_char_unbuffered : t -> pos:int -> [ `Char of char | `Eof ] promise
 
   (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
       [`Eof] if [EOI] is reached. *)

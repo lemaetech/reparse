@@ -43,20 +43,34 @@ module Stream = struct
       let len' = Cstruct.length t.buf - (pos' + len) in
       (pos', len')
 
-    let get_char t ~pos =
+    let get_char_common t ~pos =
       let pos', len' = buffer_pos_len t ~pos ~len:1 in
       if len' >= 0 then
-        return (`Char (Cstruct.get_char t.buf pos'))
+        return (`Return (Cstruct.get_char t.buf pos'))
       else
         Lwt_stream.get t.stream
         >|= function
-        | Some c ->
-          let new_buf = Cstruct.create_unsafe (Cstruct.length t.buf + 1) in
-          Cstruct.blit t.buf 0 new_buf 0 (Cstruct.length t.buf);
-          Cstruct.set_char new_buf (Cstruct.length new_buf - 1) c;
-          t.buf <- new_buf;
-          `Char c
+        | Some c -> `Additional_byte_read c
         | None -> `Eof
+
+    let get_char t ~pos =
+      get_char_common t ~pos
+      >|= function
+      | `Return c -> `Char c
+      | `Additional_byte_read c ->
+        let new_buf = Cstruct.create_unsafe (Cstruct.length t.buf + 1) in
+        Cstruct.blit t.buf 0 new_buf 0 (Cstruct.length t.buf);
+        Cstruct.set_char new_buf (Cstruct.length new_buf - 1) c;
+        t.buf <- new_buf;
+        `Char c
+      | `Eof -> `Eof
+
+    let get_char_unbuffered t ~pos =
+      get_char_common t ~pos
+      >|= function
+      | `Return c -> `Char c
+      | `Additional_byte_read c -> `Char c
+      | `Eof -> `Eof
 
     let get_cstruct t ~pos ~len =
       let pos', len' = buffer_pos_len t ~pos ~len in
