@@ -67,8 +67,9 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let p = P.unsafe_any_char in
     let inp () = P.of_string "hello" in
     let p2 =
-      (P.unsafe_any_char, P.any_char, P.any_char)
-      <$$$> fun c1 c2 c3 -> List.to_seq [ c1; c2; c3 ] |> String.of_seq
+      (P.unsafe_any_char, P.unsafe_any_char, P.unsafe_any_char)
+      <$$$> (fun c1 c2 c3 -> List.to_seq [ c1; c2; c3 ] |> String.of_seq)
+      >>= fun s -> P.trim_input_buffer $> s
     in
     Popper.(
       suite
@@ -85,7 +86,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
           , test (fun () ->
                 equal string_result_comparator (P.run p2 inp) (Ok "hel")) )
         ; pos_test p2 3 inp
-        ; last_trimmed_pos_test p 0 inp
+        ; last_trimmed_pos_test p2 3 inp
         ])
 
   let char =

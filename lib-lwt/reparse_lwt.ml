@@ -34,7 +34,13 @@ module Stream = struct
     let trim_buffer t ~pos =
       let pos' = pos - t.last_trimmed_pos in
       let bytes_to_copy = Cstruct.length t.buf - pos' in
-      t.buf <- Cstruct.sub t.buf pos' bytes_to_copy;
+      let buf =
+        if bytes_to_copy <= 0 then
+          Cstruct.empty
+        else
+          Cstruct.sub t.buf pos' bytes_to_copy
+      in
+      t.buf <- buf;
       t.last_trimmed_pos <- pos;
       return ()
 
