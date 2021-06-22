@@ -33,9 +33,9 @@
     - Others *)
 
 module type PARSER = sig
+  type 'a t
   (** Represents a parser which can parse value ['a]. Use {{:#parse} parse
       functions} to evaluate a parser. *)
-  type 'a t
 
   type 'a promise
 
@@ -45,6 +45,7 @@ module type PARSER = sig
 
   (** {2 Monadic operators} *)
 
+  val return : 'a -> 'a t
   (** [return v] always parses value [v].
 
       {4:return_examples Examples}
@@ -58,15 +59,15 @@ module type PARSER = sig
         let v2 = P.(parse input (return "hello")) in
         v1 = 5 && v2 = "hello"
       ]} *)
-  val return : 'a -> 'a t
 
-  (** [unit] always parses to [():unit] value. *)
   val unit : unit t
+  (** [unit] always parses to [():unit] value. *)
 
+  val ignore : _ t -> unit t
   (** [ignore p] ignore any result from [p] upon success and return [()]
       instead. *)
-  val ignore : _ t -> unit t
 
+  val fail : string -> 'a t
   (** [fail err_msg] returns a parser that always fails with [err_msg].
 
       {4:fail_examples Examples}
@@ -80,30 +81,29 @@ module type PARSER = sig
           try
             let _ = P.(parse input (fail "hello error")) in
             assert false
-          with
-          | e -> e
+          with e -> e
         in
         r
         = P.Parser
-            { offset = 0
-            ; line_number = 0
-            ; column_number = 0
-            ; msg = "hello error"
+            {
+              offset = 0;
+              line_number = 0;
+              column_number = 0;
+              msg = "hello error";
             }
       ]} *)
-  val fail : string -> 'a t
 
-  (** [bind f p] is prefix version of [p >>= f]. *)
   val bind : ('a -> 'b t) -> 'a t -> 'b t
+  (** [bind f p] is prefix version of [p >>= f]. *)
 
+  val both : 'a t -> 'b t -> ('a * 'b) t
   (** [both p q] is evaluates to [(a,b)] when [a] is evaluted from [p] and [b]
       is evaluated from [q]. *)
-  val both : 'a t -> 'b t -> ('a * 'b) t
 
   val apply : ('a -> 'b) t -> 'a t -> 'b t
 
-  (** [map f p] is prefix version of [p >>| f]. *)
   val map : ('a -> 'b) -> 'a t -> 'b t
+  (** [map f p] is prefix version of [p >>| f]. *)
 
   val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
 
@@ -113,6 +113,7 @@ module type PARSER = sig
     ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
 
   module Infix : sig
+    val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
     (** [p >>= f] returns a new parser b where,
 
         - [a] is the parsed value of [p]
@@ -131,8 +132,8 @@ module type PARSER = sig
           let v = P.parse_string p "hello" in
           v = 104
         ]} *)
-    val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 
+    val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
     (** [p >>| f] returns a new parser encapsulating value [b] where,
 
         - [a] is the parsed value of [p].
@@ -151,8 +152,8 @@ module type PARSER = sig
           let v = P.parse_string p "hello" in
           v = 104
         ]} *)
-    val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
 
+    val ( <*> ) : 'a t -> ('a -> 'b) t -> 'b t
     (** [pf <*> q] returns a new parser encapsulating value [b] where
 
         - [pf] and [q] are evaluated sequentially in order as given.
@@ -174,10 +175,9 @@ module type PARSER = sig
           let v = P.parse_string p "hello" in
           v = 4
         ]} *)
-    val ( <*> ) : 'a t -> ('a -> 'b) t -> 'b t
 
-    (** [f <$> p] is [return f <*> p]. *)
     val ( <$> ) : 'a t -> ('a -> 'b) -> 'b t
+    (** [f <$> p] is [return f <*> p]. *)
 
     val ( <$$> ) : 'a t * 'b t -> ('a -> 'b -> 'c) -> 'c t
 
@@ -186,6 +186,7 @@ module type PARSER = sig
     val ( <$$$$> ) :
       'a t * 'b t * 'c t * 'd t -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'e t
 
+    val ( <$ ) : 'a -> 'b t -> 'a t
     (** [v <$ p] replaces the parse value of [p] with [v].
 
         {4:infix_replace_examples Examples}
@@ -201,11 +202,11 @@ module type PARSER = sig
           let v2 = P.parse_string p "hello" in
           v2 = "hello"
         ]} *)
-    val ( <$ ) : 'a -> 'b t -> 'a t
 
-    (** [p $> v] is inverse of [v <$ p]. *)
     val ( $> ) : 'a t -> 'b -> 'b t
+    (** [p $> v] is inverse of [v <$ p]. *)
 
+    val ( *> ) : _ t -> 'b t -> 'b t
     (** [p *> q] returns a parser encapsulating value [a] where,
 
         - [p], [q] are evaluated sequentially in order as given.
@@ -225,8 +226,8 @@ module type PARSER = sig
           let v = P.parse_string p "world" in
           v = "hello"
         ]} *)
-    val ( *> ) : _ t -> 'b t -> 'b t
 
+    val ( <* ) : 'a t -> _ t -> 'a t
     (** [p <* q] returns a parser encapsulating value [a] where,
 
         - [p], [q] are evaluated sequentially in order as given.
@@ -246,8 +247,8 @@ module type PARSER = sig
           let v = P.parse_string p "world" in
           v = "world"
         ]} *)
-    val ( <* ) : 'a t -> _ t -> 'a t
 
+    val ( <|> ) : 'a t -> 'a t -> 'a t
     (** [p <|> q] returns a parser encapsulating value [a] where,
 
         - [p],[q] are evaluated sequentially in order as given.
@@ -292,13 +293,12 @@ module type PARSER = sig
             try
               let _ = P.parse_string p "" in
               false
-            with
-            | _ -> true
+            with _ -> true
           in
           v = true
         ]} *)
-    val ( <|> ) : 'a t -> 'a t -> 'a t
 
+    val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
     (** [let*] is a let syntax binding for {!val:Reparse.Infix.(>>=)}
 
         {4:infix_let_bind_examples Examples}
@@ -316,10 +316,10 @@ module type PARSER = sig
           let v = P.parse_string p "" in
           v = 10
         ]} *)
-    val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
 
     val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
 
+    val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
     (** [let*] is a let syntax binding for {!val:Reparse.(>|=)}
 
         {4:infix_let_map_examples Examples}
@@ -337,10 +337,10 @@ module type PARSER = sig
           let v = P.parse_string p "" in
           v = 10
         ]} *)
-    val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
 
     val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
 
+    val ( <?> ) : 'a t -> string -> 'a t
     (** [p <?> err_msg] parses [p] to value [a] and returns a new parser
         encapsulating [a]. If [p] is a failure, then it fails with error message
         [err_msg]. Often used as a last choice in [<|>], e.g.
@@ -362,17 +362,17 @@ module type PARSER = sig
               false
             with
             | P.Parser
-                { offset = 0
-                ; line_number = 0
-                ; column_number = 0
-                ; msg = "[error]"
+                {
+                  offset = 0;
+                  line_number = 0;
+                  column_number = 0;
+                  msg = "[error]";
                 } ->
-              true
+                true
             | _ -> false
           in
           v = true
         ]} *)
-    val ( <?> ) : 'a t -> string -> 'a t
   end
 
   include module type of Infix
@@ -405,6 +405,7 @@ module type PARSER = sig
 
   (** {2 Char/String parsers} *)
 
+  val peek_char : char t
   (** [peek_char t] parses the next character from input without consuming it.
       It fails if [EOI] is reached.
 
@@ -420,12 +421,12 @@ module type PARSER = sig
       ]}
 
       Input is not consumed. *)
-  val peek_char : char t
 
+  val peek_char_opt : char option t
   (** [peek_char_opt] is the exception safe version of [peek_char]. It returns
       an option rather than throwing [exn] when [EOI] is reached. *)
-  val peek_char_opt : char option t
 
+  val peek_string : int -> string t
   (** [peek_string n] parse a string of length [n] without consuming it.
 
       {4:peek_string_examples Examples}
@@ -441,8 +442,8 @@ module type PARSER = sig
       ]}
 
       Input is not consumed. *)
-  val peek_string : int -> string t
 
+  val any_char : char t
   (** [any_char] parses the next character from input. Fails if input has
       reached end of input.
 
@@ -455,15 +456,15 @@ module type PARSER = sig
         let v = P.(parse_string any_char "hello") in
         v = 'h'
       ]} *)
-  val any_char : char t
 
+  val unsafe_any_char : char t
   (** [unsafe_any_char] is same as [any_char] except the returned char value is
       not buffered by the input. {b Important} don't use this parser with
       backtracking parsers such as [<|>], [alt], [any] etc.
 
       {b Note} Ensure you call [trim_input_buffer] after calling this parser. *)
-  val unsafe_any_char : char t
 
+  val char : char -> char t
   (** [char c] parses character [c] exactly.
 
       {4:char_examples Examples}
@@ -476,8 +477,8 @@ module type PARSER = sig
         let v = P.parse_string p "hello" in
         v = 'h'
       ]} *)
-  val char : char -> char t
 
+  val char_if : (char -> bool) -> char t
   (** [char_if f] parses a character [c] if [f c] is [true].
 
       {4:char_if_examples Examples}
@@ -486,16 +487,12 @@ module type PARSER = sig
         module P = Reparse.String
 
         ;;
-        let p =
-          P.char_if (function
-            | 'a' -> true
-            | _ -> false)
-        in
+        let p = P.char_if (function 'a' -> true | _ -> false) in
         let v = P.parse_string p "abc" in
         v = 'a'
       ]} *)
-  val char_if : (char -> bool) -> char t
 
+  val string_cs : string -> string t
   (** [string_cs s] parses a string [s] exactly. String comparison is case
       sensitive.
 
@@ -509,10 +506,10 @@ module type PARSER = sig
         let v = P.parse p (P.of_string "hello world") in
         v = "hello"
       ]} *)
-  val string_cs : string -> string t
 
   val string_ci : string -> string t
 
+  val string_of_chars : char list -> string t
   (** [string_of_chars l] converts [char list] [l] to string
 
       {4:string_of_chars_examples Examples}
@@ -525,18 +522,18 @@ module type PARSER = sig
         let v = P.parse_string p "h e l l o" in
         v = "hello"
       ]} *)
-  val string_of_chars : char list -> string t
 
-  (** [take_string n] returns a string of length [n] exactly from input. *)
   val take_string : int -> string t
+  (** [take_string n] returns a string of length [n] exactly from input. *)
 
+  val take_cstruct : int -> Cstruct.t t
   (** [take_cstruct n] returns a [Cstruct.t] of length [n] exactly from input.
       This is usually a zeor copy - depending on input of course - version of
       [take_string]. *)
-  val take_cstruct : int -> Cstruct.t t
 
   (** {2 Alternate parsers} *)
 
+  val any : ?failure_msg:string -> 'a t list -> 'a t
   (** [any l] parses the value of the first successful parser in list [l].
       Specified parsers in [l] are evaluated sequentially from left to right. A
       failed parser doesn't consume any input, i.e. [offset] is unaffected. The
@@ -573,16 +570,15 @@ module type PARSER = sig
           try
             let _ = P.parse_string p "yyy" in
             false
-          with
-          | _ -> true
+          with _ -> true
         in
         v = true
       ]} *)
-  val any : ?failure_msg:string -> 'a t list -> 'a t
 
-  (** [alt p q] is [p <|> q]. See {!val:Reparse.Infix.(<|>)} *)
   val alt : 'a t -> 'a t -> 'a t
+  (** [alt p q] is [p <|> q]. See {!val:Reparse.Infix.(<|>)} *)
 
+  val optional : 'a t -> 'a option t
   (** [optional p] parses [Some a] if successful and [None] otherwise. [a] is
       the parsed value of [p].
 
@@ -602,10 +598,10 @@ module type PARSER = sig
         let v = P.parse_string p "ab" in
         v = None
       ]}*)
-  val optional : 'a t -> 'a option t
 
   (** {2 Boolean} *)
 
+  val not_ : 'a t -> unit t
   (** [not_ p] parses value [()] if and only if [p] fails to parse, otherwise
       the parse fails.
 
@@ -619,8 +615,8 @@ module type PARSER = sig
         let v = P.parse_string p "bbb" in
         v = ()
       ]} *)
-  val not_ : 'a t -> unit t
 
+  val is : 'a t -> bool t
   (** [is p] parses [true] if [p] is successful, [false] otherwise. {b Note}
       evaluation of [p] doesn't consume any input.
 
@@ -634,8 +630,8 @@ module type PARSER = sig
         let v = P.parse_string p "bcb" in
         v = true
       ]} *)
-  val is : 'a t -> bool t
 
+  val is_not : 'a t -> bool t
   (** [is_not p] parses value [true] if [p] fails to parse and [false]
       otherwise. {b Note} evaluating [p] doesn't consume any input.
 
@@ -649,25 +645,25 @@ module type PARSER = sig
         let v = P.parse_string p "bbb" in
         v = true
       ]} *)
-  val is_not : 'a t -> bool t
 
   (** {2 Repetition} *)
 
+  val recur : ('a t -> 'a t) -> 'a t
   (** [recur f] returns a recursive parser. Function value [f] accepts a parser
       [p] as its argument and returns a parser [q]. Parser [q] in its definition
       can refer to [p] and [p] can refer to [q] in its own definition. Such
       parsers are also known as a fixpoint or y combinator. *)
-  val recur : ('a t -> 'a t) -> 'a t
 
+  val all : 'a t list -> 'a list t
   (** [all parsers] parses all parsers in [parsers] and returns a list of
       successful parse result. All of the [parsers] must succeed for [all] to
       succeed. *)
-  val all : 'a t list -> 'a list t
 
+  val all_unit : _ t list -> unit t
   (** [all_unit parsers] parses [parsers] and discards their results. All of the
       [parsers] must succeed for [all_unit] to succeed. *)
-  val all_unit : _ t list -> unit t
 
+  val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
   (** [skip ~at_least ~up_to p] repeatedly parses [p] and discards its value.
       The lower and upper bound of repetition is specified by arguments
       [at_least] and [up_to] respectively. The default value of [at_least] is 0.
@@ -688,8 +684,8 @@ module type PARSER = sig
         let v = P.parse_string p "     " in
         v = 5
       ]} *)
-  val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
 
+  val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
   (** [take ~at_least ~up_to ~sep_by p] repeatedly parses [p] and returns the
       parsed values. The lower and upper bound of repetition is specified by
       arguments [at_least] and [up_to] respectively. The default value of
@@ -750,8 +746,7 @@ module type PARSER = sig
           try
             let _ = P.parse_string p "a,a,a,a" in
             false
-          with
-          | _ -> true
+          with _ -> true
         in
         v = true
       ]}
@@ -766,8 +761,9 @@ module type PARSER = sig
         let v = P.parse_string p "a,a,a,a,a" in
         v = [ 'a'; 'a'; 'a' ]
       ]} *)
-  val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
 
+  val take_while_cb :
+    ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit t) -> 'a t -> unit t
   (** [take_while_cb ~sep_by ~while_ ~on_take p] repeatedly parses [p] and calls
       callback [on_take_cb] with the parsed value. [p] is evaluated if and only
       if [while_] evaluates to [true]. If [sep_by] is specified then the
@@ -798,9 +794,8 @@ module type PARSER = sig
         let s = Buffer.contents buf in
         v = 3 && s = "aaa"
       ]} *)
-  val take_while_cb :
-    ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit t) -> 'a t -> unit t
 
+  val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
   (** [take_while ~sep_by p ~while_ p] repeatedly parses [p] and returns its
       value. [p] is evaluated if and only if [while_] evaluates to [true]. If
       [sep_by] is specified then the evaluation of [p] must be followed by a
@@ -837,8 +832,8 @@ module type PARSER = sig
         let v = P.parse_string p "a,a,ab" in
         v = [ 'a'; 'a'; 'a' ]
       ]} *)
-  val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
 
+  val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
   (** [take_between ~sep_by ~start ~end_ p] parses [start] and then repeatedly
       parses [p] while the parsed value of [p] doesn't equal to parsed value of
       [end_]. After the repetition end, it parses [end_]. The parser returns the
@@ -866,7 +861,6 @@ module type PARSER = sig
         let v = P.parse_string p "(a,a,a)" in
         v = [ 'a'; 'a'; 'a' ]
       ]} *)
-  val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
 
   (** {1:rfc5234 RFC 5234}
 
@@ -874,6 +868,7 @@ module type PARSER = sig
 
       @see <https://tools.ietf.org/html/rfc5234#appendix-B> *)
 
+  val alpha : char t
   (** [alpha] parses a character in range [A- Z] or [a-z].
 
       {4:alpha_examples Examples}
@@ -887,8 +882,8 @@ module type PARSER = sig
         let v = P.parse_string p "abcdABCD" in
         v = [ 'a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D' ]
       ]} *)
-  val alpha : char t
 
+  val alpha_num : char t
   (** [alpha_num] parses a character in range [A-Z] or [a-z] or [0-9].
 
       {4:alpha_num_examples Examples}
@@ -902,8 +897,8 @@ module type PARSER = sig
         let v = P.parse_string p "ab123ABCD" in
         v = [ 'a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D' ]
       ]} *)
-  val alpha_num : char t
 
+  val lower_alpha : char t
   (** [lower_alpha] parses a character in range [a-z].
 
       {4:lower_alpha_examples Examples}
@@ -917,8 +912,8 @@ module type PARSER = sig
         let v = P.parse_string p "abcd" in
         v = [ 'a'; 'b'; 'c'; 'd' ]
       ]} *)
-  val lower_alpha : char t
 
+  val upper_alpha : char t
   (** [upper_alpha] parses a character in range [A-Z].
 
       {4:upper_alpha_examples Examples}
@@ -932,8 +927,8 @@ module type PARSER = sig
         let v = P.parse_string p "ABCD" in
         v = [ 'A'; 'B'; 'C'; 'D' ]
       ]} *)
-  val upper_alpha : char t
 
+  val bit : char t
   (** [bit] parses a character which is either ['0'] or ['1'].
 
       {4:bit_examples Examples}
@@ -946,8 +941,8 @@ module type PARSER = sig
         let v = P.parse_string p "0110 ab" in
         v = [ '0'; '1'; '1'; '0' ]
       ]} *)
-  val bit : char t
 
+  val ascii_char : char t
   (** [ascii_char] parses any US-ASCII character.
 
       {4:ascii_char_examples Examples}
@@ -960,8 +955,8 @@ module type PARSER = sig
         let v = P.parse_string p "0110 abc '" in
         v = [ '0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'' ]
       ]} *)
-  val ascii_char : char t
 
+  val cr : char t
   (** [cr] parses character ['\r'].
 
       {4:cr_examples Examples}
@@ -973,8 +968,8 @@ module type PARSER = sig
         let v = P.(parse_string cr "\rab") in
         v = '\r'
       ]} *)
-  val cr : char t
 
+  val crlf : string t
   (** [crlf] parses string ["\r\n"].
 
       {4:crlf_examples Examples}
@@ -986,8 +981,8 @@ module type PARSER = sig
         let v = P.(parse_string crlf "\r\n abc") in
         v = "\r\n"
       ]} *)
-  val crlf : string t
 
+  val control : char t
   (** [control] parses characters in range [0x00 - 0x1F] or character [0x7F].
 
       {4:control_examples Examples}
@@ -999,8 +994,8 @@ module type PARSER = sig
         let v = P.(parse_string control "\x00") in
         v = '\x00'
       ]} *)
-  val control : char t
 
+  val digit : char t
   (** [digit] parses one of the digit characters, [0 .. 9].
 
       {4:digit_examples Examples}
@@ -1013,8 +1008,8 @@ module type PARSER = sig
         let v = P.parse_string p "0123456789a" in
         v = [ '0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9' ]
       ]} *)
-  val digit : char t
 
+  val digits : string t
   (** [digits] parses one or more digit characters, [0 .. 9].
 
       {4:digits_examples Examples}
@@ -1026,8 +1021,8 @@ module type PARSER = sig
         let v = P.(parse_string digits "1234 +") in
         v = "1234"
       ]} *)
-  val digits : string t
 
+  val dquote : char t
   (** [dquote] parses double quote character ['"'].
 
       {4:dquote_examples Examples}
@@ -1039,8 +1034,8 @@ module type PARSER = sig
         let v = P.(parse_string dquote "\"hello ") in
         v = '"'
       ]} *)
-  val dquote : char t
 
+  val hex_digit : char t
   (** [hex_digit] parses any of the hexadecimal digits -
       [0..9, A, B, C, D, E, F].
 
@@ -1054,8 +1049,8 @@ module type PARSER = sig
         let v = P.parse_string p "0ABCDEFa" in
         v = [ '0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F' ]
       ]} *)
-  val hex_digit : char t
 
+  val htab : char t
   (** [htab] parses a horizontal tab character ['\t'].
 
       {4:htab_examples Examples}
@@ -1067,8 +1062,8 @@ module type PARSER = sig
         let v = P.(parse_string htab "\t") in
         v = '\t'
       ]} *)
-  val htab : char t
 
+  val lf : char t
   (** [lf] parses a linefeed ['\n'] character.
 
       {4:lf_examples Examples}
@@ -1080,8 +1075,8 @@ module type PARSER = sig
         let v = P.(parse_string lf "\n") in
         v = '\n'
       ]} *)
-  val lf : char t
 
+  val octet : char t
   (** [octect] parses any character in the range [\x00 - \xFF]. Synonym for
       {!val:Reparse.next}
 
@@ -1095,8 +1090,8 @@ module type PARSER = sig
         let v = P.parse_string p "0110 abc '" in
         v = [ '0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'' ]
       ]} *)
-  val octet : char t
 
+  val space : char t
   (** [space] parses a space character.
 
       {4:space_examples Examples}
@@ -1108,8 +1103,8 @@ module type PARSER = sig
         let v = P.(parse_string space " abc '") in
         v = ' '
       ]} *)
-  val space : char t
 
+  val vchar : char t
   (** [vchar] parses any of the visible - printable - characters.
 
       {4:vchar_examples Examples}
@@ -1122,8 +1117,8 @@ module type PARSER = sig
         let v = P.parse_string p "0110abc\x00" in
         v = [ '0'; '1'; '1'; '0'; 'a'; 'b'; 'c' ]
       ]} *)
-  val vchar : char t
 
+  val whitespace : char t
   (** [whitespace] parses a space [' '] or horizontal tab ['\t'] character.
 
       {4:whitespace_examples Examples}
@@ -1136,13 +1131,13 @@ module type PARSER = sig
         let v = P.parse_string p "\t \t " in
         v = [ '\t'; ' '; '\t'; ' ' ]
       ]} *)
-  val whitespace : char t
 
   (** {2 Input manipulation} *)
 
-  (** [advance n] advances input by [n] bytes. *)
   val advance : int -> unit t
+  (** [advance n] advances input by [n] bytes. *)
 
+  val eoi : unit t
   (** [eoi] parses end of input. Fails if parser is not at end of input.
 
       {4:eoi_examples Examples}
@@ -1159,13 +1154,12 @@ module type PARSER = sig
           try
             let _ = P.(parse_string eoi "a") in
             false
-          with
-          | _ -> true
+          with _ -> true
         in
         v = true
       ]} *)
-  val eoi : unit t
 
+  val trim_input_buffer : unit t
   (** [trim_input_buffer ()] calls [INPUT.trim_buffer] with the current parser
       position. Use this function to control the memory consumption of the input
       buffer.
@@ -1173,48 +1167,51 @@ module type PARSER = sig
       {b Note} Once trimmed the parser is unable to backtrack beyond the
       position of [last_trimmed_pos]. This may affect a correct functioning of
       [<|>] parser as it backtracks when trying various alternatives. *)
-  val trim_input_buffer : unit t
 
-  (** [pos] returns the current parser position. *)
   val pos : int t
+  (** [pos] returns the current parser position. *)
 
-  (** [last_trimmed_pos] returns the last trimmed input position marker. *)
   val last_trimmed_pos : int t
+  (** [last_trimmed_pos] returns the last trimmed input position marker. *)
 
+  val input_buffer_size : int option t
   (** [input_buffer_size] returns current input buffer size in bytes if input is
       a buffered input otherwise it returns [None] for unbuffered input. *)
-  val input_buffer_size : int option t
 
   val of_promise : 'a promise -> 'a t
 end
 
+module type PROMISE = sig
+  type 'a t
+
+  val return : 'a -> 'a t
+
+  val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
+
+  val bind : ('a -> 'b t) -> 'a t -> 'b t
+end
+
 module type INPUT = sig
-  (** Represents the input. *)
   type t
+  (** Represents the input. *)
 
-  (** Represents an input promise. *)
   type 'a promise
+  (** Represents an input promise. *)
 
-  val catch : (unit -> 'a promise) -> (exn -> 'a promise) -> 'a promise
-
-  val return : 'a -> 'a promise
-
-  val bind : ('a -> 'b promise) -> 'a promise -> 'b promise
-
+  val trim_buffer : t -> pos:int -> unit promise
   (** [trim_buffer t ~pos] removes data from the input buffer up till [pos].
 
       {b Note} After the input buffer is trimmed the parser is unable to
       backtrack to [pos] less than [pos]. *)
-  val trim_buffer : t -> pos:int -> unit promise
 
   val get_char : t -> pos:int -> [ `Char of char | `Eof ] promise
 
   val get_char_unbuffered : t -> pos:int -> [ `Char of char | `Eof ] promise
 
-  (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
-      [`Eof] if [EOI] is reached. *)
   val get_cstruct :
     t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
+  (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
+      [`Eof] if [EOI] is reached. *)
 
   val last_trimmed_pos : t -> int promise
 
@@ -1222,10 +1219,12 @@ module type INPUT = sig
 end
 
 (** A functor to create parsers based on the given [Input] module. *)
-module Make : functor (Input : INPUT) ->
-  PARSER with type 'a promise = 'a Input.promise with type input = Input.t
+module Make : functor
+  (Promise : PROMISE)
+  (Input : INPUT with type 'a promise = 'a Promise.t)
+  -> PARSER with type 'a promise = 'a Input.promise with type input = Input.t
 
-(** A parser when the input is a [string]. *)
+(** String based input parser. *)
 module String : sig
   include PARSER with type 'a promise = 'a
 

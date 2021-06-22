@@ -8,15 +8,16 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let inp () = P.of_string "hello world" in
     Popper.(
       suite
-        [ ( "value is 'h'"
-          , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
-          )
-        ; pos_test p 0 inp
-        ; last_trimmed_pos_test p 0 inp
-        ; ( "fail on eof"
-          , test (fun () ->
+        [
+          ( "value is 'h'",
+            test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
+          );
+          pos_test p 0 inp;
+          last_trimmed_pos_test p 0 inp;
+          ( "fail on eof",
+            test (fun () ->
                 equal char_result_comparator (P.run p empty)
-                  (Error "[peek_char] pos:0 eof")) )
+                  (Error "[peek_char] pos:0 eof")) );
         ])
 
   let peek_char_opt =
@@ -24,15 +25,16 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let inp () = P.of_string "hello world" in
     Popper.(
       suite
-        [ ( "value is 'h'"
-          , test (fun () ->
+        [
+          ( "value is 'h'",
+            test (fun () ->
                 equal char_opt_result_comparator (P.run p inp) (Ok (Some 'h')))
-          )
-        ; pos_test p 0 inp
-        ; last_trimmed_pos_test p 0 inp
-        ; ( "fail on eof"
-          , test (fun () ->
-                equal char_opt_result_comparator (P.run p empty) (Ok None)) )
+          );
+          pos_test p 0 inp;
+          last_trimmed_pos_test p 0 inp;
+          ( "fail on eof",
+            test (fun () ->
+                equal char_opt_result_comparator (P.run p empty) (Ok None)) );
         ])
 
   let peek_string =
@@ -40,11 +42,12 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let inp () = P.of_string "hello" in
     Popper.(
       suite
-        [ ( "value is \"hello\""
-          , test (fun () ->
-                equal string_result_comparator (P.run p inp) (Ok "hello")) )
-        ; pos_test p 0 inp
-        ; last_trimmed_pos_test p 0 inp
+        [
+          ( "value is \"hello\"",
+            test (fun () ->
+                equal string_result_comparator (P.run p inp) (Ok "hello")) );
+          pos_test p 0 inp;
+          last_trimmed_pos_test p 0 inp;
         ])
 
   let any_char =
@@ -52,41 +55,43 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let inp () = P.of_string "hello" in
     Popper.(
       suite
-        [ ( "value is 'h'"
-          , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
-          )
-        ; pos_test p 1 inp
-        ; last_trimmed_pos_test p 0 inp
-        ; ( "fail on eof"
-          , test (fun () ->
+        [
+          ( "value is 'h'",
+            test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
+          );
+          pos_test p 1 inp;
+          last_trimmed_pos_test p 0 inp;
+          ( "fail on eof",
+            test (fun () ->
                 equal char_result_comparator (P.run p empty)
-                  (Error "[any_char] pos:0 eof")) )
+                  (Error "[any_char] pos:0 eof")) );
         ])
 
   let any_char_unbuffered =
     let p = P.unsafe_any_char in
     let inp () = P.of_string "hello" in
     let p2 =
-      (P.unsafe_any_char, P.unsafe_any_char, P.unsafe_any_char)
-      <$$$> (fun c1 c2 c3 -> List.to_seq [ c1; c2; c3 ] |> String.of_seq)
+      ( (P.unsafe_any_char, P.unsafe_any_char, P.unsafe_any_char)
+      <$$$> fun c1 c2 c3 -> List.to_seq [ c1; c2; c3 ] |> String.of_seq )
       >>= fun s -> P.trim_input_buffer $> s
     in
     Popper.(
       suite
-        [ ( "value is 'h'"
-          , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
-          )
-        ; pos_test p 1 inp
-        ; last_trimmed_pos_test p 0 inp
-        ; ( "fail on eof"
-          , test (fun () ->
+        [
+          ( "value is 'h'",
+            test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
+          );
+          pos_test p 1 inp;
+          last_trimmed_pos_test p 0 inp;
+          ( "fail on eof",
+            test (fun () ->
                 equal char_result_comparator (P.run p empty)
-                  (Error "[unsafe_any_char] pos:0 eof")) )
-        ; ( {|value is "hel"|}
-          , test (fun () ->
-                equal string_result_comparator (P.run p2 inp) (Ok "hel")) )
-        ; pos_test p2 3 inp
-        ; last_trimmed_pos_test p2 3 inp
+                  (Error "[unsafe_any_char] pos:0 eof")) );
+          ( {|value is "hel"|},
+            test (fun () ->
+                equal string_result_comparator (P.run p2 inp) (Ok "hel")) );
+          pos_test p2 3 inp;
+          last_trimmed_pos_test p2 3 inp;
         ])
 
   let char =
@@ -94,16 +99,17 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let inp () = P.of_string "hello" in
     Popper.(
       suite
-        [ ( "value is 'h'"
-          , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
-          )
-        ; pos_test p 1 inp
-        ; last_trimmed_pos_test p 0 inp
-        ; ( "fail on 'c'"
-          , test (fun () ->
+        [
+          ( "value is 'h'",
+            test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
+          );
+          pos_test p 1 inp;
+          last_trimmed_pos_test p 0 inp;
+          ( "fail on 'c'",
+            test (fun () ->
                 let p = P.char 'c' in
                 equal char_result_comparator (P.run p inp)
-                  (Error "[char] pos:0, expected 'c', got 'h'")) )
+                  (Error "[char] pos:0, expected 'c', got 'h'")) );
         ])
 
   let char_if =
@@ -111,16 +117,17 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let inp () = P.of_string "hello" in
     Popper.(
       suite
-        [ ( "value is 'h'"
-          , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
-          )
-        ; pos_test p 1 inp
-        ; last_trimmed_pos_test p 0 inp
-        ; ( "fail on 'c'"
-          , test (fun () ->
+        [
+          ( "value is 'h'",
+            test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
+          );
+          pos_test p 1 inp;
+          last_trimmed_pos_test p 0 inp;
+          ( "fail on 'c'",
+            test (fun () ->
                 let p = P.char_if (fun c -> Char.equal 'c' c) in
                 equal char_result_comparator (P.run p inp)
-                  (Error "[char_if] pos:0 'h'")) )
+                  (Error "[char_if] pos:0 'h'")) );
         ])
 
   let string_cs =
@@ -128,21 +135,22 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let inp () = P.of_string "hello world" in
     Popper.(
       suite
-        [ ( "value is 'hello'"
-          , test (fun () ->
-                equal string_result_comparator (P.run p inp) (Ok "hello")) )
-        ; pos_test p 5 inp
-        ; last_trimmed_pos_test p 0 inp
-        ; ( "fail"
-          , test (fun () ->
+        [
+          ( "value is 'hello'",
+            test (fun () ->
+                equal string_result_comparator (P.run p inp) (Ok "hello")) );
+          pos_test p 5 inp;
+          last_trimmed_pos_test p 0 inp;
+          ( "fail",
+            test (fun () ->
                 let p = P.string_cs "bye" in
                 equal string_result_comparator (P.run p inp)
-                  (Error "[string_cs] \"bye\"")) )
-        ; ( "case sensitive"
-          , test (fun () ->
+                  (Error "[string_cs] \"bye\"")) );
+          ( "case sensitive",
+            test (fun () ->
                 let inp () = P.of_string "HELLO world" in
                 equal string_result_comparator (P.run p inp)
-                  (Error {|[string_cs] "hello"|})) )
+                  (Error {|[string_cs] "hello"|})) );
         ])
 
   let string_ci =
@@ -150,31 +158,33 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let inp () = P.of_string "HELLO world" in
     Popper.(
       suite
-        [ ( "value is 'hello'"
-          , test (fun () ->
-                equal string_result_comparator (P.run p inp) (Ok "hello")) )
-        ; pos_test p 5 inp
-        ; last_trimmed_pos_test p 0 inp
-        ; ( "fail"
-          , test (fun () ->
+        [
+          ( "value is 'hello'",
+            test (fun () ->
+                equal string_result_comparator (P.run p inp) (Ok "hello")) );
+          pos_test p 5 inp;
+          last_trimmed_pos_test p 0 inp;
+          ( "fail",
+            test (fun () ->
                 let p = P.string_ci "bye" in
                 equal string_result_comparator (P.run p inp)
-                  (Error "[string_ci] \"bye\"")) )
-        ; ( "case sensitive"
-          , test (fun () ->
+                  (Error "[string_ci] \"bye\"")) );
+          ( "case sensitive",
+            test (fun () ->
                 let inp () = P.of_string "hello world" in
-                equal string_result_comparator (P.run p inp) (Ok "hello")) )
+                equal string_result_comparator (P.run p inp) (Ok "hello")) );
         ])
 
   let string_of_chars =
     let p = P.string_of_chars [ 'h'; 'e'; 'l'; 'l'; 'o' ] in
     Popper.(
       suite
-        [ ( "value is 'hello'"
-          , test (fun () ->
-                equal string_result_comparator (P.run p empty) (Ok "hello")) )
-        ; pos_test p 0 empty
-        ; last_trimmed_pos_test p 0 empty
+        [
+          ( "value is 'hello'",
+            test (fun () ->
+                equal string_result_comparator (P.run p empty) (Ok "hello")) );
+          pos_test p 0 empty;
+          last_trimmed_pos_test p 0 empty;
         ])
 
   let take_string =
@@ -182,15 +192,16 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let inp () = P.of_string "hello world" in
     Popper.(
       suite
-        [ ( Format.sprintf "value is \"%s\"" "hello"
-          , test (fun () ->
-                equal string_result_comparator (P.run p inp) (Ok "hello")) )
-        ; pos_test p 5 inp
-        ; last_trimmed_pos_test p 0 inp
-        ; ( "fail on eof"
-          , test (fun () ->
+        [
+          ( Format.sprintf "value is \"%s\"" "hello",
+            test (fun () ->
+                equal string_result_comparator (P.run p inp) (Ok "hello")) );
+          pos_test p 5 inp;
+          last_trimmed_pos_test p 0 inp;
+          ( "fail on eof",
+            test (fun () ->
                 equal string_result_comparator (P.run p empty)
-                  (Error "pos:0, n:5 eof")) )
+                  (Error "pos:0, n:5 eof")) );
         ])
 
   let cstruct_result_comparator =
@@ -206,33 +217,35 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let inp () = P.of_string "hello world" in
     Popper.(
       suite
-        [ ( "value is 'hello'"
-          , test (fun () ->
+        [
+          ( "value is 'hello'",
+            test (fun () ->
                 equal cstruct_result_comparator (P.run p inp)
-                  (Ok (Cstruct.of_string "hello"))) )
-        ; pos_test p 5 inp
-        ; last_trimmed_pos_test p 0 inp
-        ; ( "fail on eof"
-          , test (fun () ->
+                  (Ok (Cstruct.of_string "hello"))) );
+          pos_test p 5 inp;
+          last_trimmed_pos_test p 0 inp;
+          ( "fail on eof",
+            test (fun () ->
                 let p = P.take_cstruct 12 in
                 equal cstruct_result_comparator (P.run p inp)
-                  (Error "pos:0, n:12 not enough input")) )
+                  (Error "pos:0, n:12 not enough input")) );
         ])
 
   let suites =
     Popper.suite
-      [ ("peek_char", peek_char)
-      ; ("peek_char_opt", peek_char_opt)
-      ; ("peek_string", peek_string)
-      ; ("any_char", any_char)
-      ; ("any_char_unbuffered", any_char_unbuffered)
-      ; ("char", char)
-      ; ("char_if", char_if)
-      ; ("string_cs", string_cs)
-      ; ("string_ci", string_ci)
-      ; ("string_of_chars", string_of_chars)
-      ; ("take_string", take_string)
-      ; ("take_cstruct", take_cstruct)
+      [
+        ("peek_char", peek_char);
+        ("peek_char_opt", peek_char_opt);
+        ("peek_string", peek_string);
+        ("any_char", any_char);
+        ("any_char_unbuffered", any_char_unbuffered);
+        ("char", char);
+        ("char_if", char_if);
+        ("string_cs", string_cs);
+        ("string_ci", string_ci);
+        ("string_of_chars", string_of_chars);
+        ("take_string", take_string);
+        ("take_cstruct", take_cstruct);
       ]
 end
 

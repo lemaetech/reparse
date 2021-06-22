@@ -26,26 +26,19 @@ open Reparse.String
 type value =
   | Object of (string * value) list
   | Array of value list
-  | Number of
-      { negative : bool
-      ; int : string
-      ; frac : string option
-      ; exponent : string option
-      }
+  | Number of {
+      negative : bool;
+      int : string;
+      frac : string option;
+      exponent : string option;
+    }
   | String of string
   | False
   | True
   | Null
 
 let ws =
-  skip
-    (char_if (function
-      | ' '
-      | '\t'
-      | '\n'
-      | '\r' ->
-        true
-      | _ -> false))
+  skip (char_if (function ' ' | '\t' | '\n' | '\r' -> true | _ -> false))
 
 let struct_char c = ws *> char c <* ws
 
@@ -57,17 +50,10 @@ let true_value = ws *> string_cs "true" *> ws *> return True
 
 let number_value =
   let* negative =
-    optional (char '-')
-    >>| function
-    | Some '-' -> true
-    | _ -> false
+    optional (char '-') >>| function Some '-' -> true | _ -> false
   in
   let* int =
-    let digits1_to_9 =
-      char_if (function
-        | '1' .. '9' -> true
-        | _ -> false)
-    in
+    let digits1_to_9 = char_if (function '1' .. '9' -> true | _ -> false) in
     let num =
       map2
         (fun first_ch digits -> Format.sprintf "%c%s" first_ch digits)
@@ -81,9 +67,7 @@ let number_value =
       (let* e = char 'E' <|> char 'e' in
        let* sign = optional (char '-' <|> char '+') in
        let sign =
-         match sign with
-         | Some c -> Format.sprintf "%c" c
-         | None -> ""
+         match sign with Some c -> Format.sprintf "%c" c | None -> ""
        in
        let+ digits = digits in
        Format.sprintf "%c%s%s" e sign digits)
@@ -95,15 +79,7 @@ let string =
     let ch =
       char '\\'
       *> char_if (function
-           | '"'
-           | '\\'
-           | '/'
-           | 'b'
-           | 'f'
-           | 'n'
-           | 'r'
-           | 't' ->
-             true
+           | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -> true
            | _ -> false)
       >>| Format.sprintf "\\%c"
     in
@@ -146,13 +122,14 @@ let json_value =
         Array vals
       in
       any
-        [ object_value
-        ; array_value
-        ; number_value
-        ; string_value
-        ; false_value
-        ; true_value
-        ; null_value
+        [
+          object_value;
+          array_value;
+          number_value;
+          string_value;
+          false_value;
+          true_value;
+          null_value;
         ])
 
 let parse s = parse s json_value

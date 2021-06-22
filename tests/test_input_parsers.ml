@@ -10,11 +10,12 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
     let inp () = P.of_string "hello world" in
     Popper.(
       suite
-        [ ( "value is ()"
-          , test (fun () -> equal unit_result_comparator (P.run p inp) (Ok ()))
-          )
-        ; pos_test p 11 inp
-        ; last_trimmed_pos_test p 11 inp
+        [
+          ( "value is ()",
+            test (fun () -> equal unit_result_comparator (P.run p inp) (Ok ()))
+          );
+          pos_test p 11 inp;
+          last_trimmed_pos_test p 11 inp;
         ])
 
   let suites = Popper.suite [ ("trim_input_buffer", trim_input_buffer) ]

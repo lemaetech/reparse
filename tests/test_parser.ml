@@ -45,23 +45,23 @@ module Make_helper (P : TEST_PARSER) = struct
   open P.Infix
 
   let pos_test p pos inp =
-    ( Format.sprintf "pos is %d" pos
-    , Popper.(
+    ( Format.sprintf "pos is %d" pos,
+      Popper.(
         test (fun () ->
             let p = p *> P.pos in
             equal int_result_comparator (P.run p inp) (Ok pos))) )
 
   let last_trimmed_pos_test p pos inp =
-    ( Format.asprintf "last_trimmed_pos is %d" pos
-    , Popper.(
+    ( Format.asprintf "last_trimmed_pos is %d" pos,
+      Popper.(
         test (fun () ->
             let p = p *> P.last_trimmed_pos in
             equal int_result_comparator (P.run p inp) (Ok pos))) )
 
   let buffer_size_test p sz inp =
     let pp_int_opt fmt = Format.pp_print_option Format.pp_print_int fmt in
-    ( Format.asprintf "buffer size is %a" pp_int_opt sz
-    , Popper.(
+    ( Format.asprintf "buffer size is %a" pp_int_opt sz,
+      Popper.(
         test (fun () ->
             let p = p *> P.input_buffer_size in
             equal int_opt_result_comparator (P.run p inp) (Ok sz))) )
