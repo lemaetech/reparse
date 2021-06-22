@@ -801,6 +801,101 @@ struct
     Promise.(Input.buffer_size inp >>| fun sz_opt -> (sz_opt, pos))
 end
 
+module type INPUT2 = sig
+  type t
+
+  type 'a promise
+
+  val read : t -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
+end
+
+module Make_buffered
+    (Promise : PROMISE)
+    (Input : INPUT2 with type 'a promise = 'a Promise.t) :
+  INPUT with type 'a promise = 'a Promise.t = struct
+  type t = {
+    input : Input.t;
+    mutable buf : Cstruct.t;
+    mutable last_trimmed_pos : int;
+        (* An input position marker. The marker restricts the parser from
+           backtracking beyound this point. Any attempt to do so will raise an
+           exception. *)
+  }
+
+  type 'a promise = 'a Promise.t
+
+  module Promise = struct
+    include Promise
+
+    let ( >>= ) b f = bind f b
+
+    let ( >>| ) b f = b >>= fun x -> return (f x)
+  end
+
+  let trim_buffer t ~pos =
+    let pos' = pos - t.last_trimmed_pos in
+    let bytes_to_copy = Cstruct.length t.buf - pos' in
+    let buf =
+      if bytes_to_copy <= 0 then Cstruct.empty
+      else Cstruct.sub t.buf pos' bytes_to_copy
+    in
+    t.buf <- buf;
+    t.last_trimmed_pos <- pos;
+    Promise.return ()
+
+  let buffer_pos_len t ~pos ~len =
+    let pos' = pos - t.last_trimmed_pos in
+    let len' = Cstruct.length t.buf - (pos' + len) in
+    (pos', len')
+
+  let get_char_common t ~pos =
+    let pos', len' = buffer_pos_len t ~pos ~len:1 in
+    if len' >= 0 then Promise.return (`Return (Cstruct.get_char t.buf pos'))
+    else
+      Promise.(
+        Input.read t.input ~len:1 >>| function
+        | `Cstruct cs -> `Additional_byte_read (Cstruct.get_char cs 0)
+        | `Eof -> `Eof)
+
+  let get_char t ~pos =
+    Promise.(
+      get_char_common t ~pos >>| function
+      | `Return c -> `Char c
+      | `Additional_byte_read c ->
+          let new_buf = Cstruct.create_unsafe (Cstruct.length t.buf + 1) in
+          Cstruct.blit t.buf 0 new_buf 0 (Cstruct.length t.buf);
+          Cstruct.set_char new_buf (Cstruct.length new_buf - 1) c;
+          t.buf <- new_buf;
+          `Char c
+      | `Eof -> `Eof)
+
+  let get_char_unbuffered t ~pos =
+    Promise.(
+      get_char_common t ~pos >>| function
+      | `Return c -> `Char c
+      | `Additional_byte_read c -> `Char c
+      | `Eof -> `Eof)
+
+  let get_cstruct t ~pos ~len =
+    let pos', len' = buffer_pos_len t ~pos ~len in
+    if len' >= 0 then Promise.return (`Cstruct (Cstruct.sub t.buf pos' len))
+    else
+      Promise.(
+        let len' = abs len' in
+        Input.read t.input ~len:len' >>| function
+        | `Cstruct cs ->
+            let new_buf = Cstruct.append t.buf cs in
+            let len' = Cstruct.length new_buf - pos' in
+            let len = if len' < len then len' else len in
+            t.buf <- new_buf;
+            `Cstruct (Cstruct.sub t.buf pos' len)
+        | `Eof -> `Eof)
+
+  let last_trimmed_pos t = Promise.return t.last_trimmed_pos
+
+  let buffer_size t = Promise.return @@ Some (Cstruct.length t.buf)
+end
+
 module String = struct
   type t' = { input : Cstruct.t; mutable last_trimmed_pos : int }
 
