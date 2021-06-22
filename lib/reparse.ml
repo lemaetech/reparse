@@ -161,9 +161,6 @@ module type PARSER = sig
   val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
 
   val take_while_cb :
-    ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> unit t
-
-  val take_while_cbt :
     ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit t) -> 'a t -> unit t
 
   val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
@@ -684,34 +681,6 @@ struct
     loop pos 0
 
   let take_while_cb :
-      ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> unit t
-      =
-   fun ?sep_by ~while_ ~on_take_cb p inp ~pos ->
-    let sep_by = sep_by_to_bool ?sep_by in
-    let p' = (p, sep_by) <$$> fun v sep_by_ok -> (v, sep_by_ok) in
-    let rec loop pos =
-      Input.(
-        while_ inp ~pos
-        >>= fun (continue, _pos) ->
-        if continue then
-          catch
-            (fun () ->
-              p' inp ~pos
-              >>= fun ((v, sep_by_ok), pos) ->
-              on_take_cb v;
-              if sep_by_ok then
-                (loop [@tailcall]) pos
-              else
-                return ((), pos))
-            (function
-              | Parse_failure _ -> return ((), pos)
-              | e -> raise e)
-        else
-          return ((), pos))
-    in
-    loop pos
-
-  let take_while_cbt :
          ?sep_by:_ t
       -> while_:bool t
       -> on_take_cb:('a -> unit t)
@@ -747,7 +716,11 @@ struct
   let take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t =
    fun ?sep_by ~while_ p ->
     let items = ref [] in
-    take_while_cb ?sep_by ~while_ ~on_take_cb:(fun a -> items := a :: !items) p
+    take_while_cb ?sep_by ~while_
+      ~on_take_cb:(fun a ->
+        items := a :: !items;
+        unit)
+      p
     *> return (List.rev !items)
 
   let take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t =

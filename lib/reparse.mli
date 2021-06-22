@@ -768,7 +768,7 @@ module type PARSER = sig
       ]} *)
   val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
 
-  (** [take_while_on ~sep_by ~while_ ~on_take p] repeatedly parses [p] and calls
+  (** [take_while_cb ~sep_by ~while_ ~on_take p] repeatedly parses [p] and calls
       callback [on_take_cb] with the parsed value. [p] is evaluated if and only
       if [while_] evaluates to [true]. If [sep_by] is specified then the
       evaluation of [p] must be followed by a successful evaluation of [sep_by].
@@ -799,11 +799,6 @@ module type PARSER = sig
         v = 3 && s = "aaa"
       ]} *)
   val take_while_cb :
-    ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit) -> 'a t -> unit t
-
-  (** [take_while_db_promise] is same as [take_while_cb] except [on_take_cb]
-      returns [unit t] instead of [unit]. *)
-  val take_while_cbt :
     ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit t) -> 'a t -> unit t
 
   (** [take_while ~sep_by p ~while_ p] repeatedly parses [p] and returns its
