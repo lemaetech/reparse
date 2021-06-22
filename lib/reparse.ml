@@ -804,41 +804,42 @@ end
 module String = struct
   type t' = { input : Cstruct.t; mutable last_trimmed_pos : int }
 
-  include
-    Make
-      (struct
-        type 'a t = 'a
+  module Promise = struct
+    type 'a t = 'a
 
-        let return a = a
+    let return a = a
 
-        let catch f e = try f () with exn -> e exn
+    let catch f e = try f () with exn -> e exn
 
-        let bind f promise = f promise
-      end)
-      (struct
-        type 'a promise = 'a
+    let bind f promise = f promise
+  end
 
-        type t = t'
+  module Input = struct
+    type 'a promise = 'a
 
-        let trim_buffer t ~pos = t.last_trimmed_pos <- pos
+    type t = t'
 
-        let get_char t ~pos =
-          if pos + 1 <= Cstruct.length t.input then
-            `Char (Cstruct.get_char t.input pos)
-          else `Eof
+    let trim_buffer t ~pos = t.last_trimmed_pos <- pos
 
-        let get_char_unbuffered = get_char
+    let get_char t ~pos =
+      if pos + 1 <= Cstruct.length t.input then
+        `Char (Cstruct.get_char t.input pos)
+      else `Eof
 
-        let get_cstruct t ~pos ~len =
-          let len' = Cstruct.length t.input - pos in
-          if len' <= 0 then `Eof
-          else if len' > len then `Cstruct (Cstruct.sub t.input pos len)
-          else `Cstruct (Cstruct.sub t.input pos len')
+    let get_char_unbuffered = get_char
 
-        let last_trimmed_pos t = t.last_trimmed_pos
+    let get_cstruct t ~pos ~len =
+      let len' = Cstruct.length t.input - pos in
+      if len' <= 0 then `Eof
+      else if len' > len then `Cstruct (Cstruct.sub t.input pos len)
+      else `Cstruct (Cstruct.sub t.input pos len')
 
-        let buffer_size _ = None
-      end)
+    let last_trimmed_pos t = t.last_trimmed_pos
+
+    let buffer_size _ = None
+  end
+
+  include Make (Promise) (Input)
 
   let input_of_string s = { input = Cstruct.of_string s; last_trimmed_pos = 0 }
 
