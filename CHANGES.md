@@ -6,7 +6,6 @@
 - Facilitate IO promise monads such as `Lwt` and `Async`
 - Add package `reparse-lwt` which defines `Lwt_stream.t` as one of the input sources.
 - Add package 'reparse-lwt-unix' which defines `Lwt_unix.file_descr` and `Lwt_io.input_channel` as parser input sources.
-- 
 
 ## v2.1.0 2021-04-06 UK
 
