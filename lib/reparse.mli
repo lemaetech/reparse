@@ -1189,6 +1189,8 @@ module type INPUT = sig
   val buffer_size : t -> int option promise
 end
 
+(** {2 Buffered Input} *)
+
 module type BUFFERED_INPUT = sig
   type t
   type 'a promise
@@ -1196,10 +1198,33 @@ module type BUFFERED_INPUT = sig
   val read : t -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
 end
 
+(** Makes a buffered [INPUT] module. Buffered input provide backtracking
+    functionality in [Reparse] for those input that doesn't support random
+    seeking, for eg. Unix socket descriptors, Lwt input channels, Lwt streams,
+    etc. *)
 module Make_buffered_input : functor
   (Promise : PROMISE)
   (Input : BUFFERED_INPUT with type 'a promise = 'a Promise.t)
   -> INPUT with type 'a promise = 'a Promise.t with type input = Input.t
+
+(** {2 Unbuffered Input} *)
+
+module type UNBUFFERED_INPUT = sig
+  type t
+  type 'a promise
+
+  val read : t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
+end
+
+(** Makes a unbuffered [INPUT] module. Unbuffered input doesn't buffer any input
+    since it natively supports random access and thus backtracking functionality
+    is in-built to the input itself. *)
+module Make_unbuffered_input : functor
+  (Promise : PROMISE)
+  (Input : UNBUFFERED_INPUT with type 'a promise = 'a Promise.t)
+  -> INPUT with type 'a promise = 'a Promise.t with type input = Input.t
+
+(** {2 Make a parser} *)
 
 (** A functor to create parsers based on the given [Promise] and [Input] module. *)
 module Make : functor
@@ -1207,7 +1232,8 @@ module Make : functor
   (Input : INPUT with type 'a promise = 'a Promise.t)
   -> PARSER with type 'a promise = 'a Input.promise with type input = Input.t
 
-(** String based input parser. *)
+(** {2 String Parser} *)
+
 module String : sig
   include PARSER with type 'a promise = 'a
 

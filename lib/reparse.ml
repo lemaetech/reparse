@@ -696,6 +696,13 @@ module type BUFFERED_INPUT = sig
   val read : t -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
 end
 
+module Make_promise_ops (Promise : PROMISE) = struct
+  include Promise
+
+  let ( >>= ) b f = bind f b
+  let ( >>| ) b f = b >>= fun x -> return (f x)
+end
+
 module Make_buffered_input
     (Promise : PROMISE)
     (Input : BUFFERED_INPUT with type 'a promise = 'a Promise.t) :
@@ -714,12 +721,7 @@ module Make_buffered_input
 
   type 'a promise = 'a Promise.t
 
-  module Promise = struct
-    include Promise
-
-    let ( >>= ) b f = bind f b
-    let ( >>| ) b f = b >>= fun x -> return (f x)
-  end
+  module Promise = Make_promise_ops (Promise)
 
   let trim_buffer t ~pos =
     let pos' = pos - t.last_trimmed_pos in
@@ -785,9 +787,41 @@ module Make_buffered_input
   let buffer_size t = Promise.return @@ Some (Cstruct.length t.buf)
 end
 
-module String = struct
-  type t' = {input: Cstruct.t; mutable last_trimmed_pos: int}
+module type UNBUFFERED_INPUT = sig
+  type t
+  type 'a promise
 
+  val read : t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
+end
+
+module Make_unbuffered_input
+    (Promise : PROMISE)
+    (Input : UNBUFFERED_INPUT with type 'a promise = 'a Promise.t) :
+  INPUT with type 'a promise = 'a Promise.t with type input = Input.t = struct
+  module Promise = Make_promise_ops (Promise)
+
+  type t = {input: Input.t; mutable last_trimmed_pos: int}
+  type input = Input.t
+  type 'a promise = 'a Promise.t
+
+  let create input = {input; last_trimmed_pos= 0}
+
+  let trim_buffer t ~pos =
+    t.last_trimmed_pos <- pos ;
+    Promise.return ()
+
+  let get_char t ~pos =
+    Promise.(
+      Input.read t.input ~pos ~len:1
+      >>| function `Cstruct cs -> `Char (Cstruct.get_char cs 0) | `Eof -> `Eof)
+
+  let get_char_unbuffered = get_char
+  let get_cstruct t ~pos ~len = Input.read t.input ~pos ~len
+  let last_trimmed_pos t = Promise.return @@ t.last_trimmed_pos
+  let buffer_size _ = Promise.return None
+end
+
+module String = struct
   module Promise = struct
     type 'a t = 'a
 
@@ -796,37 +830,25 @@ module String = struct
     let bind f promise = f promise
   end
 
-  module Input = struct
-    type 'a promise = 'a
-    type t = t'
-    type input = Cstruct.t
+  module Input =
+    Make_unbuffered_input
+      (Promise)
+      (struct
+        type t = Cstruct.t
+        type 'a promise = 'a
 
-    let create input = {input; last_trimmed_pos= 0}
-    let trim_buffer t ~pos = t.last_trimmed_pos <- pos
-
-    let get_char t ~pos =
-      if pos + 1 <= Cstruct.length t.input then
-        `Char (Cstruct.get_char t.input pos)
-      else `Eof
-
-    let get_char_unbuffered = get_char
-
-    let get_cstruct t ~pos ~len =
-      let len' = Cstruct.length t.input - pos in
-      if len' <= 0 then `Eof
-      else if len' > len then `Cstruct (Cstruct.sub t.input pos len)
-      else `Cstruct (Cstruct.sub t.input pos len')
-
-    let last_trimmed_pos t = t.last_trimmed_pos
-    let buffer_size _ = None
-  end
+        let read t ~pos ~len =
+          let len' = Cstruct.length t - pos in
+          if len' <= 0 then `Eof
+          else if len' > len then `Cstruct (Cstruct.sub t pos len)
+          else `Cstruct (Cstruct.sub t pos len')
+      end)
 
   include Make (Promise) (Input)
 
-  let input_of_string s = {input= Cstruct.of_string s; last_trimmed_pos= 0}
+  let input_of_cstruct input = Input.create input
+  let input_of_string s = Input.create (Cstruct.of_string s)
 
   let input_of_bigstring ?off ?len ba =
-    {input= Cstruct.of_bigarray ?off ?len ba; last_trimmed_pos= 0}
-
-  let input_of_cstruct input = {input; last_trimmed_pos= 0}
+    Input.create (Cstruct.of_bigarray ?off ?len ba)
 end
