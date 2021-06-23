@@ -8,7 +8,7 @@ end
 module String : TEST_PARSER = struct
   include Reparse.String
 
-  let of_string = input_of_string
+  let of_string = create_input_from_string
   let run p i = parse (i ()) p
 end
 

@@ -851,9 +851,9 @@ module String = struct
 
   include Make (Promise) (Input)
 
-  let input_of_cstruct input = Input.create input
-  let input_of_string s = Input.create (Cstruct.of_string s)
+  let create_input input = Input.create input
+  let create_input_from_string s = Input.create (Cstruct.of_string s)
 
-  let input_of_bigstring ?off ?len ba =
+  let create_input_from_bigstring ?off ?len ba =
     Input.create (Cstruct.of_bigarray ?off ?len ba)
 end

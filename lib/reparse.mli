@@ -1237,7 +1237,9 @@ module Make : functor
 module String : sig
   include PARSER with type 'a promise = 'a
 
-  val input_of_string : string -> input
-  val input_of_bigstring : ?off:int -> ?len:int -> Cstruct.buffer -> input
-  val input_of_cstruct : Cstruct.t -> input
+  val create_input : Cstruct.t -> input
+  val create_input_from_string : string -> input
+
+  val create_input_from_bigstring :
+    ?off:int -> ?len:int -> Cstruct.buffer -> input
 end
