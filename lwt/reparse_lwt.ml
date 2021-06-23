@@ -24,14 +24,26 @@ module Stream = struct
         type t = char Lwt_stream.t
         type 'a promise = 'a Lwt.t
 
+        let read_char t =
+          let open Lwt.Infix in
+          Lwt_stream.get t
+          >|= function
+          | Some c ->
+              let cs = Cstruct.create 1 in
+              Cstruct.set_char cs 0 c ; `Cstruct cs
+          | None -> `Eof
+
         let read t ~len =
           let open Lwt.Infix in
-          Lwt_stream.nget len t
-          >|= fun chars ->
-          let len'' = List.length chars in
-          if len'' > 0 then
-            `Cstruct (chars |> List.to_seq |> String.of_seq |> Cstruct.of_string)
-          else `Eof
+          if len = 1 then read_char t
+          else
+            Lwt_stream.nget len t
+            >|= fun chars ->
+            let len'' = List.length chars in
+            if len'' > 0 then
+              `Cstruct
+                (chars |> List.to_seq |> String.of_seq |> Cstruct.of_string)
+            else `Eof
       end)
 
   include Reparse.Make (Promise) (Input)
