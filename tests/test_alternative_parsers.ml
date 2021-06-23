@@ -82,6 +82,12 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
 end
 
 let suite =
-  let module S = Make_test (Test_parser.String) in
-  let module L = Make_test (Test_parser.Lwt_stream) in
-  Popper.suite [("String", S.suites); ("Lwt.Stream", L.suites)]
+  let module String = Make_test (Test_parser.String) in
+  let module Lwt_stream = Make_test (Test_parser.Lwt_stream) in
+  let module Lwt_fd = Make_test (Test_parser.Lwt_fd) in
+  let module Lwt_channel = Make_test (Test_parser.Lwt_channel) in
+  Popper.suite
+    [ ("Reparse.String", String.suites)
+    ; ("Reparse_lwt.Stream", Lwt_stream.suites)
+    ; ("Reparse_lwt_unix.Fd", Lwt_fd.suites)
+    ; ("Reparse_lwt_unix.Channel", Lwt_channel.suites) ]
