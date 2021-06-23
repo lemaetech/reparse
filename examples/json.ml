@@ -106,8 +106,13 @@ let json_value =
         in
         Array vals in
       any
-        [ object_value; array_value; number_value; string_value; false_value
-        ; true_value; null_value ] )
+        [ object_value
+        ; array_value
+        ; number_value
+        ; string_value
+        ; false_value
+        ; true_value
+        ; null_value ] )
 
 let parse s = parse s json_value
 

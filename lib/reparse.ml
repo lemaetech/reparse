@@ -284,7 +284,12 @@ struct
         (fun () -> p inp ~pos:0 >>| fun (a, _) -> Ok a)
         (function
           | Parse_failure msg -> return (Error msg)
-          | e -> return (Printexc.to_string e |> Result.error) ))
+          | e ->
+              let msg =
+                Format.sprintf "%s, %s"
+                  (Printexc.get_backtrace ())
+                  (Printexc.to_string e) in
+              return (Result.error msg) ))
 
   (* Parser invariant: pos should not be less than the last_trimmed_pos. *)
   let check_last_trimmed : unit t =

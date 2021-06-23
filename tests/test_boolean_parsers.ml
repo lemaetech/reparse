@@ -10,7 +10,9 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       suite
         [ ( "value is ()"
           , test (fun () -> equal unit_result_comparator (P.run p inp) (Ok ()))
-          ); pos_test p 0 inp; last_trimmed_pos_test p 0 inp
+          )
+        ; pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail"
           , test (fun () ->
                 equal unit_result_comparator (P.run p2 inp)
@@ -30,11 +32,13 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         [ ( "value is true"
           , test (fun () ->
                 equal bool_result_comparator (P.run p inp) (Ok true) ) )
-        ; pos_test p 0 inp; last_trimmed_pos_test p 0 inp
+        ; pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "value is false"
           , test (fun () ->
                 equal bool_result_comparator (P.run p2 inp) (Ok false) ) )
-        ; pos_test p2 0 inp; last_trimmed_pos_test p2 0 inp ])
+        ; pos_test p2 0 inp
+        ; last_trimmed_pos_test p2 0 inp ])
 
   let is_not =
     let p = P.(is_not (string_cs "hello")) in
@@ -45,16 +49,18 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         [ ( "value is true"
           , test (fun () ->
                 equal bool_result_comparator (P.run p inp) (Ok true) ) )
-        ; pos_test p 0 inp; last_trimmed_pos_test p 0 inp
+        ; pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "value is false"
           , test (fun () ->
                 equal bool_result_comparator (P.run p2 inp) (Ok false) ) )
-        ; pos_test p2 0 inp; last_trimmed_pos_test p2 0 inp ])
+        ; pos_test p2 0 inp
+        ; last_trimmed_pos_test p2 0 inp ])
 
   let suites = Popper.suite [("not_", not_); ("is", is); ("is_not", is_not)]
 end
 
 let suite =
   let module S = Make_test (Test_parser.String) in
-  let module L = Make_test (Test_parser.Lwt) in
+  let module L = Make_test (Test_parser.Lwt_stream) in
   Popper.suite [("String", S.suites); ("Lwt.Stream", L.suites)]

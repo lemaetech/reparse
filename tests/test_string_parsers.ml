@@ -9,7 +9,9 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       suite
         [ ( "value is 'h'"
           , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
-          ); pos_test p 0 inp; last_trimmed_pos_test p 0 inp
+          )
+        ; pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
                 equal char_result_comparator (P.run p empty)
@@ -23,7 +25,9 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         [ ( "value is 'h'"
           , test (fun () ->
                 equal char_opt_result_comparator (P.run p inp) (Ok (Some 'h')) )
-          ); pos_test p 0 inp; last_trimmed_pos_test p 0 inp
+          )
+        ; pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
                 equal char_opt_result_comparator (P.run p empty) (Ok None) ) )
@@ -37,7 +41,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         [ ( "value is \"hello\""
           , test (fun () ->
                 equal string_result_comparator (P.run p inp) (Ok "hello") ) )
-        ; pos_test p 0 inp; last_trimmed_pos_test p 0 inp ])
+        ; pos_test p 0 inp
+        ; last_trimmed_pos_test p 0 inp ])
 
   let any_char =
     let p = P.any_char in
@@ -46,7 +51,9 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       suite
         [ ( "value is 'h'"
           , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
-          ); pos_test p 1 inp; last_trimmed_pos_test p 0 inp
+          )
+        ; pos_test p 1 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
                 equal char_result_comparator (P.run p empty)
@@ -63,7 +70,9 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       suite
         [ ( "value is 'h'"
           , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
-          ); pos_test p 1 inp; last_trimmed_pos_test p 0 inp
+          )
+        ; pos_test p 1 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
                 equal char_result_comparator (P.run p empty)
@@ -71,7 +80,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         ; ( {|value is "hel"|}
           , test (fun () ->
                 equal string_result_comparator (P.run p2 inp) (Ok "hel") ) )
-        ; pos_test p2 3 inp; last_trimmed_pos_test p2 3 inp ])
+        ; pos_test p2 3 inp
+        ; last_trimmed_pos_test p2 3 inp ])
 
   let char =
     let p = P.char 'h' in
@@ -80,7 +90,9 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       suite
         [ ( "value is 'h'"
           , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
-          ); pos_test p 1 inp; last_trimmed_pos_test p 0 inp
+          )
+        ; pos_test p 1 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on 'c'"
           , test (fun () ->
                 let p = P.char 'c' in
@@ -94,7 +106,9 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       suite
         [ ( "value is 'h'"
           , test (fun () -> equal char_result_comparator (P.run p inp) (Ok 'h'))
-          ); pos_test p 1 inp; last_trimmed_pos_test p 0 inp
+          )
+        ; pos_test p 1 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on 'c'"
           , test (fun () ->
                 let p = P.char_if (fun c -> Char.equal 'c' c) in
@@ -109,7 +123,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         [ ( "value is 'hello'"
           , test (fun () ->
                 equal string_result_comparator (P.run p inp) (Ok "hello") ) )
-        ; pos_test p 5 inp; last_trimmed_pos_test p 0 inp
+        ; pos_test p 5 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail"
           , test (fun () ->
                 let p = P.string_cs "bye" in
@@ -129,7 +144,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         [ ( "value is 'hello'"
           , test (fun () ->
                 equal string_result_comparator (P.run p inp) (Ok "hello") ) )
-        ; pos_test p 5 inp; last_trimmed_pos_test p 0 inp
+        ; pos_test p 5 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail"
           , test (fun () ->
                 let p = P.string_ci "bye" in
@@ -147,7 +163,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         [ ( "value is 'hello'"
           , test (fun () ->
                 equal string_result_comparator (P.run p empty) (Ok "hello") ) )
-        ; pos_test p 0 empty; last_trimmed_pos_test p 0 empty ])
+        ; pos_test p 0 empty
+        ; last_trimmed_pos_test p 0 empty ])
 
   let take_string =
     let p = P.take_string 5 in
@@ -157,7 +174,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         [ ( Format.sprintf "value is \"%s\"" "hello"
           , test (fun () ->
                 equal string_result_comparator (P.run p inp) (Ok "hello") ) )
-        ; pos_test p 5 inp; last_trimmed_pos_test p 0 inp
+        ; pos_test p 5 inp
+        ; last_trimmed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
                 equal string_result_comparator (P.run p empty)
@@ -178,7 +196,8 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
         [ ( "value is 'hello'"
           , test (fun () ->
                 equal cstruct_result_comparator (P.run p inp)
-                  (Ok (Cstruct.of_string "hello")) ) ); pos_test p 5 inp
+                  (Ok (Cstruct.of_string "hello")) ) )
+        ; pos_test p 5 inp
         ; last_trimmed_pos_test p 0 inp
         ; ( "fail on eof"
           , test (fun () ->
@@ -188,15 +207,27 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
 
   let suites =
     Popper.suite
-      [ ("peek_char", peek_char); ("peek_char_opt", peek_char_opt)
-      ; ("peek_string", peek_string); ("any_char", any_char)
-      ; ("any_char_unbuffered", any_char_unbuffered); ("char", char)
-      ; ("char_if", char_if); ("string_cs", string_cs); ("string_ci", string_ci)
-      ; ("string_of_chars", string_of_chars); ("take_string", take_string)
+      [ ("peek_char", peek_char)
+      ; ("peek_char_opt", peek_char_opt)
+      ; ("peek_string", peek_string)
+      ; ("any_char", any_char)
+      ; ("any_char_unbuffered", any_char_unbuffered)
+      ; ("char", char)
+      ; ("char_if", char_if)
+      ; ("string_cs", string_cs)
+      ; ("string_ci", string_ci)
+      ; ("string_of_chars", string_of_chars)
+      ; ("take_string", take_string)
       ; ("take_cstruct", take_cstruct) ]
 end
 
 let suite =
-  let module S = Make_test (Test_parser.String) in
-  let module L = Make_test (Test_parser.Lwt) in
-  Popper.suite [("String", S.suites); ("Lwt.Stream", L.suites)]
+  let module String = Make_test (Test_parser.String) in
+  let module Lwt_stream = Make_test (Test_parser.Lwt_stream) in
+  let module Lwt_fd = Make_test (Test_parser.Lwt_fd) in
+  let module Lwt_channel = Make_test (Test_parser.Lwt_channel) in
+  Popper.suite
+    [ ("Reparse.String", String.suites)
+    ; ("Reparse_lwt.Stream", Lwt_stream.suites)
+    ; ("Reparse_lwt_unix.Fd", Lwt_fd.suites)
+    ; ("Reparse_lwt_unix.Channel", Lwt_channel.suites) ]

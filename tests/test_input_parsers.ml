@@ -11,12 +11,14 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
       suite
         [ ( "value is ()"
           , test (fun () -> equal unit_result_comparator (P.run p inp) (Ok ()))
-          ); pos_test p 11 inp; last_trimmed_pos_test p 11 inp ])
+          )
+        ; pos_test p 11 inp
+        ; last_trimmed_pos_test p 11 inp ])
 
   let suites = Popper.suite [("trim_input_buffer", trim_input_buffer)]
 end
 
 let suite =
   let module S = Make_test (Test_parser.String) in
-  let module L = Make_test (Test_parser.Lwt) in
+  let module L = Make_test (Test_parser.Lwt_stream) in
   Popper.suite [("String", S.suites); ("Lwt.Stream", L.suites)]

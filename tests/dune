@@ -1,5 +1,5 @@
 (test
  (name run)
- (libraries cstruct lwt lwt.unix popper reparse reparse-lwt)
+ (libraries cstruct lwt lwt.unix popper reparse reparse-lwt reparse-lwt-unix)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.ord ppx_deriving_popper)))

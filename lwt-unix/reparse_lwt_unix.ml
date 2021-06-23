@@ -29,7 +29,10 @@ module Fd = struct
         let read t ~len =
           let buf = Cstruct.create len in
           Lwt_bytes.read t buf.buffer 0 len
-          >|= fun read_count -> if read_count = 0 then `Eof else `Cstruct buf
+          >|= fun read_count ->
+          if read_count <= 0 then `Eof
+          else if read_count < len then `Cstruct (Cstruct.sub buf 0 read_count)
+          else `Cstruct buf
       end)
 
   include Reparse.Make (Promise) (Input)
@@ -48,7 +51,10 @@ module Channel = struct
         let read t ~len =
           let buf = Cstruct.create len in
           Lwt_io.read_into_bigstring t buf.buffer 0 len
-          >|= fun read_count -> if read_count = 0 then `Eof else `Cstruct buf
+          >|= fun read_count ->
+          if read_count <= 0 then `Eof
+          else if read_count < len then `Cstruct (Cstruct.sub buf 0 read_count)
+          else `Cstruct buf
       end)
 
   include Reparse.Make (Promise) (Input)
