@@ -13,9 +13,7 @@ module Stream = struct
     type 'a t = 'a Lwt.t
 
     let return = Lwt.return
-
     let bind f p = Lwt.bind p f
-
     let catch = Lwt.catch
   end
 
@@ -24,12 +22,12 @@ module Stream = struct
       (Promise)
       (struct
         type t = char Lwt_stream.t
-
         type 'a promise = 'a Lwt.t
 
         let read t ~len =
           let open Lwt.Infix in
-          Lwt_stream.nget len t >|= fun chars ->
+          Lwt_stream.nget len t
+          >|= fun chars ->
           let len'' = List.length chars in
           if len'' > 0 then
             `Cstruct (chars |> List.to_seq |> String.of_seq |> Cstruct.of_string)
