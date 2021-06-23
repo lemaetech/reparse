@@ -173,6 +173,13 @@ module type INPUT = sig
   val buffer_size : t -> int option promise
 end
 
+module Make_promise_ops (Promise : PROMISE) = struct
+  include Promise
+
+  let ( >>= ) b f = bind f b
+  let ( >>| ) b f = b >>= fun x -> return (f x)
+end
+
 module Make
     (Promise : PROMISE)
     (Input : INPUT with type 'a promise = 'a Promise.t) :
@@ -183,12 +190,7 @@ struct
   type pos = int
   type 'a t = Input.t -> pos:pos -> ('a * pos) Input.promise
 
-  module Promise = struct
-    include Promise
-
-    let ( >>= ) b f = bind f b
-    let ( >>| ) b f = b >>= fun x -> return (f x)
-  end
+  module Promise = Make_promise_ops (Promise)
 
   exception Parse_failure of string
 
@@ -694,13 +696,6 @@ module type BUFFERED_INPUT = sig
   type 'a promise
 
   val read : t -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
-end
-
-module Make_promise_ops (Promise : PROMISE) = struct
-  include Promise
-
-  let ( >>= ) b f = bind f b
-  let ( >>| ) b f = b >>= fun x -> return (f x)
 end
 
 module Make_buffered_input
