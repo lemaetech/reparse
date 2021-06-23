@@ -239,6 +239,10 @@ module type INPUT = sig
 
   type 'a promise
 
+  type input
+
+  val create : input -> t
+
   val trim_buffer : t -> pos:int -> unit promise
 
   val get_char : t -> pos:int -> [ `Char of char | `Eof ] promise
@@ -812,7 +816,7 @@ end
 module Make_buffered
     (Promise : PROMISE)
     (Input : INPUT2 with type 'a promise = 'a Promise.t) :
-  INPUT with type 'a promise = 'a Promise.t = struct
+  INPUT with type 'a promise = 'a Promise.t with type input = Input.t = struct
   type t = {
     input : Input.t;
     mutable buf : Cstruct.t;
@@ -821,6 +825,10 @@ module Make_buffered
            backtracking beyound this point. Any attempt to do so will raise an
            exception. *)
   }
+
+  type input = Input.t
+
+  let create input = { input; buf = Cstruct.empty; last_trimmed_pos = 0 }
 
   type 'a promise = 'a Promise.t
 
@@ -913,6 +921,10 @@ module String = struct
     type 'a promise = 'a
 
     type t = t'
+
+    type input = Cstruct.t
+
+    let create input = { input; last_trimmed_pos = 0 }
 
     let trim_buffer t ~pos = t.last_trimmed_pos <- pos
 

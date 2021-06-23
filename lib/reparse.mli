@@ -1198,6 +1198,10 @@ module type INPUT = sig
   type 'a promise
   (** Represents an input promise. *)
 
+  type input
+
+  val create : input -> t
+
   val trim_buffer : t -> pos:int -> unit promise
   (** [trim_buffer t ~pos] removes data from the input buffer up till [pos].
 
@@ -1229,7 +1233,7 @@ end
 module Make_buffered : functor
   (Promise : PROMISE)
   (Input : INPUT2 with type 'a promise = 'a Promise.t)
-  -> INPUT with type 'a promise = 'a Promise.t
+  -> INPUT with type 'a promise = 'a Promise.t with type input = Input.t
 
 (** A functor to create parsers based on the given [Promise] and [Input] module. *)
 module Make : functor

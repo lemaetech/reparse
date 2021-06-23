@@ -23,13 +23,12 @@ module Stream = struct
     Reparse.Make_buffered
       (Promise)
       (struct
-        open Lwt.Infix
-
         type t = char Lwt_stream.t
 
         type 'a promise = 'a Lwt.t
 
         let read t ~len =
+          let open Lwt.Infix in
           Lwt_stream.nget len t >|= fun chars ->
           let len'' = List.length chars in
           if len'' > 0 then
@@ -39,6 +38,5 @@ module Stream = struct
 
   include Reparse.Make (Promise) (Input)
 
-  let input_of_stream stream =
-    { stream; buf = Cstruct.empty; last_trimmed_pos = 0 }
+  let input_of_stream stream = Input.create stream
 end
