@@ -8,6 +8,8 @@
  * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
 
+open Lwt.Infix
+
 module Promise = struct
   type 'a t = 'a Lwt.t
 
@@ -16,25 +18,40 @@ module Promise = struct
   let catch = Lwt.catch
 end
 
-module Stream = struct
+module Fd = struct
   module Input =
     Reparse.Make_buffered_input
       (Promise)
       (struct
-        type t = char Lwt_stream.t
+        type t = Lwt_unix.file_descr
         type 'a promise = 'a Lwt.t
 
         let read t ~len =
-          let open Lwt.Infix in
-          Lwt_stream.nget len t
-          >|= fun chars ->
-          let len'' = List.length chars in
-          if len'' > 0 then
-            `Cstruct (chars |> List.to_seq |> String.of_seq |> Cstruct.of_string)
-          else `Eof
+          let buf = Cstruct.create len in
+          Lwt_bytes.read t buf.buffer 0 len
+          >|= fun read_count -> if read_count = 0 then `Eof else `Cstruct buf
       end)
 
   include Reparse.Make (Promise) (Input)
 
-  let create_input stream = Input.create stream
+  let create_input file_descr = Input.create file_descr
+end
+
+module Channel = struct
+  module Input =
+    Reparse.Make_buffered_input
+      (Promise)
+      (struct
+        type t = Lwt_io.input_channel
+        type 'a promise = 'a Lwt.t
+
+        let read t ~len =
+          let buf = Cstruct.create len in
+          Lwt_io.read_into_bigstring t buf.buffer 0 len
+          >|= fun read_count -> if read_count = 0 then `Eof else `Cstruct buf
+      end)
+
+  include Reparse.Make (Promise) (Input)
+
+  let create_input channel = Input.create channel
 end

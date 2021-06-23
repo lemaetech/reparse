@@ -15,7 +15,7 @@ end
 module Lwt : TEST_PARSER = struct
   include Reparse_lwt.Stream
 
-  let of_string s = input_of_stream (Lwt_stream.of_string s)
+  let of_string s = create_input (Lwt_stream.of_string s)
   let run p inp = Lwt_main.run (parse (inp ()) p)
 end
 
