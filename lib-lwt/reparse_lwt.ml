@@ -18,7 +18,7 @@ module Stream = struct
   end
 
   module Input =
-    Reparse.Make_buffered
+    Reparse.Make_buffered_input
       (Promise)
       (struct
         type t = char Lwt_stream.t

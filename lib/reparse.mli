@@ -1189,16 +1189,16 @@ module type INPUT = sig
   val buffer_size : t -> int option promise
 end
 
-module type INPUT2 = sig
+module type BUFFERED_INPUT = sig
   type t
   type 'a promise
 
   val read : t -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
 end
 
-module Make_buffered : functor
+module Make_buffered_input : functor
   (Promise : PROMISE)
-  (Input : INPUT2 with type 'a promise = 'a Promise.t)
+  (Input : BUFFERED_INPUT with type 'a promise = 'a Promise.t)
   -> INPUT with type 'a promise = 'a Promise.t with type input = Input.t
 
 (** A functor to create parsers based on the given [Promise] and [Input] module. *)

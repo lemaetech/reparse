@@ -689,16 +689,16 @@ struct
     Promise.(Input.buffer_size inp >>| fun sz_opt -> (sz_opt, pos))
 end
 
-module type INPUT2 = sig
+module type BUFFERED_INPUT = sig
   type t
   type 'a promise
 
   val read : t -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
 end
 
-module Make_buffered
+module Make_buffered_input
     (Promise : PROMISE)
-    (Input : INPUT2 with type 'a promise = 'a Promise.t) :
+    (Input : BUFFERED_INPUT with type 'a promise = 'a Promise.t) :
   INPUT with type 'a promise = 'a Promise.t with type input = Input.t = struct
   type t =
     { input: Input.t
