@@ -27,53 +27,31 @@ type value =
   | Object of (string * value) list
   | Array of value list
   | Number of
-      { negative : bool
-      ; int : string
-      ; frac : string option
-      ; exponent : string option
-      }
+      {negative: bool; int: string; frac: string option; exponent: string option}
   | String of string
   | False
   | True
   | Null
 
 let ws =
-  skip
-    (char_if (function
-      | ' '
-      | '\t'
-      | '\n'
-      | '\r' ->
-        true
-      | _ -> false))
+  skip (char_if (function ' ' | '\t' | '\n' | '\r' -> true | _ -> false))
 
 let struct_char c = ws *> char c <* ws
-
 let null_value = ws *> string_cs "null" *> ws *> return Null
-
 let false_value = ws *> string_cs "false" *> ws *> return False
-
 let true_value = ws *> string_cs "true" *> ws *> return True
 
 let number_value =
   let* negative =
-    optional (char '-')
-    >>| function
-    | Some '-' -> true
-    | _ -> false
+    optional (char '-') >>| function Some '-' -> true | _ -> false
   in
   let* int =
-    let digits1_to_9 =
-      char_if (function
-        | '1' .. '9' -> true
-        | _ -> false)
-    in
+    let digits1_to_9 = char_if (function '1' .. '9' -> true | _ -> false) in
     let num =
       map2
         (fun first_ch digits -> Format.sprintf "%c%s" first_ch digits)
-        digits1_to_9 digits
-    in
-    any [ string_cs "0"; num ]
+        digits1_to_9 digits in
+    any [string_cs "0"; num]
   in
   let* frac = optional (char '.' *> digits) in
   let+ exponent =
@@ -81,46 +59,31 @@ let number_value =
       (let* e = char 'E' <|> char 'e' in
        let* sign = optional (char '-' <|> char '+') in
        let sign =
-         match sign with
-         | Some c -> Format.sprintf "%c" c
-         | None -> ""
-       in
+         match sign with Some c -> Format.sprintf "%c" c | None -> "" in
        let+ digits = digits in
        Format.sprintf "%c%s%s" e sign digits)
   in
-  Number { negative; int; frac; exponent }
+  Number {negative; int; frac; exponent}
 
 let string =
   let escaped =
     let ch =
       char '\\'
       *> char_if (function
-           | '"'
-           | '\\'
-           | '/'
-           | 'b'
-           | 'f'
-           | 'n'
-           | 'r'
-           | 't' ->
-             true
-           | _ -> false)
-      >>| Format.sprintf "\\%c"
-    in
+           | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -> true
+           | _ -> false )
+      >>| Format.sprintf "\\%c" in
     let hex4digit =
       let+ hex =
         string_cs "\\u" *> take ~at_least:4 ~up_to:4 hex_digit
         >>= string_of_chars
       in
-      Format.sprintf "\\u%s" hex
-    in
-    any [ ch; hex4digit ]
-  in
+      Format.sprintf "\\u%s" hex in
+    any [ch; hex4digit] in
   let unescaped =
-    take_while ~while_:(is_not (any [ char '\\'; control; dquote ])) any_char
-    >>= string_of_chars
-  in
-  let+ str = dquote *> take (any [ escaped; unescaped ]) <* dquote in
+    take_while ~while_:(is_not (any [char '\\'; control; dquote])) any_char
+    >>= string_of_chars in
+  let+ str = dquote *> take (any [escaped; unescaped]) <* dquote in
   String.concat "" str
 
 let string_value = string >>| fun s -> String s
@@ -132,19 +95,16 @@ let json_value =
         let member =
           let* nm = string <* struct_char ':' in
           let+ v = value in
-          (nm, v)
-        in
+          (nm, v) in
         let+ object_value =
           struct_char '{' *> take member ~sep_by:value_sep <* struct_char '}'
         in
-        Object object_value
-      in
+        Object object_value in
       let array_value =
         let+ vals =
           struct_char '[' *> take value ~sep_by:value_sep <* struct_char ']'
         in
-        Array vals
-      in
+        Array vals in
       any
         [ object_value
         ; array_value
@@ -152,10 +112,9 @@ let json_value =
         ; string_value
         ; false_value
         ; true_value
-        ; null_value
-        ])
+        ; null_value ] )
 
-let parse s = parse json_value s
+let parse s = parse s json_value
 
 (*------------------------------------------------------------------------- *
   Copyright (c) 2020 Bikal Gurung. All rights reserved. * * This Source Code

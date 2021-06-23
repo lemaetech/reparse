@@ -43,14 +43,14 @@ let integer : expr t =
 
 let factor : expr t -> expr t =
  fun expr ->
-  any [ char '(' *> skip_spaces *> expr <* skip_spaces <* char ')'; integer ]
+  any [char '(' *> skip_spaces *> expr <* skip_spaces <* char ')'; integer]
 
 let term : expr t -> expr t =
  fun factor ->
   recur (fun term ->
       let mult = binop factor '*' term (fun e1 e2 -> Mult (e1, e2)) in
       let div = binop factor '/' term (fun e1 e2 -> Div (e1, e2)) in
-      mult <|> div <|> factor)
+      mult <|> div <|> factor )
 
 let expr : expr t =
   recur (fun expr ->
@@ -58,7 +58,7 @@ let expr : expr t =
       let term = term factor in
       let add = binop term '+' expr (fun e1 e2 -> Add (e1, e2)) in
       let sub = binop term '-' expr (fun e1 e2 -> Sub (e1, e2)) in
-      any [ add; sub; term ] <?> "expr")
+      any [add; sub; term] <?> "expr" )
 
 let rec eval : expr -> int = function
   | Int i -> i
@@ -69,13 +69,15 @@ let rec eval : expr -> int = function
 
 (* Test AST *)
 let r =
-  let actual = parse expr (input_of_string "1*2-4+3") in
+  let actual = parse (create_input_from_string "1*2-4+3") expr in
   let expected = Ok (Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3))) in
   Bool.equal (expected = actual) true
 
 (* Run and test the evaluator. *)
 let exp_result =
-  let v = eval @@ Result.get_ok (parse expr @@ input_of_string "12+1*10") in
+  let v =
+    eval @@ Result.get_ok (parse (create_input_from_string "12+1*10") expr)
+  in
   Int.equal 22 v
 
 (*-------------------------------------------------------------------------

@@ -8,8 +8,16 @@
  * %%NAME%% %%VERSION%%
  *-------------------------------------------------------------------------*)
 
-module Stream : sig
+(** [Fd] is a [Lwt_unix.file_descr] input based [Reparse] parser. *)
+module Fd : sig
   include Reparse.PARSER with type 'a promise = 'a Lwt.t
 
-  val input_of_stream : char Lwt_stream.t -> input
+  val create_input : Lwt_unix.file_descr -> input
+end
+
+(** [Channel] is a [Lwt_io.input_channel] input based [Reparse] parser. *)
+module Channel : sig
+  include Reparse.PARSER with type 'a promise = 'a Lwt.t
+
+  val create_input : Lwt_io.input_channel -> input
 end

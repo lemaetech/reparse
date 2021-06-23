@@ -1,4 +1,4 @@
 (library
  (name reparse_lwt)
  (public_name reparse-lwt)
- (libraries reparse lwt))
+ (libraries reparse lwt cstruct))
