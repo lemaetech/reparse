@@ -244,7 +244,9 @@ struct
 
     let ( <|> ) : 'a t -> 'a t -> 'a t =
      fun p q inp ~pos ->
-      Promise.catch (fun () -> p inp ~pos) (fun (_ : exn) -> q inp ~pos)
+      Promise.catch
+        (fun () -> p inp ~pos)
+        (function Parse_failure _ -> q inp ~pos | e -> raise e)
 
     let ( let* ) = ( >>= )
     let ( and* ) = both
@@ -253,7 +255,9 @@ struct
 
     let ( <?> ) : 'a t -> string -> 'a t =
      fun p msg inp ~pos ->
-      Promise.catch (fun () -> p inp ~pos) (fun (_ : exn) -> fail msg inp ~pos)
+      Promise.catch
+        (fun () -> p inp ~pos)
+        (function Parse_failure _ -> fail msg inp ~pos | e -> raise e)
   end
 
   include Infix
@@ -411,7 +415,9 @@ struct
         | p :: parsers ->
             catch
               (fun () -> p inp ~pos)
-              (fun (_ : exn) -> (loop [@tailcall]) parsers) in
+              (function
+                | Parse_failure _ -> (loop [@tailcall]) parsers | e -> raise e
+                ) in
       loop parsers)
 
   let alt = ( <|> )
@@ -421,7 +427,7 @@ struct
     Promise.(
       catch
         (fun () -> p inp ~pos >>= fun (a, pos) -> return (Some a, pos))
-        (fun (_ : exn) -> return (None, pos)))
+        (function Parse_failure _ -> return (None, pos) | e -> raise e))
 
   (*+++++ Boolean +++++*)
 
@@ -430,7 +436,7 @@ struct
     Promise.(
       catch
         (fun () -> p inp ~pos >>| fun _ -> `Fail)
-        (fun (_ : exn) -> return `Success)
+        (function Parse_failure _ -> return `Success | e -> raise e)
       >>= function
       | `Fail -> fail "[not_] expected failure but succeeded" inp ~pos
       | `Success -> return ((), pos))
@@ -440,14 +446,14 @@ struct
     Promise.(
       catch
         (fun () -> p inp ~pos >>| fun _ -> (true, pos))
-        (fun (_ : exn) -> return (false, pos)))
+        (function Parse_failure _ -> return (false, pos) | e -> raise e))
 
   let is_not : 'a t -> bool t =
    fun p inp ~pos ->
     Promise.(
       catch
         (fun () -> p inp ~pos >>| fun _ -> (false, pos))
-        (fun (_ : exn) -> return (true, pos)))
+        (function Parse_failure _ -> return (true, pos) | e -> raise e))
 
   (*+++++ Repetition +++++*)
 
@@ -469,11 +475,12 @@ struct
                 >>= fun (a, pos) ->
                 items := a :: !items ;
                 (loop [@tailcall]) pos parsers )
-              (fun (e : exn) ->
-                fail
-                  (Format.sprintf "[all] one of the parsers failed: %s"
-                     (Printexc.to_string e) )
-                  inp ~pos )) in
+              (function
+                | Parse_failure err ->
+                    fail
+                      (Format.sprintf "[all] one of the parsers failed: %s" err)
+                      inp ~pos
+                | e -> raise e )) in
     loop pos parsers
 
   let all_unit : _ t list -> unit t =
@@ -485,11 +492,12 @@ struct
             catch
               (fun () ->
                 p inp ~pos >>= fun (_, pos) -> (loop [@tailcall]) pos parsers )
-              (fun (e : exn) ->
-                fail
-                  (Format.sprintf "[all] one of the parsers failed: %s"
-                     (Printexc.to_string e) )
-                  inp ~pos )) in
+              (function
+                | Parse_failure err ->
+                    fail
+                      (Format.sprintf "[all] one of the parsers failed: %s" err)
+                      inp ~pos
+                | e -> raise e )) in
     loop pos parsers
 
   let skip : ?at_least:int -> ?up_to:int -> 'a t -> int t =
@@ -601,9 +609,10 @@ struct
     Promise.(
       catch
         (fun () -> (char_if f) inp ~pos)
-        (fun (e : exn) ->
-          fail (Format.sprintf "[%s] %s" name (Printexc.to_string e)) inp ~pos
-          ))
+        (function
+          | Parse_failure err ->
+              fail (Format.sprintf "[%s] %s" name err) inp ~pos
+          | e -> raise e ))
 
   let is_alpha = function 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false
   let is_digit = function '0' .. '9' -> true | _ -> false
@@ -657,11 +666,12 @@ struct
     Promise.(
       catch
         (fun () -> get_input n inp ~pos >>= fun (_, pos) -> return ((), pos + n))
-        (fun (e : exn) ->
-          fail
-            (Format.sprintf "[advance] pos:%d, error: %s" pos
-               (Printexc.to_string e) )
-            inp ~pos ))
+        (function
+          | Parse_failure err ->
+              fail
+                (Format.sprintf "[advance] pos:%d, error: %s" pos err)
+                inp ~pos
+          | e -> raise e ))
 
   let eoi : unit t =
    fun inp ~pos ->
