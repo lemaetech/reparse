@@ -18,17 +18,23 @@ module Promise = struct
   let catch = Lwt.catch
 end
 
-module Fd = struct
+module Make_parser (Reader : sig
+  type t
+
+  val read_into_bigstring :
+    t -> Cstruct.buffer -> off:int -> len:int -> int Lwt.t
+end) =
+struct
   module Input =
     Reparse.Make_buffered_input
       (Promise)
       (struct
-        type t = Lwt_unix.file_descr
+        type t = Reader.t
         type 'a promise = 'a Lwt.t
 
         let read t ~len =
           let buf = Cstruct.create len in
-          Lwt_bytes.read t buf.buffer 0 len
+          Reader.read_into_bigstring t buf.buffer ~off:0 ~len
           >|= fun read_count ->
           if read_count <= 0 then `Eof
           else if read_count < len then `Cstruct (Cstruct.sub buf 0 read_count)
@@ -36,28 +42,25 @@ module Fd = struct
       end)
 
   include Reparse.Make (Promise) (Input)
+end
+
+module Fd = struct
+  include Make_parser (struct
+    type t = Lwt_unix.file_descr
+
+    let read_into_bigstring t buf ~off ~len = Lwt_bytes.read t buf off len
+  end)
 
   let create_input file_descr = Input.create file_descr
 end
 
 module Channel = struct
-  module Input =
-    Reparse.Make_buffered_input
-      (Promise)
-      (struct
-        type t = Lwt_io.input_channel
-        type 'a promise = 'a Lwt.t
+  include Make_parser (struct
+    type t = Lwt_io.input_channel
 
-        let read t ~len =
-          let buf = Cstruct.create len in
-          Lwt_io.read_into_bigstring t buf.buffer 0 len
-          >|= fun read_count ->
-          if read_count <= 0 then `Eof
-          else if read_count < len then `Cstruct (Cstruct.sub buf 0 read_count)
-          else `Cstruct buf
-      end)
-
-  include Reparse.Make (Promise) (Input)
+    let read_into_bigstring t buf ~off ~len =
+      Lwt_io.read_into_bigstring t buf off len
+  end)
 
   let create_input channel = Input.create channel
 end
