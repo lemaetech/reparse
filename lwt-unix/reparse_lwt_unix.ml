@@ -18,13 +18,14 @@ module Promise = struct
   let catch = Lwt.catch
 end
 
-module Make_parser (Reader : sig
+module type READER = sig
   type t
 
   val read_into_bigstring :
     t -> Cstruct.buffer -> off:int -> len:int -> int Lwt.t
-end) =
-struct
+end
+
+module Make_parser (Reader : READER) = struct
   module Input =
     Reparse.Make_buffered_input
       (Promise)
@@ -45,22 +46,26 @@ struct
 end
 
 module Fd = struct
-  include Make_parser (struct
+  module Reader = struct
     type t = Lwt_unix.file_descr
 
     let read_into_bigstring t buf ~off ~len = Lwt_bytes.read t buf off len
-  end)
+  end
+
+  include Make_parser (Reader)
 
   let create_input file_descr = Input.create file_descr
 end
 
 module Channel = struct
-  include Make_parser (struct
+  module Reader = struct
     type t = Lwt_io.input_channel
 
     let read_into_bigstring t buf ~off ~len =
       Lwt_io.read_into_bigstring t buf off len
-  end)
+  end
+
+  include Make_parser (Reader)
 
   let create_input channel = Input.create channel
 end
