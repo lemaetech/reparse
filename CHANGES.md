@@ -1,4 +1,8 @@
-## v3.0.0 2021-08-06 UK
+## v3.0.1 2021-06-29
+
+- Fix `take_while`
+
+## v3.0.0 2021-06-23 UK
 
 - Overhaul parser implementation - use functor based implementation. Introduce, `Make_buffered_input`, `Make_unbuffered_input` and `Make` functors. 
 - Remove `reparse-unix` package

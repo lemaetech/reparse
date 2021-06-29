@@ -602,11 +602,13 @@ struct
         items := a :: !items ;
         unit )
       p
-    *> return (List.rev !items)
+    >>= fun () -> return (List.rev !items)
 
   let take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t =
    fun ?sep_by ~start ~end_ p ->
-    start *> take_while ?sep_by ~while_:(is_not end_) p <* end_
+    start
+    >>= fun _ ->
+    take_while ?sep_by ~while_:(is_not end_) p >>= fun l -> end_ >>| fun _ -> l
 
   (*+++++ RFC 5234 parsers *)
 
