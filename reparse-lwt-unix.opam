@@ -12,7 +12,7 @@ depends: [
   "ocaml" {>= "4.10.0"}
   "lwt" {>= "5.4.1"}
   "cstruct" {>= "6.0.0"}
-  "reparse" {>= "3.0.0"}
+  "reparse" {= version}
   "odoc" {with-doc}
 ]
 build: [
