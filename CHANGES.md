@@ -1,3 +1,7 @@
+## v3.1.0 2021-07-02
+
+- Add `unsafe_take_cstruct` parser.
+
 ## v3.0.1 2021-06-29
 
 - Fix `take_while`

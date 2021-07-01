@@ -88,6 +88,7 @@ module type PARSER = sig
   val string_of_chars : char list -> string t
   val take_string : int -> string t
   val take_cstruct : int -> Cstruct.t t
+  val unsafe_take_cstruct : int -> Cstruct.t t
 
   (** {2 Alternate parsers} *)
 
@@ -167,6 +168,9 @@ module type INPUT = sig
   val get_char_unbuffered : t -> pos:int -> [`Char of char | `Eof] promise
 
   val get_cstruct :
+    t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
+
+  val get_cstruct_unbuffered :
     t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
 
   val last_trimmed_pos : t -> int promise
@@ -404,6 +408,22 @@ struct
 
   let take_string : int -> string t =
    fun n -> take_cstruct n >>| fun cs -> Cstruct.to_string cs
+
+  let unsafe_take_cstruct : int -> Cstruct.t t =
+   fun n inp ~pos ->
+    Promise.(
+      Input.get_cstruct_unbuffered inp ~pos ~len:n
+      >>= function
+      | `Cstruct s when Cstruct.length s = n -> return (s, pos + n)
+      | `Cstruct _ ->
+          fail
+            (Format.sprintf
+               "[unsafe_take_cstruct] pos:%d, n:%d not enough input" pos n )
+            inp ~pos
+      | `Eof ->
+          fail
+            (Format.sprintf "[unsafe_take_cstruct] pos:%d, n:%d eof" pos n)
+            inp ~pos)
 
   (*++++++ Alternates +++++*)
 
@@ -779,21 +799,42 @@ module Make_buffered_input
       >>| function
       | `Return c -> `Char c | `Additional_byte_read c -> `Char c | `Eof -> `Eof)
 
-  let get_cstruct t ~pos ~len =
+  let get_cstruct_common t ~pos ~len =
+    let open Promise in
     let pos', len' = buffer_pos_len t ~pos ~len in
-    if len' >= 0 then Promise.return (`Cstruct (Cstruct.sub t.buf pos' len))
+    if len' >= 0 then return (`Return (Cstruct.sub t.buf pos' len))
     else
-      Promise.(
-        let len' = abs len' in
-        Input.read t.input ~len:len'
-        >>| function
-        | `Cstruct cs ->
-            let new_buf = Cstruct.append t.buf cs in
-            let len' = Cstruct.length new_buf - pos' in
-            let len = if len' < len then len' else len in
-            t.buf <- new_buf ;
-            `Cstruct (Cstruct.sub t.buf pos' len)
-        | `Eof -> `Eof)
+      let len = abs len' in
+      Input.read t.input ~len
+      >>| function
+      | `Cstruct cs -> `Additional_bytes_read (cs, pos') | `Eof -> `Eof
+
+  let get_cstruct_unbuffered t ~pos ~len =
+    let open Promise in
+    get_cstruct_common t ~pos ~len
+    >>| function
+    | `Eof -> `Eof
+    | `Return cs -> `Cstruct cs
+    | `Additional_bytes_read (cs, pos') ->
+        if Cstruct.length cs <= len then `Cstruct cs
+        else
+          let b1 =
+            let len' = len - Cstruct.length cs in
+            Cstruct.sub t.buf pos' len' in
+          `Cstruct Cstruct.(append b1 cs)
+
+  let get_cstruct t ~pos ~len =
+    let open Promise in
+    get_cstruct_common t ~pos ~len
+    >>| function
+    | `Eof -> `Eof
+    | `Return buf -> `Cstruct buf
+    | `Additional_bytes_read (additional_bytes, pos') ->
+        let new_buf = Cstruct.append t.buf additional_bytes in
+        let len' = Cstruct.length new_buf - pos' in
+        let len = if len' < len then len' else len in
+        t.buf <- new_buf ;
+        `Cstruct (Cstruct.sub t.buf pos' len)
 
   let last_trimmed_pos t = Promise.return t.last_trimmed_pos
   let buffer_size t = Promise.return @@ Some (Cstruct.length t.buf)
@@ -829,6 +870,7 @@ module Make_unbuffered_input
 
   let get_char_unbuffered = get_char
   let get_cstruct t ~pos ~len = Input.read t.input ~pos ~len
+  let get_cstruct_unbuffered = get_cstruct
   let last_trimmed_pos t = Promise.return @@ t.last_trimmed_pos
   let buffer_size _ = Promise.return None
 end

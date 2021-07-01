@@ -59,7 +59,7 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                 equal char_result_comparator (P.run p empty)
                   (Error "[any_char] pos:0 eof") ) ) ])
 
-  let any_char_unbuffered =
+  let unsafe_any_char =
     let p = P.unsafe_any_char in
     let inp () = P.of_string "hello" in
     let p2 =
@@ -205,20 +205,60 @@ module Make_test (P : Test_parser.TEST_PARSER) = struct
                 equal cstruct_result_comparator (P.run p inp)
                   (Error "pos:0, n:12 not enough input") ) ) ])
 
+  let unsafe_take_cstruct =
+    let p = P.unsafe_take_cstruct 5 in
+    let inp () = P.of_string "hello world" in
+    let p2 =
+      (P.unsafe_take_cstruct 6, P.unsafe_take_cstruct 5)
+      <$$> fun a b -> Cstruct.append a b in
+    Popper.(
+      suite
+        [ ( "value is 'hello'"
+          , test (fun () ->
+                equal cstruct_result_comparator (P.run p inp)
+                  (Ok (Cstruct.of_string "hello")) ) )
+        ; pos_test p 5 inp
+        ; last_trimmed_pos_test p 0 inp
+        ; ( "fail"
+          , test (fun () ->
+                let p = P.unsafe_take_cstruct 12 in
+                equal cstruct_result_comparator (P.run p inp)
+                  (Error "[unsafe_take_cstruct] pos:0, n:12 not enough input") )
+          )
+        ; ( "value is 'hello world'"
+          , test (fun () ->
+                equal cstruct_result_comparator (P.run p2 inp)
+                  (Ok (Cstruct.of_string "hello world")) ) )
+        ; pos_test p2 11 inp
+        ; last_trimmed_pos_test p2 0 inp
+        ; ( "value is 'hello world hello'"
+          , test (fun () ->
+                let p =
+                  ( P.take_cstruct 6
+                  , P.unsafe_take_cstruct 6
+                  , P.unsafe_take_cstruct 5 )
+                  <$$$> fun a b c ->
+                  let a = Cstruct.append a b in
+                  Cstruct.append a c in
+                let inp () = P.of_string "hello world hello" in
+                equal cstruct_result_comparator (P.run p inp)
+                  (Ok (Cstruct.of_string "hello world hello")) ) ) ])
+
   let suites =
     Popper.suite
       [ ("peek_char", peek_char)
       ; ("peek_char_opt", peek_char_opt)
       ; ("peek_string", peek_string)
       ; ("any_char", any_char)
-      ; ("any_char_unbuffered", any_char_unbuffered)
+      ; ("unsafe_any_char", unsafe_any_char)
       ; ("char", char)
       ; ("char_if", char_if)
       ; ("string_cs", string_cs)
       ; ("string_ci", string_ci)
       ; ("string_of_chars", string_of_chars)
       ; ("take_string", take_string)
-      ; ("take_cstruct", take_cstruct) ]
+      ; ("take_cstruct", take_cstruct)
+      ; ("unsafe_take_cstruct", unsafe_take_cstruct) ]
 end
 
 let suite =

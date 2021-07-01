@@ -38,7 +38,8 @@ module Lwt_channel : TEST_PARSER = struct
 
   let of_string s =
     Lwt_io.(of_bytes ~mode:Input (Lwt_bytes.of_string s))
-    |> create_input |> Lwt.return
+    |> create_input
+    |> Lwt.return
 
   let run p inp = Lwt.Infix.(inp () >>= fun inp -> parse inp p) |> Lwt_main.run
 end

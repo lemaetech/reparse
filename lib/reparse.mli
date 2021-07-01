@@ -506,6 +506,17 @@ module type PARSER = sig
       This is usually a zeor copy - depending on input of course - version of
       [take_string]. *)
 
+  val unsafe_take_cstruct : int -> Cstruct.t t
+  (** [unsafe_take_cstruct n] is similar to [take_cstruct n] except the parser
+      calls [INPUT.get_cstruct_unbuffered] to retrieve bytes of length [n].
+      Additionally the parser is unable to backtrack beyond position [pos + n]
+      where [pos] is the current input position of the parser.
+
+      [Note:] Ensure that [unsafe_take_cstruct] is not being run as part of
+      combinators that require backtracking such as [<|>, any]. Additionally it
+      is recommended to call [trim_input_buffer] after calling
+      [unsafe_take_cstruct]. *)
+
   (** {2 Alternate parsers} *)
 
   val any : ?failure_msg:string -> 'a t list -> 'a t
@@ -1184,6 +1195,9 @@ module type INPUT = sig
     t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
   (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
       [`Eof] if [EOI] is reached. *)
+
+  val get_cstruct_unbuffered :
+    t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
 
   val last_trimmed_pos : t -> int promise
   val buffer_size : t -> int option promise

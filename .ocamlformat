@@ -1,3 +1,4 @@
 profile=compact
 break-collection-expressions=fit-or-vertical
+break-infix=fit-or-vertical
 parse-docstrings=true
