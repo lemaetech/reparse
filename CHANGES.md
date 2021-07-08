@@ -1,7 +1,7 @@
 ## v3.1.0 2021-07-02
 
 - Add `unsafe_take_cstruct` parser.
-- `PARSER.parse` function now take `?pos` parameter and returns `pos` in a tuple.
+- `PARSER.parse` function now takes `?pos` parameter and returns `pos` in a tuple. This is implemented to allow creating pull based parsers.
 
 ## v3.0.1 2021-06-29
 
