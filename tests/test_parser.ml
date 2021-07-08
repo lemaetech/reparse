@@ -9,14 +9,20 @@ module String : TEST_PARSER = struct
   include Reparse.String
 
   let of_string = create_input_from_string
-  let run p i = parse (i ()) p
+
+  let run p i =
+    match parse (i ()) p with Ok (x, _) -> Ok x | Error _ as e -> e
 end
 
 module Lwt_stream : TEST_PARSER = struct
   include Reparse_lwt.Stream
 
   let of_string s = Lwt.return (create_input (Lwt_stream.of_string s))
-  let run p inp = Lwt.Infix.(inp () >>= fun inp -> parse inp p) |> Lwt_main.run
+
+  let run p inp =
+    Lwt.Infix.(inp () >>= fun inp -> parse inp p)
+    |> Lwt_main.run
+    |> function Ok (x, _) -> Ok x | Error _ as e -> e
 end
 
 module Lwt_fd : TEST_PARSER = struct
@@ -30,7 +36,10 @@ module Lwt_fd : TEST_PARSER = struct
       Lwt_unix.(openfile tmpfile_name [O_RDONLY] 0o640)
       >|= fun fd -> create_input fd)
 
-  let run p inp = Lwt.Infix.(inp () >>= fun inp -> parse inp p) |> Lwt_main.run
+  let run p inp =
+    Lwt.Infix.(inp () >>= fun inp -> parse inp p)
+    |> Lwt_main.run
+    |> function Ok (x, _) -> Ok x | Error _ as e -> e
 end
 
 module Lwt_channel : TEST_PARSER = struct
@@ -41,7 +50,10 @@ module Lwt_channel : TEST_PARSER = struct
     |> create_input
     |> Lwt.return
 
-  let run p inp = Lwt.Infix.(inp () >>= fun inp -> parse inp p) |> Lwt_main.run
+  let run p inp =
+    Lwt.Infix.(inp () >>= fun inp -> parse inp p)
+    |> Lwt_main.run
+    |> function Ok (x, _) -> Ok x | Error _ as e -> e
 end
 
 module Make_helper (P : TEST_PARSER) = struct

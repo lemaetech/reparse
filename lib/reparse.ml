@@ -12,8 +12,9 @@ module type PARSER = sig
   type 'a t
   type 'a promise
   type input
+  type pos = int
 
-  val parse : input -> 'a t -> ('a, string) result promise
+  val parse : ?pos:pos -> input -> 'a t -> ('a * pos, string) result promise
 
   (** {2 Monadic operators} *)
 
@@ -282,10 +283,11 @@ struct
     end
   end
 
-  let parse (inp : Input.t) (p : 'a t) : ('a, string) result promise =
+  let parse ?(pos = 0) (inp : Input.t) (p : 'a t) :
+      ('a * pos, string) result promise =
     Promise.(
       catch
-        (fun () -> p inp ~pos:0 >>| fun (a, _) -> Ok a)
+        (fun () -> p inp ~pos >>| fun (a, pos) -> Ok (a, pos))
         (function
           | Parse_failure msg -> return (Error msg)
           | e ->

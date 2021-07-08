@@ -77,11 +77,13 @@ let rec eval : expr -> int = function
 
 ```ocaml
 # let ast = parse (create_input_from_string "1*2-4+3") expr ;;
-val ast : (expr, string) result =
-  Ok (Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)))
+val ast : (expr * int, string) result =
+  Ok (Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)), 7)
 
 # eval @@ Result.get_ok (parse (create_input_from_string "12+1*10") expr);;
-- : int = 22
+Line 1, characters 9-72:
+Error: This expression has type expr * int
+       but an expression was expected of type expr
 ```
 
 ## More Examples

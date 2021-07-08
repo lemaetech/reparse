@@ -70,14 +70,15 @@ let rec eval : expr -> int = function
 (* Test AST *)
 let r =
   let actual = parse (create_input_from_string "1*2-4+3") expr in
-  let expected = Ok (Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3))) in
+  let expected = Ok (Sub (Mult (Int 1, Int 2), Add (Int 4, Int 3)), 7) in
   Bool.equal (expected = actual) true
 
 (* Run and test the evaluator. *)
 let exp_result =
   let v =
-    eval @@ Result.get_ok (parse (create_input_from_string "12+1*10") expr)
-  in
+    let expr, _ =
+      Result.get_ok (parse (create_input_from_string "12+1*10") expr) in
+    eval expr in
   Int.equal 22 v
 
 (*-------------------------------------------------------------------------

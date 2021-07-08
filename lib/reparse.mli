@@ -39,8 +39,14 @@ module type PARSER = sig
 
   type 'a promise
   type input
+  type pos = int
 
-  val parse : input -> 'a t -> ('a, string) result promise
+  val parse : ?pos:pos -> input -> 'a t -> ('a * pos, string) result promise
+  (** [parse ?pos input p] parses [input] using parser [p] from given [pos]. It
+      returns a tuple ['a * pos] which represents a parsed value ['a] and the
+      final parser position [pos].
+
+      Default value for [pos] is [0]. *)
 
   (** {2 Monadic operators} *)
 
