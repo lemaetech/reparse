@@ -541,7 +541,7 @@ struct
       | `Cstruct s -> return (s, pos + Cstruct.length s)
       | `Eof ->
           fail
-            (Format.sprintf "[unsafe_take_cstruct] pos:%d, n:%d eof" pos n)
+            (Format.sprintf "[unsafe_take_cstruct_ne] pos:%d, n:%d eof" pos n)
             inp ~pos)
 
   (*++++++ Alternates +++++*)
