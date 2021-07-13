@@ -14,7 +14,9 @@ module Promise = struct
   type 'a t = 'a Lwt.t
 
   let return = Lwt.return
+
   let bind f p = Lwt.bind p f
+
   let catch = Lwt.catch
 end
 
@@ -31,6 +33,7 @@ module Make_parser (Reader : READER) = struct
       (Promise)
       (struct
         type t = Reader.t
+
         type 'a promise = 'a Lwt.t
 
         let read t ~len =

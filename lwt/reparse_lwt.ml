@@ -12,7 +12,9 @@ module Promise = struct
   type 'a t = 'a Lwt.t
 
   let return = Lwt.return
+
   let bind f p = Lwt.bind p f
+
   let catch = Lwt.catch
 end
 
@@ -22,23 +24,23 @@ module Stream = struct
       (Promise)
       (struct
         type t = char Lwt_stream.t
+
         type 'a promise = 'a Lwt.t
 
         let read_char t =
           let open Lwt.Infix in
-          Lwt_stream.get t
-          >|= function
+          Lwt_stream.get t >|= function
           | Some c ->
               let cs = Cstruct.create 1 in
-              Cstruct.set_char cs 0 c ; `Cstruct cs
+              Cstruct.set_char cs 0 c;
+              `Cstruct cs
           | None -> `Eof
 
         let read t ~len =
           let open Lwt.Infix in
           if len = 1 then read_char t
           else
-            Lwt_stream.nget len t
-            >|= fun chars ->
+            Lwt_stream.nget len t >|= fun chars ->
             let len'' = List.length chars in
             if len'' > 0 then
               `Cstruct
