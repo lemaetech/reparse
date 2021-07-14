@@ -33,9 +33,9 @@
     - Others *)
 
 module type PARSER = sig
-  type 'a t
   (** Represents a parser which can parse value ['a]. Use {{:#parse} parse
       functions} to evaluate a parser. *)
+  type 'a t
 
   type 'a promise
 
@@ -90,12 +90,7 @@ module type PARSER = sig
         in
         r
         = P.Parser
-            {
-              offset = 0;
-              line_number = 0;
-              column_number = 0;
-              msg = "hello error";
-            }
+            {offset= 0; line_number= 0; column_number= 0; msg= "hello error"}
       ]} *)
 
   val bind : ('a -> 'b t) -> 'a t -> 'b t
@@ -357,12 +352,7 @@ module type PARSER = sig
               false
             with
             | P.Parser
-                {
-                  offset = 0;
-                  line_number = 0;
-                  column_number = 0;
-                  msg = "[error]";
-                } ->
+                {offset= 0; line_number= 0; column_number= 0; msg= "[error]"} ->
                 true
             | _ -> false
           in
@@ -396,6 +386,20 @@ module type PARSER = sig
       val map4 :
         'a t -> 'b t -> 'c t -> 'd t -> f:('a -> 'b -> 'c -> 'd -> 'e) -> 'e t
     end
+  end
+
+  module Promise : sig
+    type 'a t = 'a promise
+
+    val return : 'a -> 'a t
+
+    val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
+
+    val bind : ('a -> 'b t) -> 'a t -> 'b t
+
+    val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
+
+    val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   end
 
   (** {2 Char/String parsers} *)
@@ -548,17 +552,17 @@ module type PARSER = sig
       {[
         module P = Reparse.String;;
 
-        let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
+        let p = P.(any [char 'z'; char 'x'; char 'a']) in
         let v = P.parse_string p "zabc" in
         v = 'z'
         ;;
 
-        let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
+        let p = P.(any [char 'z'; char 'x'; char 'a']) in
         let v = P.parse_string p "xabc" in
         v = 'x'
         ;;
 
-        let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
+        let p = P.(any [char 'z'; char 'x'; char 'a']) in
         let v = P.parse_string p "abc" in
         v = 'a'
       ]}
@@ -566,7 +570,7 @@ module type PARSER = sig
       Parser fails when none of the parsers in [l] are successful.
 
       {[
-        let p = P.(any [ char 'z'; char 'x'; char 'a' ]) in
+        let p = P.(any [char 'z'; char 'x'; char 'a']) in
         let v =
           try
             let _ = P.parse_string p "yyy" in
@@ -705,7 +709,7 @@ module type PARSER = sig
 
         let p = P.(take (char 'a')) in
         let v = P.parse_string p "aaaaa" in
-        v = [ 'a'; 'a'; 'a'; 'a'; 'a' ]
+        v = ['a'; 'a'; 'a'; 'a'; 'a']
       ]}
 
       Specify [~sep_by].
@@ -715,7 +719,7 @@ module type PARSER = sig
 
         let p = P.(take ~sep_by:(char ',') (char 'a')) in
         let v = P.parse_string p "a,a,a,a,a" in
-        v = [ 'a'; 'a'; 'a'; 'a'; 'a' ]
+        v = ['a'; 'a'; 'a'; 'a'; 'a']
       ]}
 
       Specify lower bound argument [at_least].
@@ -725,7 +729,7 @@ module type PARSER = sig
 
         let p = P.(take ~at_least:3 ~sep_by:(char ',') (char 'a')) in
         let v = P.parse_string p "a,a,a,a,a" in
-        v = [ 'a'; 'a'; 'a'; 'a'; 'a' ]
+        v = ['a'; 'a'; 'a'; 'a'; 'a']
       ]}
 
       Lower bound not met results in error.
@@ -750,7 +754,7 @@ module type PARSER = sig
 
         let p = P.(take ~up_to:3 ~sep_by:(char ',') (char 'a')) in
         let v = P.parse_string p "a,a,a,a,a" in
-        v = [ 'a'; 'a'; 'a' ]
+        v = ['a'; 'a'; 'a']
       ]} *)
 
   val take_while_cb :
@@ -805,7 +809,7 @@ module type PARSER = sig
 
         let p = P.(take_while ~while_:(is_not (char 'b')) (char 'a')) in
         let v = P.parse_string p "aab" in
-        v = [ 'a'; 'a' ]
+        v = ['a'; 'a']
       ]}
 
       Specify [sep_by].
@@ -818,7 +822,7 @@ module type PARSER = sig
             take_while ~sep_by:(char ',') ~while_:(is_not (char 'b')) (char 'a'))
         in
         let v = P.parse_string p "a,a,ab" in
-        v = [ 'a'; 'a'; 'a' ]
+        v = ['a'; 'a'; 'a']
       ]} *)
 
   val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
@@ -846,7 +850,7 @@ module type PARSER = sig
               next)
         in
         let v = P.parse_string p "(a,a,a)" in
-        v = [ 'a'; 'a'; 'a' ]
+        v = ['a'; 'a'; 'a']
       ]} *)
 
   (** {1:rfc5234 RFC 5234}
@@ -866,7 +870,7 @@ module type PARSER = sig
 
         let p = P.(take alpha) in
         let v = P.parse_string p "abcdABCD" in
-        v = [ 'a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D' ]
+        v = ['a'; 'b'; 'c'; 'd'; 'A'; 'B'; 'C'; 'D']
       ]} *)
 
   val alpha_num : char t
@@ -880,7 +884,7 @@ module type PARSER = sig
 
         let p = P.(take alpha_num) in
         let v = P.parse_string p "ab123ABCD" in
-        v = [ 'a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D' ]
+        v = ['a'; 'b'; '1'; '2'; '3'; 'A'; 'B'; 'C'; 'D']
       ]} *)
 
   val lower_alpha : char t
@@ -894,7 +898,7 @@ module type PARSER = sig
 
         let p = P.(take lower_alpha) in
         let v = P.parse_string p "abcd" in
-        v = [ 'a'; 'b'; 'c'; 'd' ]
+        v = ['a'; 'b'; 'c'; 'd']
       ]} *)
 
   val upper_alpha : char t
@@ -908,7 +912,7 @@ module type PARSER = sig
 
         let p = P.(take upper_alpha) in
         let v = P.parse_string p "ABCD" in
-        v = [ 'A'; 'B'; 'C'; 'D' ]
+        v = ['A'; 'B'; 'C'; 'D']
       ]} *)
 
   val bit : char t
@@ -921,7 +925,7 @@ module type PARSER = sig
 
         let p = P.(take bit) in
         let v = P.parse_string p "0110 ab" in
-        v = [ '0'; '1'; '1'; '0' ]
+        v = ['0'; '1'; '1'; '0']
       ]} *)
 
   val ascii_char : char t
@@ -934,7 +938,7 @@ module type PARSER = sig
 
         let p = P.(take ascii_char) in
         let v = P.parse_string p "0110 abc '" in
-        v = [ '0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'' ]
+        v = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']
       ]} *)
 
   val cr : char t
@@ -983,7 +987,7 @@ module type PARSER = sig
 
         let p = P.(take digit) in
         let v = P.parse_string p "0123456789a" in
-        v = [ '0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9' ]
+        v = ['0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9']
       ]} *)
 
   val digits : string t
@@ -1021,7 +1025,7 @@ module type PARSER = sig
 
         let p = P.(take hex_digit) in
         let v = P.parse_string p "0ABCDEFa" in
-        v = [ '0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F' ]
+        v = ['0'; 'A'; 'B'; 'C'; 'D'; 'E'; 'F']
       ]} *)
 
   val htab : char t
@@ -1059,7 +1063,7 @@ module type PARSER = sig
 
         let p = P.(take octet) in
         let v = P.parse_string p "0110 abc '" in
-        v = [ '0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'' ]
+        v = ['0'; '1'; '1'; '0'; ' '; 'a'; 'b'; 'c'; ' '; '\'']
       ]} *)
 
   val space : char t
@@ -1084,7 +1088,7 @@ module type PARSER = sig
 
         let p = P.(take vchar) in
         let v = P.parse_string p "0110abc\x00" in
-        v = [ '0'; '1'; '1'; '0'; 'a'; 'b'; 'c' ]
+        v = ['0'; '1'; '1'; '0'; 'a'; 'b'; 'c']
       ]} *)
 
   val whitespace : char t
@@ -1097,7 +1101,7 @@ module type PARSER = sig
 
         let p = P.(take whitespace) in
         let v = P.parse_string p "\t \t " in
-        v = [ '\t'; ' '; '\t'; ' ' ]
+        v = ['\t'; ' '; '\t'; ' ']
       ]} *)
 
   (** {2 Input manipulation} *)
@@ -1159,11 +1163,11 @@ module type PROMISE = sig
 end
 
 module type INPUT = sig
-  type t
   (** Represents the input. *)
+  type t
 
-  type 'a promise
   (** Represents an input promise. *)
+  type 'a promise
 
   type input
 
@@ -1175,17 +1179,17 @@ module type INPUT = sig
       {b Note} After the input buffer is trimmed the parser is unable to
       backtrack to [pos] less than [pos]. *)
 
-  val get_char : t -> pos:int -> [ `Char of char | `Eof ] promise
+  val get_char : t -> pos:int -> [`Char of char | `Eof] promise
 
-  val get_char_unbuffered : t -> pos:int -> [ `Char of char | `Eof ] promise
+  val get_char_unbuffered : t -> pos:int -> [`Char of char | `Eof] promise
 
   val get_cstruct :
-    t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
+    t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
   (** [get t ~pos ~len] returns [`String s] where [String.length s <= len] or
       [`Eof] if [EOI] is reached. *)
 
   val get_cstruct_unbuffered :
-    t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
+    t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
 
   val last_trimmed_pos : t -> int promise
 
@@ -1199,7 +1203,7 @@ module type BUFFERED_INPUT = sig
 
   type 'a promise
 
-  val read : t -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
+  val read : t -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
 end
 
 (** Makes a buffered [INPUT] module. Buffered input provide backtracking
@@ -1218,7 +1222,7 @@ module type UNBUFFERED_INPUT = sig
 
   type 'a promise
 
-  val read : t -> pos:int -> len:int -> [ `Cstruct of Cstruct.t | `Eof ] promise
+  val read : t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
 end
 
 (** Makes a unbuffered [INPUT] module. Unbuffered input doesn't buffer any input

@@ -26,12 +26,8 @@ open Reparse.String
 type value =
   | Object of (string * value) list
   | Array of value list
-  | Number of {
-      negative : bool;
-      int : string;
-      frac : string option;
-      exponent : string option;
-    }
+  | Number of
+      {negative: bool; int: string; frac: string option; exponent: string option}
   | String of string
   | False
   | True
@@ -59,7 +55,7 @@ let number_value =
         (fun first_ch digits -> Format.sprintf "%c%s" first_ch digits)
         digits1_to_9 digits
     in
-    any [ string_cs "0"; num ]
+    any [string_cs "0"; num]
   in
   let* frac = optional (char '.' *> digits) in
   let+ exponent =
@@ -70,9 +66,9 @@ let number_value =
          match sign with Some c -> Format.sprintf "%c" c | None -> ""
        in
        let+ digits = digits in
-       Format.sprintf "%c%s%s" e sign digits)
+       Format.sprintf "%c%s%s" e sign digits )
   in
-  Number { negative; int; frac; exponent }
+  Number {negative; int; frac; exponent}
 
 let string =
   let escaped =
@@ -80,7 +76,7 @@ let string =
       char '\\'
       *> char_if (function
            | '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' -> true
-           | _ -> false)
+           | _ -> false )
       >>| Format.sprintf "\\%c"
     in
     let hex4digit =
@@ -90,13 +86,13 @@ let string =
       in
       Format.sprintf "\\u%s" hex
     in
-    any [ ch; hex4digit ]
+    any [ch; hex4digit]
   in
   let unescaped =
-    take_while ~while_:(is_not (any [ char '\\'; control; dquote ])) any_char
+    take_while ~while_:(is_not (any [char '\\'; control; dquote])) any_char
     >>= string_of_chars
   in
-  let+ str = dquote *> take (any [ escaped; unescaped ]) <* dquote in
+  let+ str = dquote *> take (any [escaped; unescaped]) <* dquote in
   String.concat "" str
 
 let string_value = string >>| fun s -> String s
@@ -122,15 +118,13 @@ let json_value =
         Array vals
       in
       any
-        [
-          object_value;
-          array_value;
-          number_value;
-          string_value;
-          false_value;
-          true_value;
-          null_value;
-        ])
+        [ object_value
+        ; array_value
+        ; number_value
+        ; string_value
+        ; false_value
+        ; true_value
+        ; null_value ] )
 
 let parse s = parse s json_value
 

@@ -1,4 +1,4 @@
-profile = conventional
+profile = ocamlformat
 break-cases = fit
 parse-docstrings = true
 wrap-comments = true

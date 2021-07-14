@@ -34,8 +34,8 @@ let skip_spaces = skip space
 
 let binop : 'a t -> char -> 'b t -> ('a -> 'b -> 'c) -> 'c t =
  fun exp1 op exp2 f ->
-  (exp1, skip_spaces *> char op <* skip_spaces, exp2) <$$$> fun e1 _ e2 ->
-  f e1 e2
+  (exp1, skip_spaces *> char op <* skip_spaces, exp2)
+  <$$$> fun e1 _ e2 -> f e1 e2
 
 let integer : expr t =
   let+ d = skip_spaces *> digits <* skip_spaces in
@@ -43,14 +43,14 @@ let integer : expr t =
 
 let factor : expr t -> expr t =
  fun expr ->
-  any [ char '(' *> skip_spaces *> expr <* skip_spaces <* char ')'; integer ]
+  any [char '(' *> skip_spaces *> expr <* skip_spaces <* char ')'; integer]
 
 let term : expr t -> expr t =
  fun factor ->
   recur (fun term ->
       let mult = binop factor '*' term (fun e1 e2 -> Mult (e1, e2)) in
       let div = binop factor '/' term (fun e1 e2 -> Div (e1, e2)) in
-      mult <|> div <|> factor)
+      mult <|> div <|> factor )
 
 let expr : expr t =
   recur (fun expr ->
@@ -58,7 +58,7 @@ let expr : expr t =
       let term = term factor in
       let add = binop term '+' expr (fun e1 e2 -> Add (e1, e2)) in
       let sub = binop term '-' expr (fun e1 e2 -> Sub (e1, e2)) in
-      any [ add; sub; term ] <?> "expr")
+      any [add; sub; term] <?> "expr" )
 
 let rec eval : expr -> int = function
   | Int i -> i
