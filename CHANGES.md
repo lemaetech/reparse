@@ -2,6 +2,7 @@
 
 - Add `unsafe_take_cstruct_exact` and `unsafe_take_cstruct_ne` parsers.
 - `PARSER.parse` function now takes `?pos` parameter and returns `pos` along with the parsed value. This allows creating pull based parsers.
+- Expose `Promise` module.
 
 ## v3.0.1 2021-06-29
 
