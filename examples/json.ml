@@ -37,11 +37,8 @@ let ws =
   skip (char_if (function ' ' | '\t' | '\n' | '\r' -> true | _ -> false))
 
 let struct_char c = ws *> char c <* ws
-
 let null_value = ws *> string_cs "null" *> ws *> return Null
-
 let false_value = ws *> string_cs "false" *> ws *> return False
-
 let true_value = ws *> string_cs "true" *> ws *> return True
 
 let number_value =

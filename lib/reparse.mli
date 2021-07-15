@@ -38,9 +38,7 @@ module type PARSER = sig
   type 'a t
 
   type 'a promise
-
   type input
-
   type pos = int
 
   val parse : ?pos:pos -> input -> 'a t -> ('a * pos, string) result promise
@@ -106,7 +104,6 @@ module type PARSER = sig
   (** [map f p] is prefix version of [p >>| f]. *)
 
   val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
-
   val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
 
   val map4 :
@@ -177,7 +174,6 @@ module type PARSER = sig
     (** [f <$> p] is [return f <*> p]. *)
 
     val ( <$$> ) : 'a t * 'b t -> ('a -> 'b -> 'c) -> 'c t
-
     val ( <$$$> ) : 'a t * 'b t * 'c t -> ('a -> 'b -> 'c -> 'd) -> 'd t
 
     val ( <$$$$> ) :
@@ -365,22 +361,15 @@ module type PARSER = sig
   (** [ppx_let] syntax support module. *)
   module Let_syntax : sig
     val return : 'a -> 'a t
-
     val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
-
     val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 
     module Let_syntax : sig
       val return : 'a -> 'a t
-
       val map : 'a t -> f:('a -> 'b) -> 'b t
-
       val bind : 'a t -> f:('a -> 'b t) -> 'b t
-
       val both : 'a t -> 'b t -> ('a * 'b) t
-
       val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
-
       val map3 : 'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) -> 'd t
 
       val map4 :
@@ -392,13 +381,9 @@ module type PARSER = sig
     type 'a t = 'a promise
 
     val return : 'a -> 'a t
-
     val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
-
     val bind : ('a -> 'b t) -> 'a t -> 'b t
-
     val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
-
     val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   end
 
@@ -1156,9 +1141,7 @@ module type PROMISE = sig
   type 'a t
 
   val return : 'a -> 'a t
-
   val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
-
   val bind : ('a -> 'b t) -> 'a t -> 'b t
 end
 
@@ -1180,7 +1163,6 @@ module type INPUT = sig
       backtrack to [pos] less than [pos]. *)
 
   val get_char : t -> pos:int -> [`Char of char | `Eof] promise
-
   val get_char_unbuffered : t -> pos:int -> [`Char of char | `Eof] promise
 
   val get_cstruct :
@@ -1192,7 +1174,6 @@ module type INPUT = sig
     t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
 
   val last_trimmed_pos : t -> int promise
-
   val buffer_size : t -> int option promise
 end
 
@@ -1200,7 +1181,6 @@ end
 
 module type BUFFERED_INPUT = sig
   type t
-
   type 'a promise
 
   val read : t -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
@@ -1219,7 +1199,6 @@ module Make_buffered_input : functor
 
 module type UNBUFFERED_INPUT = sig
   type t
-
   type 'a promise
 
   val read : t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
@@ -1247,7 +1226,6 @@ module String : sig
   include PARSER with type 'a promise = 'a
 
   val create_input : Cstruct.t -> input
-
   val create_input_from_string : string -> input
 
   val create_input_from_bigstring :

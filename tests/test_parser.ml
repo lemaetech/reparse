@@ -2,7 +2,6 @@ module type TEST_PARSER = sig
   include Reparse.PARSER
 
   val of_string : string -> input promise
-
   val run : 'a t -> (unit -> input promise) -> ('a, string) result
 end
 
@@ -58,7 +57,6 @@ end
 
 module Make_helper (P : TEST_PARSER) = struct
   type int_result = (int, string) result [@@deriving show, ord, popper]
-
   type string_result = (string, string) result [@@deriving show, ord, popper]
 
   type string_opt_result = (string option, string) result
@@ -70,7 +68,6 @@ module Make_helper (P : TEST_PARSER) = struct
   [@@deriving show, ord, popper]
 
   type unit_result = (unit, string) result [@@deriving show, ord, popper]
-
   type bool_result = (bool, string) result [@@deriving show, ord, popper]
 
   type int_opt_result = (int option, string) result

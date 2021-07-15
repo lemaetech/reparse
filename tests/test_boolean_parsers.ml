@@ -1,6 +1,5 @@
 module Make_test (P : Test_parser.TEST_PARSER) = struct
   open Test_parser.Make_helper (P)
-
   open P.Infix
 
   let not_ =

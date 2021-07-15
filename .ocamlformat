@@ -1,4 +1,8 @@
 profile = ocamlformat
+module-item-spacing=compact
+sequence-blank-line=preserve-one
+single-case=compact
 break-cases = fit
 parse-docstrings = true
 wrap-comments = true
+

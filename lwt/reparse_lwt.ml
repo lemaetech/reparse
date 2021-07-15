@@ -12,9 +12,7 @@ module Promise = struct
   type 'a t = 'a Lwt.t
 
   let return = Lwt.return
-
   let bind f p = Lwt.bind p f
-
   let catch = Lwt.catch
 end
 
@@ -24,7 +22,6 @@ module Stream = struct
       (Promise)
       (struct
         type t = char Lwt_stream.t
-
         type 'a promise = 'a Lwt.t
 
         let read_char t =

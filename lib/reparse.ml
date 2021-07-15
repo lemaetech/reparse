@@ -10,11 +10,8 @@
 
 module type PARSER = sig
   type 'a t
-
   type 'a promise
-
   type input
-
   type pos = int
 
   val parse : ?pos:pos -> input -> 'a t -> ('a * pos, string) result promise
@@ -22,23 +19,14 @@ module type PARSER = sig
   (** {2 Monadic operators} *)
 
   val return : 'a -> 'a t
-
   val unit : unit t
-
   val ignore : _ t -> unit t
-
   val fail : string -> 'a t
-
   val bind : ('a -> 'b t) -> 'a t -> 'b t
-
   val both : 'a t -> 'b t -> ('a * 'b) t
-
   val apply : ('a -> 'b) t -> 'a t -> 'b t
-
   val map : ('a -> 'b) -> 'a t -> 'b t
-
   val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
-
   val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
 
   val map4 :
@@ -46,38 +34,24 @@ module type PARSER = sig
 
   module Infix : sig
     val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-
     val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
-
     val ( <*> ) : 'a t -> ('a -> 'b) t -> 'b t
-
     val ( <$> ) : 'a t -> ('a -> 'b) -> 'b t
-
     val ( <$$> ) : 'a t * 'b t -> ('a -> 'b -> 'c) -> 'c t
-
     val ( <$$$> ) : 'a t * 'b t * 'c t -> ('a -> 'b -> 'c -> 'd) -> 'd t
 
     val ( <$$$$> ) :
       'a t * 'b t * 'c t * 'd t -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'e t
 
     val ( <$ ) : 'a -> 'b t -> 'a t
-
     val ( $> ) : 'a t -> 'b -> 'b t
-
     val ( *> ) : _ t -> 'b t -> 'b t
-
     val ( <* ) : 'a t -> _ t -> 'a t
-
     val ( <|> ) : 'a t -> 'a t -> 'a t
-
     val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-
     val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
-
     val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
-
     val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
-
     val ( <?> ) : 'a t -> string -> 'a t
   end
 
@@ -85,22 +59,15 @@ module type PARSER = sig
 
   module Let_syntax : sig
     val return : 'a -> 'a t
-
     val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
-
     val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
 
     module Let_syntax : sig
       val return : 'a -> 'a t
-
       val map : 'a t -> f:('a -> 'b) -> 'b t
-
       val bind : 'a t -> f:('a -> 'b t) -> 'b t
-
       val both : 'a t -> 'b t -> ('a * 'b) t
-
       val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
-
       val map3 : 'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) -> 'd t
 
       val map4 :
@@ -112,135 +79,85 @@ module type PARSER = sig
     type 'a t = 'a promise
 
     val return : 'a -> 'a t
-
     val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
-
     val bind : ('a -> 'b t) -> 'a t -> 'b t
-
     val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
-
     val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   end
 
   (** {2 Char/String parsers} *)
 
   val peek_char : char t
-
   val peek_char_opt : char option t
-
   val peek_string : int -> string t
-
   val any_char : char t
-
   val unsafe_any_char : char t
-
   val char : char -> char t
-
   val char_if : (char -> bool) -> char t
-
   val string_cs : string -> string t
-
   val string_ci : string -> string t
-
   val string_of_chars : char list -> string t
-
   val take_string : int -> string t
-
   val take_cstruct : int -> Cstruct.t t
-
   val unsafe_take_cstruct : int -> Cstruct.t t
-
   val unsafe_take_cstruct_ne : int -> Cstruct.t t
 
   (** {2 Alternate parsers} *)
 
   val any : ?failure_msg:string -> 'a t list -> 'a t
-
   val alt : 'a t -> 'a t -> 'a t
-
   val optional : 'a t -> 'a option t
 
   (** {2 Boolean} *)
 
   val not_ : 'a t -> unit t
-
   val is : 'a t -> bool t
-
   val is_not : 'a t -> bool t
 
   (** {2 Repetition} *)
 
   val recur : ('a t -> 'a t) -> 'a t
-
   val all : 'a t list -> 'a list t
-
   val all_unit : _ t list -> unit t
-
   val skip : ?at_least:int -> ?up_to:int -> _ t -> int t
-
   val take : ?at_least:int -> ?up_to:int -> ?sep_by:_ t -> 'a t -> 'a list t
 
   val take_while_cb :
     ?sep_by:_ t -> while_:bool t -> on_take_cb:('a -> unit t) -> 'a t -> unit t
 
   val take_while : ?sep_by:_ t -> while_:bool t -> 'a t -> 'a list t
-
   val take_between : ?sep_by:_ t -> start:_ t -> end_:_ t -> 'a t -> 'a list t
 
   (** RFC 5234 parsers *)
 
   val alpha : char t
-
   val alpha_num : char t
-
   val lower_alpha : char t
-
   val upper_alpha : char t
-
   val bit : char t
-
   val ascii_char : char t
-
   val cr : char t
-
   val crlf : string t
-
   val control : char t
-
   val digit : char t
-
   val digits : string t
-
   val dquote : char t
-
   val hex_digit : char t
-
   val htab : char t
-
   val lf : char t
-
   val octet : char t
-
   val space : char t
-
   val vchar : char t
-
   val whitespace : char t
 
   (** {2 Input manipulation} *)
 
   val advance : int -> unit t
-
   val eoi : unit t
-
   val trim_input_buffer : unit t
-
   val pos : int t
-
   val last_trimmed_pos : int t
-
   val input_buffer_size : int option t
-
   val of_promise : 'a promise -> 'a t
 end
 
@@ -248,25 +165,18 @@ module type PROMISE = sig
   type 'a t
 
   val return : 'a -> 'a t
-
   val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
-
   val bind : ('a -> 'b t) -> 'a t -> 'b t
 end
 
 module type INPUT = sig
   type t
-
   type 'a promise
-
   type input
 
   val create : input -> t
-
   val trim_buffer : t -> pos:int -> unit promise
-
   val get_char : t -> pos:int -> [`Char of char | `Eof] promise
-
   val get_char_unbuffered : t -> pos:int -> [`Char of char | `Eof] promise
 
   val get_cstruct :
@@ -276,7 +186,6 @@ module type INPUT = sig
     t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
 
   val last_trimmed_pos : t -> int promise
-
   val buffer_size : t -> int option promise
 end
 
@@ -284,7 +193,6 @@ module Make_promise_ops (Promise : PROMISE) = struct
   include Promise
 
   let ( >>= ) b f = bind f b
-
   let ( >>| ) b f = b >>= fun x -> return (f x)
 end
 
@@ -294,11 +202,8 @@ module Make
   PARSER with type 'a promise = 'a Input.promise with type input = Input.t =
 struct
   type input = Input.t
-
   type 'a promise = 'a Input.promise
-
   type pos = int
-
   type 'a t = Input.t -> pos:pos -> ('a * pos) Input.promise
 
   module Promise = Make_promise_ops (Promise)
@@ -307,9 +212,7 @@ struct
 
   (*+++++ Monadic operators +++++*)
   let return : 'a -> 'a t = fun v _inp ~pos -> Promise.return (v, pos)
-
   let unit = return ()
-
   let fail : string -> 'a t = fun msg _inp ~pos:_ -> raise (Parse_failure msg)
 
   let bind : ('a -> 'b t) -> 'a t -> 'b t =
@@ -342,23 +245,14 @@ struct
 
   module Infix = struct
     let ( >>= ) p f = bind f p
-
     let ( >>| ) p f = map f p
-
     let ( <*> ) p f = apply f p
-
     let ( <$> ) p f = map f p
-
     let ( <$$> ) (a, b) f = map2 f a b
-
     let ( <$$$> ) (a, b, c) f = map3 f a b c
-
     let ( <$$$$> ) (a, b, c, d) f = map4 f a b c d
-
     let ( <$ ) v p = p >>| fun _ -> v
-
     let ( $> ) p v = p >>| fun _ -> v
-
     let ( *> ) : _ t -> 'b t -> 'b t = fun p q -> p >>= fun _ -> q
 
     let ( <* ) : 'a t -> _ t -> 'a t =
@@ -371,11 +265,8 @@ struct
         (function Parse_failure _ -> q inp ~pos | e -> raise e)
 
     let ( let* ) = ( >>= )
-
     let ( and* ) = both
-
     let ( let+ ) = ( >>| )
-
     let ( and+ ) = both
 
     let ( <?> ) : 'a t -> string -> 'a t =
@@ -389,24 +280,16 @@ struct
 
   module Let_syntax = struct
     let return = return
-
     let ( >>= ) p f = bind f p
-
     let ( >>| ) p f = map f p
 
     module Let_syntax = struct
       let return = return
-
       let map p ~f = map f p
-
       let bind p ~f = bind f p
-
       let both = both
-
       let map2 p q ~f = map2 f p q
-
       let map3 p q r ~f = map3 f p q r
-
       let map4 p q r s ~f = map4 f p q r s
     end
   end
@@ -791,9 +674,7 @@ struct
           | e -> raise e ))
 
   let is_alpha = function 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false
-
   let is_digit = function '0' .. '9' -> true | _ -> false
-
   let alpha = named_ch "ALPHA" is_alpha
 
   let alpha_num =
@@ -806,11 +687,8 @@ struct
     named_ch "UPPER ALPHA" (function 'A' .. 'Z' -> true | _ -> false)
 
   let bit = named_ch "BIT" (function '0' | '1' -> true | _ -> false)
-
   let cr = named_ch "CR" (function '\r' -> true | _ -> false)
-
   let crlf = string_ci "\r\n" <?> "[crlf]"
-
   let digit = named_ch "DIGIT" is_digit
 
   let digits =
@@ -819,17 +697,11 @@ struct
     <?> "[digits]"
 
   let dquote = named_ch "DQUOTE" (function '"' -> true | _ -> false)
-
   let htab = named_ch "HTAB" (function '\t' -> true | _ -> false)
-
   let lf = named_ch "LF" (function '\n' -> true | _ -> false)
-
   let octet = any_char
-
   let space = named_ch "SPACE" (function '\x20' -> true | _ -> false)
-
   let vchar = named_ch "VCHAR" (function '\x21' .. '\x7E' -> true | _ -> false)
-
   let whitespace = named_ch "WSP" (function ' ' | '\t' -> true | _ -> false)
 
   let ascii_char =
@@ -890,7 +762,6 @@ end
 
 module type BUFFERED_INPUT = sig
   type t
-
   type 'a promise
 
   val read : t -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
@@ -1000,13 +871,11 @@ module Make_buffered_input
         `Cstruct (Cstruct.sub t.buf pos' len)
 
   let last_trimmed_pos t = Promise.return t.last_trimmed_pos
-
   let buffer_size t = Promise.return @@ Some (Cstruct.length t.buf)
 end
 
 module type UNBUFFERED_INPUT = sig
   type t
-
   type 'a promise
 
   val read : t -> pos:int -> len:int -> [`Cstruct of Cstruct.t | `Eof] promise
@@ -1019,9 +888,7 @@ module Make_unbuffered_input
   module Promise = Make_promise_ops (Promise)
 
   type t = {input: Input.t; mutable last_trimmed_pos: int}
-
   type input = Input.t
-
   type 'a promise = 'a Promise.t
 
   let create input = {input; last_trimmed_pos= 0}
@@ -1036,13 +903,9 @@ module Make_unbuffered_input
       >>| function `Cstruct cs -> `Char (Cstruct.get_char cs 0) | `Eof -> `Eof)
 
   let get_char_unbuffered = get_char
-
   let get_cstruct t ~pos ~len = Input.read t.input ~pos ~len
-
   let get_cstruct_unbuffered = get_cstruct
-
   let last_trimmed_pos t = Promise.return @@ t.last_trimmed_pos
-
   let buffer_size _ = Promise.return None
 end
 
@@ -1050,9 +913,7 @@ module Promise = struct
   type 'a t = 'a
 
   let return a = a
-
   let catch f e = try f () with exn -> e exn
-
   let bind f promise = f promise
 end
 
@@ -1062,7 +923,6 @@ module String = struct
       (Promise)
       (struct
         type t = Cstruct.t
-
         type 'a promise = 'a
 
         let read t ~pos ~len =
@@ -1075,7 +935,6 @@ module String = struct
   include Make (Promise) (Input)
 
   let create_input input = Input.create input
-
   let create_input_from_string s = Input.create (Cstruct.of_string s)
 
   let create_input_from_bigstring ?off ?len ba =
